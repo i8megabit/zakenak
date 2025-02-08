@@ -1,3 +1,17 @@
+#Requires -RunAsAdministrator
+
+# Проверка политики выполнения
+$executionPolicy = Get-ExecutionPolicy
+if ($executionPolicy -eq "Restricted") {
+	Write-Host "ВНИМАНИЕ: Политика выполнения скриптов ограничена." -ForegroundColor Red
+	Write-Host "Для запуска скрипта выполните одно из следующих действий:" -ForegroundColor Yellow
+	Write-Host "1. Временно обойти политику для текущего скрипта:" -ForegroundColor Yellow
+	Write-Host "   powershell -ExecutionPolicy Bypass -File $($MyInvocation.MyCommand.Path)" -ForegroundColor Cyan
+	Write-Host "2. Изменить политику выполнения (требуются права администратора):" -ForegroundColor Yellow
+	Write-Host "   Set-ExecutionPolicy RemoteSigned" -ForegroundColor Cyan
+	exit 1
+}
+
 function Reset-WSL {
 	Write-Host "Начинаем процесс полного сброса WSL..." -ForegroundColor Yellow
 	
