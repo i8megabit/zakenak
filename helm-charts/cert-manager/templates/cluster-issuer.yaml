@@ -1,14 +1,14 @@
-{{- if and .Values.clusterIssuer.enabled (lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" "clusterissuers.cert-manager.io") }}
+{{- if .Values.clusterIssuer.enabled }}
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
- name: letsencrypt-prod
+	name: letsencrypt-prod
 spec:
- acme:
-	email: {{ .Values.clusterIssuer.email }}
-	server: {{ .Values.clusterIssuer.server }}
-	privateKeySecretRef:
-	 name: {{ .Values.clusterIssuer.privateKeySecretRef }}
-	solvers:
-	{{- toYaml .Values.clusterIssuer.solvers | nindent 2 }}
+	acme:
+		email: {{ .Values.clusterIssuer.email }}
+		server: {{ .Values.clusterIssuer.server }}
+		privateKeySecretRef:
+			name: {{ .Values.clusterIssuer.privateKeySecretRef }}
+		solvers:
+		{{- toYaml .Values.clusterIssuer.solvers | nindent 2 }}
 {{- end }}

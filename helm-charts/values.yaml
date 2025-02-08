@@ -1,21 +1,21 @@
 # Глобальные настройки для всех чартов
 global:
- environment: production
- domain: example.com
+	environment: production
+	domain: example.com
 
 # Настройки cert-manager
 cert-manager:
- email: "default@example.com"
- server: "https://acme-v02.api.letsencrypt.org/directory"
+	email: "default@example.com"
+	server: "https://acme-v02.api.letsencrypt.org/directory"
 
 # Настройки для сайдкаров
 sidecar-injector:
- certManager:
-	enabled: true
-	issuerRef:
-	 name: letsencrypt-prod
-	 kind: ClusterIssuer
- ingress:
-	enabled: true
-	hosts:
-	- host: example.com
+	certManager:
+		enabled: true
+		issuerRef:
+			name: letsencrypt-prod
+			kind: ClusterIssuer
+	ingress:
+		enabled: true
+		hosts:
+		- host: example.com

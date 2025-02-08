@@ -2,4 +2,4 @@ apiVersion: v2
 name: sidecar-injector
 description: Helm chart for TLS sidecar injection
 version: 0.1.0
-appVersion: 1.0.0
+appVersion: "1.0.0"
