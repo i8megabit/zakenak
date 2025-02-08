@@ -128,37 +128,75 @@ if [ -z "$CHART_PATH" ]; then
 	fi
 fi
 
-# Валидация чарта
-validate_chart "$CHART_PATH"
+# Функция для инициализации зависимостей чарта
+init_chart_dependencies() {
+	local chart_path=$1
+	echo -e "${CYAN}Инициализация зависимостей для чарта: $chart_path${NC}"
+	
+	# Добавление репозиториев
+	if [ -f "$chart_path/Chart.yaml" ]; then
+		# Извлекаем все репозитории из зависимостей
+		local repos=$(yq eval '.dependencies[].repository' "$chart_path/Chart.yaml" | sort -u)
+		
+		for repo in $repos; do
+			if [[ $repo == http* ]] || [[ $repo == https* ]]; then
+				local repo_name=$(echo $repo | awk -F'/' '{print $(NF-1)}')
+				echo -e "${CYAN}Добавление репозитория: $repo_name - $repo${NC}"
+				helm repo add $repo_name $repo || true
+			fi
+		done
+		
+		# Обновление репозиториев
+		helm repo update
+		
+		# Сборка зависимостей
+		echo -e "${CYAN}Сборка зависимостей чарта...${NC}"
+		helm dependency build "$chart_path"
+	fi
+}
 
-# Создание namespace если не существует
-ensure_namespace "$ENVIRONMENT"
-
-# Определение values файла для окружения
-VALUES_FILE="$CHART_PATH/values-${ENVIRONMENT}.yaml"
-if [ ! -f "$VALUES_FILE" ]; then
-	VALUES_FILE="$CHART_PATH/values.yaml"
-fi
-
-# Получение имени релиза из values файла или использование имени чарта
-RELEASE_NAME=$(yq eval '.release.name' "$VALUES_FILE" 2>/dev/null || basename "$CHART_PATH")
-
-echo -e "${CYAN}Деплой чарта:${NC}"
-echo -e "Окружение: ${GREEN}$ENVIRONMENT${NC}"
-echo -e "Чарт: ${GREEN}$CHART_PATH${NC}"
-echo -e "Values файл: ${GREEN}$VALUES_FILE${NC}"
-echo -e "Имя релиза: ${GREEN}$RELEASE_NAME${NC}"
+# Функция деплоя чарта
+deploy_chart() {
+	local chart_path=$1
+	
+	# Валидация чарта
+	validate_chart "$chart_path"
+	
+	# Создание namespace если не существует
+	ensure_namespace "$ENVIRONMENT"
+	
+	# Инициализация зависимостей перед деплоем
+	init_chart_dependencies "$chart_path"
+	
+	# Определение values файла для окружения
+	VALUES_FILE="$chart_path/values-${ENVIRONMENT}.yaml"
+	if [ ! -f "$VALUES_FILE" ]; then
+		VALUES_FILE="$chart_path/values.yaml"
+	fi
+	
+	# Получение имени релиза из values файла или использование имени чарта
+	RELEASE_NAME=$(yq eval '.release.name' "$VALUES_FILE" 2>/dev/null || basename "$chart_path")
+	
+	echo -e "${CYAN}Деплой чарта:${NC}"
+	echo -e "Окружение: ${GREEN}$ENVIRONMENT${NC}"
+	echo -e "Чарт: ${GREEN}$chart_path${NC}"
+	echo -e "Values файл: ${GREEN}$VALUES_FILE${NC}"
+	echo -e "Имя релиза: ${GREEN}$RELEASE_NAME${NC}"
+	
+	# Выполнение деплоя
+	helm upgrade --install "$RELEASE_NAME" "$chart_path" \
+		--namespace "$ENVIRONMENT" \
+		--values "$VALUES_FILE" \
+		--create-namespace \
+		$HELM_EXTRA_ARGS
+	
+	if [ $? -eq 0 ]; then
+		echo -e "${GREEN}Деплой успешно завершен!${NC}"
+	else
+		echo -e "${RED}Ошибка при выполнении деплоя${NC}"
+		exit 1
+	fi
+}
 
 # Выполнение деплоя
-helm upgrade --install "$RELEASE_NAME" "$CHART_PATH" \
-	--namespace "$ENVIRONMENT" \
-	--values "$VALUES_FILE" \
-	--create-namespace \
-	$HELM_EXTRA_ARGS
-
-if [ $? -eq 0 ]; then
-	echo -e "${GREEN}Деплой успешно завершен!${NC}"
-else
-	echo -e "${RED}Ошибка при выполнении деплоя${NC}"
-	exit 1
-fi
+deploy_chart "$CHART_PATH"
