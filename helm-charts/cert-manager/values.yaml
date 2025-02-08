@@ -18,5 +18,5 @@ clusterIssuer:
 	privateKeySecretRef: "letsencrypt-prod"
 	solvers:
 		- http01:
-			ingress:
+				ingress:
 					class: nginx
