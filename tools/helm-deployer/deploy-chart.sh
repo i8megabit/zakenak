@@ -133,25 +133,28 @@ init_chart_dependencies() {
 	local chart_path=$1
 	echo -e "${CYAN}Инициализация зависимостей для чарта: $chart_path${NC}"
 	
-	# Добавление репозиториев
 	if [ -f "$chart_path/Chart.yaml" ]; then
-		# Извлекаем все репозитории из зависимостей
-		local repos=$(yq eval '.dependencies[].repository' "$chart_path/Chart.yaml" | sort -u)
-		
-		for repo in $repos; do
-			if [[ $repo == http* ]] || [[ $repo == https* ]]; then
-				local repo_name=$(echo $repo | awk -F'/' '{print $(NF-1)}')
-				echo -e "${CYAN}Добавление репозитория: $repo_name - $repo${NC}"
-				helm repo add $repo_name $repo || true
+		# Извлекаем репозитории из Chart.yaml с помощью grep и awk
+		while IFS= read -r line; do
+			if [[ $line =~ repository:[[:space:]]*(.*) ]]; then
+				local repo="${BASH_REMATCH[1]}"
+				if [[ $repo == http* ]] || [[ $repo == https* ]]; then
+					local repo_name=$(echo $repo | awk -F'/' '{print $(NF-1)}')
+					echo -e "${CYAN}Добавление репозитория: $repo_name - $repo${NC}"
+					helm repo add $repo_name $repo || true
+				fi
 			fi
-		done
+		done < "$chart_path/Chart.yaml"
 		
 		# Обновление репозиториев
+		echo -e "${CYAN}Обновление репозиториев Helm...${NC}"
 		helm repo update
 		
 		# Сборка зависимостей
 		echo -e "${CYAN}Сборка зависимостей чарта...${NC}"
 		helm dependency build "$chart_path"
+	else
+		echo -e "${YELLOW}Chart.yaml не найден в $chart_path${NC}"
 	fi
 }
 
