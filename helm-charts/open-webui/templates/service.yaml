@@ -1,16 +1,21 @@
 apiVersion: v1
-kind: Service
+kind: Secret
 metadata:
-	name: {{ .Release.Name }}
-	namespace: {{ .Values.release.namespace }}
-	labels:
-		app: open-webui
-spec:
-	type: {{ .Values.service.type }}
-	ports:
-		- port: {{ .Values.service.port }}
-			targetPort: {{ .Values.service.targetPort }}
-			protocol: TCP
-			name: http
-	selector:
-		app: open-webui
+  name: {{ .Release.Name }}-secrets
+  namespace: {{ .Values.release.namespace }}
+  labels:
+    app: open-webui
+type: Opaque
+stringData:
+  {{- if .Values.secrets.openai.apiKey }}
+  OPENAI_API_KEY: {{ .Values.secrets.openai.apiKey }}
+  {{- end }}
+  {{- if .Values.secrets.openai.apiBase }}
+  OPENAI_API_BASE: {{ .Values.secrets.openai.apiBase }}
+  {{- end }}
+  {{- if .Values.secrets.ollama.apiBase }}
+  OLLAMA_API_BASE: {{ .Values.secrets.ollama.apiBase }}
+  {{- end }}
+  {{- range $key, $value := .Values.secrets.custom }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

@@ -1,65 +1,65 @@
 # Параметры релиза
 release:
-	name: open-webui
-	namespace: open-webui
+  name: open-webui
+  namespace: prod
 
 # Основные настройки приложения
 image:
-	repository: ghcr.io/open-webui/open-webui
-	tag: latest
-	pullPolicy: Always
+  repository: ghcr.io/open-webui/open-webui
+  tag: latest
+  pullPolicy: Always
 
 # Настройки развертывания
 deployment:
-	replicas: 1
-	resources:
-		limits:
-			cpu: 1000m
-			memory: 2Gi
-		requests:
-			cpu: 500m
-			memory: 1Gi
+  replicas: 1
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
 
 # Секреты
 secrets:
-	openai:
-		apiKey: ""  # Заполните своим API ключом
-		apiBase: "https://api.openai.com/v1"  # Базовый URL API OpenAI
-	ollama:
-		apiBase: "http://ollama:11434/api"  # URL API Ollama
-	custom: {}  # Дополнительные пользовательские секреты
+  openai:
+    apiKey: ""  # Заполните своим API ключом
+    apiBase: "https://api.openai.com/v1"  # Базовый URL API OpenAI
+  ollama:
+    apiBase: "http://ollama:11434/api"  # URL API Ollama
+  custom: {}  # Дополнительные пользовательские секреты
 
 # Настройки окружения (не секретные)
 env:
-	- name: MODEL
-		value: "gpt-3.5-turbo"
-	- name: DEBUG
-		value: "false"
+  - name: MODEL
+    value: "gpt-3.5-turbo"
+  - name: DEBUG
+    value: "true"
 
 # Настройки сервиса
 service:
-	type: ClusterIP
-	port: 8080
-	targetPort: 8080
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
 
 # Настройки Ingress
 ingress:
-	enabled: true
-	className: nginx
-	annotations:
-		cert-manager.io/cluster-issuer: letsencrypt-prod
-	hosts:
-		- host: webui.example.com
-			paths:
-				- path: /
-					pathType: Prefix
-	tls:
-		- secretName: open-webui-tls
-			hosts:
-				- webui.example.com
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: localhost
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: open-webui-tls
+      hosts:
+        - localhost
 
 # Настройки хранилища
 persistence:
-	enabled: true
-	size: 1Gi
-	storageClass: ""
+  enabled: true
+  size: 1Gi
+  storageClass: ""

@@ -1,45 +1,45 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-	name: {{ .Release.Name }}
-	namespace: {{ .Values.release.namespace }}
-	labels:
-		app: open-webui
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.release.namespace }}
+  labels:
+    app: open-webui
 spec:
-	replicas: {{ .Values.deployment.replicas }}
-	selector:
-		matchLabels:
-			app: open-webui
-	template:
-		metadata:
-			labels:
-				app: open-webui
-		spec:
-			containers:
-				- name: open-webui
-					image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-					imagePullPolicy: {{ .Values.image.pullPolicy }}
-					ports:
-						- containerPort: {{ .Values.service.targetPort }}
-							protocol: TCP
-					envFrom:
-						- secretRef:
-								name: {{ .Release.Name }}-secrets
-					env:
-						{{- range .Values.env }}
-						- name: {{ .name }}
-							value: {{ .value | quote }}
-						{{- end }}
-					resources:
-						{{- toYaml .Values.deployment.resources | nindent 12 }}
-					{{- if .Values.persistence.enabled }}
-					volumeMounts:
-						- name: data
-							mountPath: /app/backend/data
-					{{- end }}
-			{{- if .Values.persistence.enabled }}
-			volumes:
-				- name: data
-					persistentVolumeClaim:
-						claimName: {{ .Release.Name }}-pvc
-			{{- end }}
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: open-webui
+  template:
+    metadata:
+      labels:
+        app: open-webui
+    spec:
+      containers:
+        - name: open-webui
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-secrets
+          env:
+            {{- range .Values.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: data
+              mountPath: /app/backend/data
+          {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-pvc
+      {{- end }}
