@@ -1,0 +1,9 @@
+apiVersion: v2
+name: cert-manager-setup
+description: Helm chart for cert-manager with Let's Encrypt configuration
+version: 0.1.0
+appVersion: "1.12.0"
+dependencies:
+- name: cert-manager
+	version: v1.12.0
+	repository: https://charts.jetstack.io
