@@ -1,6 +1,6 @@
 # GitOps Tools
 
-Версия: 1.1.4
+Версия: 1.1.5
 ## Инструменты
 
 ### [Reset-WSL](./tools/reset-wsl)

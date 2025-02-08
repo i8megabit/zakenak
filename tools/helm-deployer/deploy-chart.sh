@@ -122,22 +122,28 @@ main() {
    esac
  done
 
- # Установка директории чартов по умолчанию
+ # Определяем путь к корню проекта и директории чартов
+ local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ local project_root="$(cd "$script_dir/../.." && pwd)"
+ 
+ # Если CHARTS_DIR не задан через аргументы, используем путь по умолчанию
  if [ -z "$CHARTS_DIR" ]; then
-   CHARTS_DIR="$(dirname $(dirname $0))/helm-charts"
- fi
-
- # Проверка существования директории чартов
- if [ ! -d "$CHARTS_DIR" ]; then
-   echo -e "${RED}Ошибка: Директория чартов не найдена: $CHARTS_DIR${NC}"
-   exit 1
+   CHARTS_DIR="$project_root/helm-charts"
  fi
 
  # Проверка prerequisites
  check_prerequisites
 
- echo -e "${YELLOW}Начинаем деплой чартов...${NC}"
+ echo -e "${YELLOW}Начинаем деплой всех чартов...${NC}"
  echo -e "Директория чартов: $CHARTS_DIR"
+
+ # Проверка существования директории чартов
+ if [ ! -d "$CHARTS_DIR" ]; then
+   echo -e "${RED}Ошибка: Директория чартов не найдена: $CHARTS_DIR${NC}"
+   echo -e "${YELLOW}Убедитесь, что директория helm-charts существует в корне проекта${NC}"
+   exit 1
+ fi
+
  echo -e "Окружение: $ENVIRONMENT"
 
 # Функция получения порядка установки чартов
