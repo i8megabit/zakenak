@@ -54,18 +54,23 @@ deploy_chart() {
  
  echo -e "${CYAN}Обработка чарта: $chart_name${NC}"
  
+ # Проверяем наличие Chart.yaml
+ if [ ! -f "$chart_path/Chart.yaml" ]; then
+   echo -e "${RED}Ошибка: Chart.yaml не найден в $chart_path${NC}"
+   return 1
+ fi
+ 
  # Получаем значения из values файлов
  local global_values="$CHARTS_DIR/values.yaml"
  local chart_values="$chart_path/values.yaml"
  local env_values="$chart_path/values.$ENVIRONMENT.yaml"
  
- # Получаем имя релиза и namespace
- local release_name=$(get_value "$chart_values" "release.name" "$chart_name")
- local namespace=$(get_value "$chart_values" "release.namespace" "default")
+ # Получаем имя релиза и namespace из values
+ local release_name=$(yq -r '.release.name // ""' "$chart_values" 2>/dev/null || echo "$chart_name")
+ local namespace=$(yq -r '.release.namespace // "default"' "$chart_values" 2>/dev/null)
  
  echo -e "Релиз: $release_name"
  echo -e "Namespace: $namespace"
- echo -e "Окружение: $ENVIRONMENT"
 
  # Создание namespace если не существует
  if ! kubectl get namespace "$namespace" &> /dev/null; then
@@ -77,22 +82,10 @@ deploy_chart() {
  local helm_cmd="helm upgrade --install $release_name $chart_path --namespace $namespace"
  
  # Добавляем values файлы в порядке приоритета
- if check_file_exists "$global_values"; then
-   helm_cmd="$helm_cmd -f $global_values"
- fi
- 
- if check_file_exists "$chart_values"; then
-   helm_cmd="$helm_cmd -f $chart_values"
- fi
- 
- if check_file_exists "$env_values"; then
-   helm_cmd="$helm_cmd -f $env_values"
- fi
- 
- # Добавляем дополнительные флаги
- if [ "$DEBUG" = true ]; then
-   helm_cmd="$helm_cmd --debug"
- fi
+ [ -f "$global_values" ] && helm_cmd="$helm_cmd -f $global_values"
+ [ -f "$chart_values" ] && helm_cmd="$helm_cmd -f $chart_values"
+ [ -f "$env_values" ] && helm_cmd="$helm_cmd -f $env_values"
+
 
  echo -e "${CYAN}Выполняем деплой...${NC}"
  echo "Команда: $helm_cmd"
@@ -108,28 +101,10 @@ deploy_chart() {
 
 # Основная логика
 main() {
- # Парсинг аргументов
- while [[ $# -gt 0 ]]; do
-   case $1 in
-	 -d|--charts-dir) CHARTS_DIR="$2"; shift 2 ;;
-	 -e|--environment) ENVIRONMENT="$2"; shift 2 ;;
-	 --debug) DEBUG=true; shift ;;
-	 -h|--help)
-	   echo "Использование: $0 [-d CHARTS_DIR] [-e ENVIRONMENT] [--debug]"
-	   exit 0
-	   ;;
-	 *) echo "Неизвестная опция: $1"; exit 1 ;;
-   esac
- done
-
  # Определяем путь к корню проекта и директории чартов
- local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
- local project_root="$(cd "$script_dir/../.." && pwd)"
- 
- # Если CHARTS_DIR не задан через аргументы, используем путь по умолчанию
- if [ -z "$CHARTS_DIR" ]; then
-   CHARTS_DIR="$project_root/helm-charts"
- fi
+ CHARTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/helm-charts"
+ ENVIRONMENT=${ENVIRONMENT:-"default"}
+
 
  # Проверка prerequisites
  check_prerequisites
@@ -146,38 +121,67 @@ main() {
 
  echo -e "Окружение: $ENVIRONMENT"
 
-# Функция получения порядка установки чартов
-get_charts_order() {
+# Функция получения списка чартов
+get_charts() {
  local charts_dir="$1"
  local order_file="$charts_dir/install-order.yaml"
- 
+ local charts=""
+
+ echo -e "${CYAN}Поиск чартов в директории: $charts_dir${NC}"
+
  if check_file_exists "$order_file"; then
-   # Изменяем способ чтения yaml файла
-   yq '.charts[]' "$order_file"
-   return 0
+   echo -e "${CYAN}Найден файл порядка установки: $order_file${NC}"
+   while IFS= read -r line; do
+     # Пропускаем комментарии и пустые строки
+     [[ "$line" =~ ^[[:space:]]*# ]] && continue
+     [[ -z "${line// }" ]] && continue
+     
+     # Извлекаем имя чарта и проверяем его существование
+     local chart_name=$(echo "$line" | sed -e 's/^[[:space:]]*-[[:space:]]*//')
+     local chart_path="$charts_dir/$chart_name"
+     
+     if [ -d "$chart_path" ]; then
+       echo -e "${CYAN}Добавлен чарт: $chart_name${NC}"
+       charts+="$chart_path"$'\n'
+     else
+       echo -e "${YELLOW}Предупреждение: Директория чарта не найдена: $chart_path${NC}"
+     fi
+   done < <(yq -r '.charts[]' "$order_file" 2>/dev/null)
+ else
+   echo -e "${YELLOW}Файл порядка установки не найден, используем все поддиректории${NC}"
+   while IFS= read -r chart_path; do
+     if [ -d "$chart_path" ]; then
+       echo -e "${CYAN}Добавлен чарт: $(basename "$chart_path")${NC}"
+       charts+="$chart_path"$'\n'
+     fi
+   done < <(find "$charts_dir" -mindepth 1 -maxdepth 1 -type d | sort)
  fi
- 
- # Если файл порядка не существует, просто листинг директорий
- ls -d "$charts_dir"/*/ | sort
+
+ if [ -z "$charts" ]; then
+   echo -e "${RED}Ошибка: Не найдено чартов для установки${NC}"
+   exit 1
+ fi
+
+ echo "$charts"
 }
 
- # Получаем список чартов для установки
- local charts=$(get_charts_order "$CHARTS_DIR")
+# Получаем список чартов
+local charts=$(get_charts "$CHARTS_DIR")
 
- # Счетчики для статистики
- local success_count=0
- local total_charts=$(echo "$charts" | wc -l)
+# Счетчики для статистики
+local success_count=0
+local total_charts=$(echo "$charts" | grep -c '^' || echo 0)
 
- # Устанавливаем каждый чарт
- for chart in $charts; do
-   if [ -d "$CHARTS_DIR/$chart" ]; then
-	 if deploy_chart "$CHARTS_DIR/$chart"; then
-	   ((success_count++))
-	 fi
-   fi
- done
+# Устанавливаем каждый чарт
+while IFS= read -r chart; do
+  [ -z "$chart" ] && continue
+  
+  if deploy_chart "$chart"; then
+    ((success_count++))
+  fi
+done <<< "$charts"
 
- echo -e "\n${GREEN}Деплой завершен. Успешно установлено $success_count из $total_charts чартов.${NC}"
+echo -e "\n${GREEN}Деплой завершен. Успешно установлено $success_count из $total_charts чартов.${NC}"
 }
 
 # Запуск скрипта
