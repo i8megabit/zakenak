@@ -1,0 +1,13 @@
+apiVersion: v2
+name: ollama
+description: A Helm chart for Ollama - LLM Model Server
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+	- llm
+	- ai
+	- ollama
+maintainers:
+	- name: "DevSecMLOps"
+		email: "i8megabit@gmail.com"

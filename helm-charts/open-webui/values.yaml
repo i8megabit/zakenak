@@ -39,7 +39,7 @@ env:
 # Настройки сервиса
 service:
   type: ClusterIP
-  port: 8080
+  port: 3000
   targetPort: 8080
 
 # Настройки Ingress
@@ -51,7 +51,7 @@ ingress:
   hosts:
     - host: localhost
       paths:
-        - path: /
+        - path: /open-webui
           pathType: Prefix
   tls:
     - secretName: open-webui-tls

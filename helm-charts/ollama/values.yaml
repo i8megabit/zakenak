@@ -1,0 +1,48 @@
+# Параметры релиза
+release:
+	name: ollama
+	namespace: prod
+
+# Основные настройки приложения
+image:
+	repository: ollama/ollama
+	tag: latest
+	pullPolicy: Always
+
+# Настройки развертывания
+deployment:
+	replicas: 1
+	resources:
+		limits:
+			cpu: "4"
+			memory: "8Gi"
+			nvidia.com/gpu: "1"  # Раскомментируйте если есть GPU
+		requests:
+			cpu: "2"
+			memory: "4Gi"
+
+# Настройки сервиса
+service:
+	type: ClusterIP
+	port: 11434
+	targetPort: 11434
+
+# Настройки хранилища для моделей
+persistence:
+	enabled: true
+	size: 50Gi
+	storageClass: ""
+	accessModes:
+		- ReadWriteOnce
+
+# Настройки безопасности
+securityContext:
+	runAsUser: 1000
+	runAsGroup: 1000
+	fsGroup: 1000
+
+# Настройки сети
+networkPolicy:
+	enabled: true
+	allowedNamespaces:
+		- prod  # Namespace где запущен Open WebUI
