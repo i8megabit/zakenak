@@ -1,6 +1,6 @@
 # GitOps Tools
 
-Версия: 1.1.2
+Версия: 1.1.3
 
 ## Инструменты
 
@@ -15,7 +15,14 @@
 
 #### Автоматический деплой всех чартов
 ```bash
-./tools/helm-deployer/deploy-chart.sh
+# Базовое использование
+./deploy-chart.sh
+
+# Деплой с указанием окружения
+./deploy-chart.sh -e prod
+
+# Деплой с отладкой
+./deploy-chart.sh --debug
 ```
 
 ### [Helm Setup](./tools/helm-setup)
