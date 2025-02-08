@@ -140,15 +140,23 @@ main() {
  echo -e "Директория чартов: $CHARTS_DIR"
  echo -e "Окружение: $ENVIRONMENT"
 
- # Получаем список чартов для установки
- local order_file="$CHARTS_DIR/install-order.yaml"
- local charts
+# Функция получения порядка установки чартов
+get_charts_order() {
+ local charts_dir="$1"
+ local order_file="$charts_dir/install-order.yaml"
  
  if check_file_exists "$order_file"; then
-   charts=$(yq eval '.charts[]' "$order_file")
- else
-   charts=$(ls -d "$CHARTS_DIR"/*/ | sort)
+   # Изменяем способ чтения yaml файла
+   yq '.charts[]' "$order_file"
+   return 0
  fi
+ 
+ # Если файл порядка не существует, просто листинг директорий
+ ls -d "$charts_dir"/*/ | sort
+}
+
+ # Получаем список чартов для установки
+ local charts=$(get_charts_order "$CHARTS_DIR")
 
  # Счетчики для статистики
  local success_count=0
