@@ -1,7 +1,7 @@
 # Параметры релиза
 release:
 	name: cert-manager
-	namespace: cert-manager
+	namespace: 'cert-manager'
 
 # Настройки cert-manager
 cert-manager:

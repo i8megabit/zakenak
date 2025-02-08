@@ -1,38 +1,38 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-	name: {{ include "sidecar-injector.fullname" . }}
+ name: {{ include "sidecar-injector.fullname" . }}
 spec:
-	replicas: 1
-	selector:
-		matchLabels:
-			{{- include "sidecar-injector.selectorLabels" . | nindent 6 }}
-	template:
-		metadata:
-			labels:
-				{{- include "sidecar-injector.selectorLabels" . | nindent 8 }}
-		spec:
-			volumes:
-			- name: tls-certs
-				secret:
-					secretName: {{ include "sidecar-injector.fullname" . }}-tls
-			containers:
-			- name: main
-				image: {{ .Values.image }}
-				# ... основной контейнер
-			{{- if .Values.sidecar.ingressSidecar.enabled }}
-			- name: ingress-sidecar
-				image: {{ .Values.sidecar.image }}
-				ports:
-				- containerPort: {{ .Values.sidecar.ingressSidecar.port }}
-				volumeMounts:
-				{{- toYaml .Values.sidecar.ingressSidecar.volumeMounts | nindent 8 }}
-			{{- end }}
-			{{- if .Values.sidecar.egressSidecar.enabled }}
-			- name: egress-sidecar
-				image: {{ .Values.sidecar.image }}
-				ports:
-				- containerPort: {{ .Values.sidecar.egressSidecar.port }}
-				volumeMounts:
-				{{- toYaml .Values.sidecar.egressSidecar.volumeMounts | nindent 8 }}
-			{{- end }}
+ replicas: 1
+ selector:
+	matchLabels:
+	 {{- include "sidecar-injector.selectorLabels" . | nindent 6 }}
+ template:
+	metadata:
+	 labels:
+		{{- include "sidecar-injector.selectorLabels" . | nindent 8 }}
+	spec:
+	 volumes:
+	 - name: tls-certs
+		secret:
+		 secretName: {{ include "sidecar-injector.fullname" . }}-tls
+	 containers:
+	 - name: main
+		image: {{ .Values.image }}
+		# ... основной контейнер
+	 {{- if .Values.sidecar.ingressSidecar.enabled }}
+	 - name: ingress-sidecar
+		image: {{ .Values.sidecar.image }}
+		ports:
+		- containerPort: {{ .Values.sidecar.ingressSidecar.port }}
+		volumeMounts:
+		{{- toYaml .Values.sidecar.ingressSidecar.volumeMounts | nindent 8 }}
+	 {{- end }}
+	 {{- if .Values.sidecar.egressSidecar.enabled }}
+	 - name: egress-sidecar
+		image: {{ .Values.sidecar.image }}
+		ports:
+		- containerPort: {{ .Values.sidecar.egressSidecar.port }}
+		volumeMounts:
+		{{- toYaml .Values.sidecar.egressSidecar.volumeMounts | nindent 8 }}
+	 {{- end }}
