@@ -29,3 +29,7 @@
 
 ### [K8s Dashboard Token](./tools/k8s-dashboard-token)
 Инструмент для автоматического получения токена доступа к Kubernetes Dashboard с поддержкой различных версий Kubernetes.
+
+### [Open WebUI](./helm-charts/open-webui)
+Helm чарт для развертывания Open WebUI - веб-интерфейса для различных LLM бэкендов.
+Включает поддержку безопасного хранения API ключей и других чувствительных данных.

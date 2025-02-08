@@ -20,19 +20,19 @@ deployment:
 			cpu: 500m
 			memory: 1Gi
 
-# Настройки окружения
+# Секреты
+secrets:
+	openai:
+		apiKey: ""  # Заполните своим API ключом
+		apiBase: "https://api.openai.com/v1"  # Базовый URL API OpenAI
+	ollama:
+		apiBase: "http://ollama:11434/api"  # URL API Ollama
+	custom: {}  # Дополнительные пользовательские секреты
+
+# Настройки окружения (не секретные)
 env:
-	# Основные настройки
-	- name: OPENAI_API_KEY
-		value: ""
-	- name: OPENAI_API_BASE
-		value: "https://api.openai.com/v1"
 	- name: MODEL
 		value: "gpt-3.5-turbo"
-	
-	# Дополнительные настройки
-	- name: OLLAMA_API_BASE
-		value: "http://ollama:11434/api"
 	- name: DEBUG
 		value: "false"
 
