@@ -141,7 +141,11 @@ init_chart_dependencies() {
 				if [[ $repo == http* ]] || [[ $repo == https* ]]; then
 					# Извлекаем имя репозитория из URL более надежным способом
 					local repo_name
-					repo_name=$(echo "$repo" | sed -E 's#https?://([^/]*)/.*#\1#' | sed 's/\..*//')
+					repo_name=$(echo "$repo" | sed -E 's|^https?://||' | cut -d'.' -f1)
+					# Для jetstack используем специальное имя
+					if [[ $repo == *"jetstack"* ]]; then
+						repo_name="jetstack"
+					fi
 					echo -e "${CYAN}Добавление репозитория: $repo_name - $repo${NC}"
 					helm repo add "$repo_name" "$repo" || true
 				fi
