@@ -1,0 +1,4 @@
+# Порядок установки чартов
+charts:
+- cert-manager
+- sidecar-injector
