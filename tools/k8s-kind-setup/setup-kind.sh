@@ -106,12 +106,6 @@ check_cluster() {
 main() {
  echo -e "${YELLOW}Начинаем установку Kubernetes кластера...${NC}"
 
- # Проверка на WSL
- if [[ ! $(uname -r) =~ Microsoft ]]; then
-   echo -e "${RED}Этот скрипт должен быть запущен в WSL!${NC}"
-   exit 1
- fi
-
  # Установка необходимых компонентов
  install_docker
  install_kubectl
