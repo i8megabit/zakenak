@@ -8,6 +8,7 @@ fullnameOverride: ""
 
 # Основные настройки
 image: nginx:alpine  # Добавлено значение для основного контейнера
+containerPort: 8080  # Изменен порт основного контейнера
 
 certManager:
   enabled: true
@@ -38,6 +39,7 @@ sidecar:
   ingressSidecar:
     enabled: true
     port: 8443
+    containerPort: 8081  # Добавлен порт для ingress сайдкара
     volumeMounts:
     - name: tls-certs
       mountPath: /etc/tls
@@ -46,6 +48,7 @@ sidecar:
   egressSidecar:
     enabled: true
     port: 8444
+    containerPort: 8082  # Добавлен порт для egress сайдкара
     volumeMounts:
     - name: tls-certs
       mountPath: /etc/tls

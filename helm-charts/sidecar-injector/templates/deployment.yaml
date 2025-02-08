@@ -19,21 +19,23 @@ spec:
    containers:
    - name: main
      image: {{ .Values.image }}
+     ports:
+     - containerPort: {{ .Values.containerPort }}
      resources:
      {{- toYaml .Values.resources | nindent 6 }}
    {{- if .Values.sidecar.ingressSidecar.enabled }}
    - name: ingress-sidecar
      image: {{ .Values.sidecar.image }}
-   ports:
-   - containerPort: {{ .Values.sidecar.ingressSidecar.port }}
+     ports:
+     - containerPort: {{ .Values.sidecar.ingressSidecar.containerPort }}
      volumeMounts:
      {{- toYaml .Values.sidecar.ingressSidecar.volumeMounts | nindent 6 }}
    {{- end }}
    {{- if .Values.sidecar.egressSidecar.enabled }}
    - name: egress-sidecar
      image: {{ .Values.sidecar.image }}
-   ports:
-   - containerPort: {{ .Values.sidecar.egressSidecar.port }}
+     ports:
+     - containerPort: {{ .Values.sidecar.egressSidecar.containerPort }}
      volumeMounts:
      {{- toYaml .Values.sidecar.egressSidecar.volumeMounts | nindent 6 }}
    {{- end }}
