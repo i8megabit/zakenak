@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.1.1] - 2024-01-09
+### Fix
+- sidecar-injector values template fixed
+
 ## [1.1.0] - 2024-01-09
 ### Added
 - Создан новый инструмент helm-setup для установки Helm
