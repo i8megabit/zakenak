@@ -8,14 +8,14 @@ spec:
  duration: 2160h # 90d
  renewBefore: 360h # 15d
  subject:
-	organizations:
-	- 'JSC "EBERIL INK"'
+  organizations:
+  - 'JSC "EBERIL INK"'
  commonName: {{ index .Values.ingress.hosts 0 "host" }}
  dnsNames:
  {{- range .Values.ingress.hosts }}
  - {{ .host }}
  {{- end }}
  issuerRef:
-	name: {{ .Values.certManager.issuerRef.name }}
-	kind: {{ .Values.certManager.issuerRef.kind }}
+  name: {{ .Values.certManager.issuerRef.name }}
+  kind: {{ .Values.certManager.issuerRef.kind }}
 {{- end }}

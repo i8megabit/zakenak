@@ -11,11 +11,11 @@ cert-manager:
 # Настройки для сайдкаров
 sidecar-injector:
  certManager:
-	enabled: true
-	issuerRef:
-	 name: letsencrypt-prod
-	 kind: ClusterIssuer
+  enabled: true
+  issuerRef:
+   name: letsencrypt-prod
+   kind: ClusterIssuer
  ingress:
-	enabled: true
-	hosts:
-	- host: example.com
+  enabled: true
+  hosts:
+  - host: example.com
