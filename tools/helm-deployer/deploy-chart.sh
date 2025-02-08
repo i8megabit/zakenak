@@ -7,6 +7,14 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+# Функция для проверки существования файла
+check_file_exists() {
+ if [ -f "$1" ]; then
+   return 0
+ fi
+ return 1
+}
+
 # Функция вывода справки
 usage() {
  echo "Использование: $0 [опции]"
@@ -27,8 +35,8 @@ check_prerequisites() {
  local tools=("helm" "kubectl")
  for tool in "${tools[@]}"; do
    if ! command -v "$tool" &> /dev/null; then
-	 echo -e "${RED}Ошибка: $tool не установлен${NC}"
-	 exit 1
+     echo -e "${RED}Ошибка: $tool не установлен${NC}"
+     exit 1
    fi
  done
 }
@@ -48,27 +56,42 @@ deploy_chart() {
  local chart_path=$1
  local release_name=$2
  local namespace=$3
- local values_file=$4
+ local custom_values=$4
  local dry_run=$5
  local debug=$6
 
+ # Базовая команда helm
  local helm_cmd="helm upgrade --install $release_name $chart_path --namespace $namespace"
  
- # Добавляем values файл если указан
- if [ -n "$values_file" ]; then
-   if [ ! -f "$values_file" ]; then
-	 echo -e "${RED}Ошибка: Values файл не найден: $values_file${NC}"
-	 exit 1
-   fi
-   helm_cmd="$helm_cmd -f $values_file"
+ # Проверяем и добавляем глобальный values файл
+ local global_values="$(dirname $(dirname $chart_path))/values.yaml"
+ if check_file_exists "$global_values"; then
+   echo -e "${CYAN}Найден глобальный values файл: $global_values${NC}"
+   helm_cmd="$helm_cmd -f $global_values"
  fi
 
- # Добавляем флаг dry-run если указан
+ # Проверяем и добавляем values файл чарта
+ local chart_values="$chart_path/values.yaml"
+ if check_file_exists "$chart_values"; then
+   echo -e "${CYAN}Найден values файл чарта: $chart_values${NC}"
+   helm_cmd="$helm_cmd -f $chart_values"
+ fi
+
+ # Добавляем кастомный values файл если указан (имеет наивысший приоритет)
+ if [ -n "$custom_values" ]; then
+   if check_file_exists "$custom_values"; then
+     echo -e "${CYAN}Применяем кастомный values файл: $custom_values${NC}"
+     helm_cmd="$helm_cmd -f $custom_values"
+   else
+     echo -e "${RED}Ошибка: Кастомный values файл не найден: $custom_values${NC}"
+     exit 1
+   fi
+ fi
+
+ # Добавляем флаги dry-run и debug
  if [ "$dry_run" = true ]; then
    helm_cmd="$helm_cmd --dry-run"
  fi
-
- # Добавляем флаг debug если указан
  if [ "$debug" = true ]; then
    helm_cmd="$helm_cmd --debug"
  fi
@@ -94,14 +117,14 @@ main() {
  # Парсинг аргументов
  while [[ $# -gt 0 ]]; do
    case $1 in
-	 -c|--chart) chart_path="$2"; shift 2 ;;
-	 -r|--release) release_name="$2"; shift 2 ;;
-	 -n|--namespace) namespace="$2"; shift 2 ;;
-	 -f|--values) values_file="$2"; shift 2 ;;
-	 --dry-run) dry_run=true; shift ;;
-	 --debug) debug=true; shift ;;
-	 -h|--help) usage ;;
-	 *) echo "Неизвестная опция: $1"; usage ;;
+     -c|--chart) chart_path="$2"; shift 2 ;;
+     -r|--release) release_name="$2"; shift 2 ;;
+     -n|--namespace) namespace="$2"; shift 2 ;;
+     -f|--values) values_file="$2"; shift 2 ;;
+     --dry-run) dry_run=true; shift ;;
+     --debug) debug=true; shift ;;
+     -h|--help) usage ;;
+     *) echo "Неизвестная опция: $1"; usage ;;
    esac
  done
 
