@@ -139,9 +139,11 @@ init_chart_dependencies() {
 			if [[ $line =~ repository:[[:space:]]*(.*) ]]; then
 				local repo="${BASH_REMATCH[1]}"
 				if [[ $repo == http* ]] || [[ $repo == https* ]]; then
-					local repo_name=$(echo $repo | awk -F'/' '{print $(NF-1)}')
+					# Извлекаем имя репозитория из URL более надежным способом
+					local repo_name
+					repo_name=$(echo "$repo" | sed -E 's#https?://([^/]*)/.*#\1#' | sed 's/\..*//')
 					echo -e "${CYAN}Добавление репозитория: $repo_name - $repo${NC}"
-					helm repo add $repo_name $repo || true
+					helm repo add "$repo_name" "$repo" || true
 				fi
 			fi
 		done < "$chart_path/Chart.yaml"
@@ -171,10 +173,10 @@ deploy_chart() {
 	# Инициализация зависимостей перед деплоем
 	init_chart_dependencies "$chart_path"
 	
-	# Определение values файла для окружения
-	VALUES_FILE="$chart_path/values-${ENVIRONMENT}.yaml"
+	# Определение values файла для окружения (исправлен двойной слеш)
+	VALUES_FILE="${chart_path}/values-${ENVIRONMENT}.yaml"
 	if [ ! -f "$VALUES_FILE" ]; then
-		VALUES_FILE="$chart_path/values.yaml"
+		VALUES_FILE="${chart_path}/values.yaml"
 	fi
 	
 	# Получение имени релиза из values файла или использование имени чарта
