@@ -1,49 +1,49 @@
 # Параметры релиза
 release:
-	name: sidecar-injector
-	namespace: default
+ name: sidecar-injector
+ namespace: default
 
 nameOverride: ""
 fullnameOverride: ""
 
 certManager:
-	enabled: true
-	issuerRef:
-		name: letsencrypt-prod
-		kind: ClusterIssuer
+ enabled: true
+ issuerRef:
+	name: letsencrypt-prod
+	kind: ClusterIssuer
 
 ingress:
-	enabled: true
-	annotations:
-		cert-manager.io/cluster-issuer: letsencrypt-prod
-	hosts:
-	- host: example.com
-		paths:
-		- path: /
-			pathType: Prefix
+ enabled: true
+ annotations:
+	cert-manager.io/cluster-issuer: letsencrypt-prod
+ hosts:
+ - host: example.com
+	 paths:
+	 - path: /
+		 pathType: Prefix
 
 sidecar:
-	image: nginx:alpine
-	resources:
-		limits:
-			cpu: 100m
-			memory: 128Mi
-		requests:
-			cpu: 50m
-			memory: 64Mi
-	
-	ingressSidecar:
-		enabled: true
-		port: 8443
-		volumeMounts:
-		- name: tls-certs
-			mountPath: /etc/tls
-			readOnly: true
+ image: nginx:alpine
+ resources:
+	limits:
+	 cpu: 100m
+	 memory: 128Mi
+	requests:
+	 cpu: 50m
+	 memory: 64Mi
+ 
+ ingressSidecar:
+	enabled: true
+	port: 8443
+	volumeMounts:
+	- name: tls-certs
+		mountPath: /etc/tls
+		readOnly: true
 
-	egressSidecar:
-		enabled: true
-		port: 8444
-		volumeMounts:
-		- name: tls-certs
-			mountPath: /etc/tls
-			readOnly: true
+ egressSidecar:
+	enabled: true
+	port: 8444
+	volumeMounts:
+	- name: tls-certs
+		mountPath: /etc/tls
+		readOnly: true

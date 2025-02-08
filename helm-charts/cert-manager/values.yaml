@@ -8,15 +8,15 @@ cert-manager:
 	installCRDs: true
 	replicaCount: 1
 	extraArgs:
-		- --dns01-recursive-nameservers=8.8.8.8:53,1.1.1.1:53
+		- '--dns01-recursive-nameservers=8.8.8.8:53,1.1.1.1:53'
 
 # Настройки для ClusterIssuer
 clusterIssuer:
 	enabled: true
-	email: "your-email@domain.com"
+	email: "i8megabit@gmail.com"
 	server: "https://acme-v02.api.letsencrypt.org/directory"
 	privateKeySecretRef: "letsencrypt-prod"
 	solvers:
 		- http01:
-				ingress:
+			ingress:
 					class: nginx

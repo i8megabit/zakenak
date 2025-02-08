@@ -6,11 +6,11 @@ spec:
  replicas: 1
  selector:
 	matchLabels:
-	 {{- include "sidecar-injector.selectorLabels" . | nindent 6 }}
+	 {{- include "sidecar-injector.selectorLabels" . | nindent 3 }}
  template:
 	metadata:
 	 labels:
-		{{- include "sidecar-injector.selectorLabels" . | nindent 8 }}
+		{{- include "sidecar-injector.selectorLabels" . | nindent 4 }}
 	spec:
 	 volumes:
 	 - name: tls-certs
@@ -26,7 +26,7 @@ spec:
 		ports:
 		- containerPort: {{ .Values.sidecar.ingressSidecar.port }}
 		volumeMounts:
-		{{- toYaml .Values.sidecar.ingressSidecar.volumeMounts | nindent 8 }}
+		{{- toYaml .Values.sidecar.ingressSidecar.volumeMounts | nindent 4 }}
 	 {{- end }}
 	 {{- if .Values.sidecar.egressSidecar.enabled }}
 	 - name: egress-sidecar
@@ -34,5 +34,5 @@ spec:
 		ports:
 		- containerPort: {{ .Values.sidecar.egressSidecar.port }}
 		volumeMounts:
-		{{- toYaml .Values.sidecar.egressSidecar.volumeMounts | nindent 8 }}
+		{{- toYaml .Values.sidecar.egressSidecar.volumeMounts | nindent 4 }}
 	 {{- end }}
