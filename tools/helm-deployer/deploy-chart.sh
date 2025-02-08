@@ -117,29 +117,48 @@ deploy_chart() {
  return 0
 }
 
-# Функция получения списка чартов
-get_charts() {
+# Функция получения порядка установки чартов
+get_charts_order() {
  local charts_dir="$1"
  local order_file="$charts_dir/install-order.yaml"
  local charts=""
-
+ 
+ echo -e "${CYAN}Поиск чартов в директории: $charts_dir${NC}"
+ 
  if [ -f "$order_file" ]; then
-   while IFS= read -r chart; do
+   echo -e "${CYAN}Найден файл install-order.yaml${NC}"
+   while IFS= read -r chart_name; do
      # Пропускаем пустые строки и комментарии
-     [[ -z "$chart" || "$chart" =~ ^[[:space:]]*# ]] && continue
+     [[ -z "$chart_name" || "$chart_name" =~ ^[[:space:]]*# ]] && continue
      
-     local chart_path="$charts_dir/$chart"
+     # Убираем начальный дефис и пробелы
+     chart_name=$(echo "$chart_name" | sed -e 's/^[[:space:]]*-[[:space:]]*//')
+     local chart_path="$charts_dir/$chart_name"
+     
+     echo -e "${CYAN}Проверка чарта: $chart_path${NC}"
+     
      if [ -d "$chart_path" ] && [ -f "$chart_path/Chart.yaml" ]; then
+       echo -e "${GREEN}Найден валидный чарт: $chart_name${NC}"
        charts+="$chart_path"$'\n'
+     else
+       echo -e "${YELLOW}Пропуск $chart_name: не найден Chart.yaml${NC}"
      fi
-   done < <(yq eval '.charts[]' "$order_file" 2>/dev/null)
+   done < <(yq e '.charts[]' "$order_file" 2>/dev/null)
  else
-   # Если нет файла порядка, ищем все директории с Chart.yaml
+   echo -e "${YELLOW}Файл install-order.yaml не найден, поиск чартов в директории${NC}"
    while IFS= read -r dir; do
      if [ -f "$dir/Chart.yaml" ]; then
+       echo -e "${GREEN}Найден валидный чарт: $(basename "$dir")${NC}"
        charts+="$dir"$'\n'
+     else
+       echo -e "${YELLOW}Пропуск $(basename "$dir"): не найден Chart.yaml${NC}"
      fi
    done < <(find "$charts_dir" -mindepth 1 -maxdepth 1 -type d)
+ fi
+
+ if [ -z "$charts" ]; then
+   echo -e "${RED}Ошибка: Не найдено валидных чартов в $charts_dir${NC}"
+   return 1
  fi
 
  echo "$charts"
@@ -147,33 +166,32 @@ get_charts() {
 
 # Основная логика
 main() {
- # Определяем путь к директории чартов
- CHARTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/helm-charts"
+ local charts_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/helm-charts"
  
  # Проверка prerequisites
  check_prerequisites
 
  echo -e "${YELLOW}Начинаем деплой чартов...${NC}"
- echo -e "Директория чартов: $CHARTS_DIR"
+ echo -e "Директория чартов: $charts_dir"
  echo -e "Окружение: $ENVIRONMENT"
 
  # Проверка существования директории чартов
- if [ ! -d "$CHARTS_DIR" ]; then
-   echo -e "${RED}Ошибка: Директория чартов не найдена: $CHARTS_DIR${NC}"
+ if [ ! -d "$charts_dir" ]; then
+   echo -e "${RED}Ошибка: Директория чартов не найдена: $charts_dir${NC}"
    exit 1
  fi
 
  # Получаем список чартов
- local charts=$(get_charts "$CHARTS_DIR")
- 
- if [ -z "$charts" ]; then
-   echo -e "${RED}Ошибка: Не найдено валидных чартов для установки${NC}"
+ local charts=$(get_charts_order "$charts_dir")
+ if [ $? -ne 0 ]; then
    exit 1
  fi
 
  # Счетчики для статистики
  local success_count=0
  local total_charts=$(echo "$charts" | grep -c '^' || echo 0)
+
+ echo -e "${CYAN}Найдено чартов для установки: $total_charts${NC}"
 
  # Устанавливаем каждый чарт
  while IFS= read -r chart; do
