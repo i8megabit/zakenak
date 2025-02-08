@@ -1,0 +1,65 @@
+# Параметры релиза
+release:
+	name: open-webui
+	namespace: open-webui
+
+# Основные настройки приложения
+image:
+	repository: ghcr.io/open-webui/open-webui
+	tag: latest
+	pullPolicy: Always
+
+# Настройки развертывания
+deployment:
+	replicas: 1
+	resources:
+		limits:
+			cpu: 1000m
+			memory: 2Gi
+		requests:
+			cpu: 500m
+			memory: 1Gi
+
+# Настройки окружения
+env:
+	# Основные настройки
+	- name: OPENAI_API_KEY
+		value: ""
+	- name: OPENAI_API_BASE
+		value: "https://api.openai.com/v1"
+	- name: MODEL
+		value: "gpt-3.5-turbo"
+	
+	# Дополнительные настройки
+	- name: OLLAMA_API_BASE
+		value: "http://ollama:11434/api"
+	- name: DEBUG
+		value: "false"
+
+# Настройки сервиса
+service:
+	type: ClusterIP
+	port: 8080
+	targetPort: 8080
+
+# Настройки Ingress
+ingress:
+	enabled: true
+	className: nginx
+	annotations:
+		cert-manager.io/cluster-issuer: letsencrypt-prod
+	hosts:
+		- host: webui.example.com
+			paths:
+				- path: /
+					pathType: Prefix
+	tls:
+		- secretName: open-webui-tls
+			hosts:
+				- webui.example.com
+
+# Настройки хранилища
+persistence:
+	enabled: true
+	size: 1Gi
+	storageClass: ""
