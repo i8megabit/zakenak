@@ -2,20 +2,20 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
- name: {{ include "sidecar-injector.fullname" . }}-cert
+  name: {{ include "sidecar-injector.fullname" . }}-cert
+  namespace: {{ .Values.release.namespace }}
 spec:
- secretName: {{ include "sidecar-injector.fullname" . }}-tls
- duration: 2160h # 90d
- renewBefore: 360h # 15d
- subject:
-  organizations:
-  - 'JSC "EBERIL INK"'
- commonName: {{ index .Values.ingress.hosts 0 "host" }}
- dnsNames:
- {{- range .Values.ingress.hosts }}
- - {{ .host }}
- {{- end }}
- issuerRef:
-  name: {{ .Values.certManager.issuerRef.name }}
-  kind: {{ .Values.certManager.issuerRef.kind }}
+  secretName: {{ include "sidecar-injector.fullname" . }}-tls
+  duration: 2160h # 90d
+  renewBefore: 360h # 15d
+  subject:
+    organizations:
+      - "DevSecMLOps"
+  commonName: {{ include "sidecar-injector.fullname" . }}.{{ .Values.release.namespace }}.svc
+  dnsNames:
+    - {{ include "sidecar-injector.fullname" . }}.{{ .Values.release.namespace }}.svc
+    - {{ include "sidecar-injector.fullname" . }}.{{ .Values.release.namespace }}.svc.cluster.local
+  issuerRef:
+    name: {{ .Values.certManager.issuerRef.name }}
+    kind: {{ .Values.certManager.issuerRef.kind }}
 {{- end }}

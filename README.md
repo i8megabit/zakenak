@@ -1,6 +1,6 @@
 # GitOps Tools
 
-Версия: 1.2.8
+Версия: 1.2.9
 ## Инструменты
 
 ### [Reset-WSL](./tools/reset-wsl)
@@ -32,7 +32,7 @@
 
 ### [Sidecar Injector](./helm-charts/sidecar-injector)
 Helm чарт для инжекции TLS сайдкаров.
-Исправлены конфликты портов и улучшена конфигурация.
+Исправлены проблемы с генерацией TLS сертификатов.
 
 ### [Open WebUI](./helm-charts/open-webui)
 Helm чарт для развертывания Open WebUI - веб-интерфейса для различных LLM бэкендов.
