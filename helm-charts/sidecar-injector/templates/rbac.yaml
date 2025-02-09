@@ -2,30 +2,30 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-	name: {{ include "sidecar-injector.fullname" . }}
-	namespace: {{ .Values.release.namespace }}
+  name: {{ include "sidecar-injector.fullname" . }}
+  namespace: {{ .Values.release.namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-	name: {{ include "sidecar-injector.fullname" . }}-secret-reader
-	namespace: {{ .Values.release.namespace }}
+  name: {{ include "sidecar-injector.fullname" . }}-secret-reader
+  namespace: {{ .Values.release.namespace }}
 rules:
 - apiGroups: [""]
-	resources: ["secrets"]
-	verbs: ["get", "list", "watch"]
+  resources: ["secrets"]
+  verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-	name: {{ include "sidecar-injector.fullname" . }}-secret-reader
-	namespace: {{ .Values.release.namespace }}
+  name: {{ include "sidecar-injector.fullname" . }}-secret-reader
+  namespace: {{ .Values.release.namespace }}
 roleRef:
-	apiGroup: rbac.authorization.k8s.io
-	kind: Role
-	name: {{ include "sidecar-injector.fullname" . }}-secret-reader
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "sidecar-injector.fullname" . }}-secret-reader
 subjects:
 - kind: ServiceAccount
-	name: {{ include "sidecar-injector.fullname" . }}
-	namespace: {{ .Values.release.namespace }}
+  name: {{ include "sidecar-injector.fullname" . }}
+  namespace: {{ .Values.release.namespace }}
 {{- end }}
