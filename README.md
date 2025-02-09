@@ -1,6 +1,6 @@
 # GitOps Tools
 
-Версия: 1.2.7
+Версия: 1.2.8
 ## Инструменты
 
 ### [Reset-WSL](./tools/reset-wsl)
@@ -30,14 +30,20 @@
 ### [K8s Dashboard Token](./tools/k8s-dashboard-token)
 Инструмент для автоматического получения токена доступа к Kubernetes Dashboard с поддержкой различных версий Kubernetes.
 
-### [Open WebUI](./helm-charts/open-webui)
-Helm чарт для развертывания Open WebUI - веб-интерфейса для различных LLM бэкендов.
-Доступ через: http://open-webui.local
-
 ### [Sidecar Injector](./helm-charts/sidecar-injector)
 Helm чарт для инжекции TLS сайдкаров.
 Исправлены конфликты портов и улучшена конфигурация.
 
+### [Open WebUI](./helm-charts/open-webui)
+Helm чарт для развертывания Open WebUI - веб-интерфейса для различных LLM бэкендов.
+Доступ через: http://localhost/open-webui
+
 ### [Ollama](./helm-charts/ollama)
 Helm чарт для развертывания Ollama - сервера LLM моделей.
-Интегрируется с Open WebUI для удобного веб-интерфейса.
+Доступ через: http://ollama.local
+
+Для доступа к интерфейсам:
+1. Добавьте записи в /etc/hosts:
+```bash
+127.0.0.1 ollama.local
+```
