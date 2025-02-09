@@ -1,53 +1,54 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-	name: {{ .Release.Name }}
-	namespace: {{ .Values.release.namespace }}
-	labels:
-		app: ollama
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.release.namespace }}
+  labels:
+    app: ollama
 spec:
-	replicas: {{ .Values.deployment.replicas }}
-	selector:
-		matchLabels:
-			app: ollama
-	template:
-		metadata:
-			labels:
-				app: ollama
-		spec:
-			initContainers:
-				- name: init-ollama-dir
-					image: busybox:latest
-					command:
-						- /bin/sh
-						- -c
-						- |
-							mkdir -p /data/.ollama && \
-							chown -R 1000:1000 /data/.ollama && \
-							chmod -R 755 /data/.ollama
-					volumeMounts:
-						- name: ollama-data
-							mountPath: /data
-			containers:
-				- name: ollama
-					image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-					imagePullPolicy: {{ .Values.image.pullPolicy }}
-					env:
-						- name: HOME
-							value: /data
-					ports:
-						- containerPort: {{ .Values.service.targetPort }}
-							protocol: TCP
-					resources:
-						{{- toYaml .Values.deployment.resources | nindent 12 }}
-					{{- if .Values.persistence.enabled }}
-					volumeMounts:
-						- name: ollama-data
-							mountPath: /data
-					{{- end }}
-			{{- if .Values.persistence.enabled }}
-			volumes:
-				- name: ollama-data
-					persistentVolumeClaim:
-						claimName: {{ .Release.Name }}-pvc
-			{{- end }}
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      initContainers:
+        - name: init-ollama-dir
+          image: busybox:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              mkdir -p /data/.ollama && \
+              chown -R 1000:1000 /data/.ollama && \
+              chmod -R 755 /data/.ollama
+          volumeMounts:
+            - name: ollama-data
+              mountPath: /data
+      containers:
+        - name: ollama
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: HOME
+              value: /data
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: ollama-data
+              mountPath: /data
+          {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: ollama-data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-pvc
+      {{- end }}
+

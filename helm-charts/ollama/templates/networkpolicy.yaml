@@ -2,22 +2,22 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-	name: {{ .Release.Name }}-network-policy
-	namespace: {{ .Values.release.namespace }}
+  name: {{ .Release.Name }}-network-policy
+  namespace: {{ .Values.release.namespace }}
 spec:
-	podSelector:
-		matchLabels:
-			app: ollama
-	policyTypes:
-		- Ingress
-	ingress:
-		- from:
-				{{- range .Values.networkPolicy.allowedNamespaces }}
-				- namespaceSelector:
-						matchLabels:
-							kubernetes.io/metadata.name: {{ . }}
-				{{- end }}
-			ports:
-				- protocol: TCP
-					port: {{ .Values.service.targetPort }}
+  podSelector:
+    matchLabels:
+      app: ollama
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        {{- range .Values.networkPolicy.allowedNamespaces }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ . }}
+        {{- end }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.targetPort }}
 {{- end }}

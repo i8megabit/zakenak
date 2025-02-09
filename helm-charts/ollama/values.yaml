@@ -1,65 +1,65 @@
 # Параметры релиза
 release:
-	name: ollama
-	namespace: prod
+  name: ollama
+  namespace: prod
 
 # Основные настройки приложения
 image:
-	repository: ollama/ollama
-	tag: latest
-	pullPolicy: Always
+  repository: ollama/ollama
+  tag: latest
+  pullPolicy: Always
 
 # Настройки развертывания
 deployment:
-	replicas: 1
-	resources:
-		limits:
-			cpu: "4"
-			memory: "8Gi"
-			nvidia.com/gpu: "1"
-		requests:
-			cpu: "2"
-			memory: "4Gi"
+  replicas: 1
+  resources:
+    limits:
+      cpu: "4"
+      memory: "8Gi"
+      nvidia.com/gpu: "1"
+    requests:
+      cpu: "2"
+      memory: "4Gi"
 
 # Настройки сервиса
 service:
-	type: ClusterIP
-	port: 11434
-	targetPort: 11434
+  type: ClusterIP
+  port: 11434
+  targetPort: 11434
 
 # Настройки Ingress
 ingress:
-	enabled: true
-	className: nginx
-	annotations:
-		cert-manager.io/cluster-issuer: letsencrypt-prod
-		nginx.ingress.kubernetes.io/ssl-redirect: "true"
-	hosts:
-		- host: ollama.local
-			paths:
-				- path: /
-					pathType: Prefix
-	tls:
-		- secretName: ollama-tls
-			hosts:
-				- ollama.local
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: ollama.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: ollama-tls
+      hosts:
+        - ollama.local
 
 # Настройки хранилища для моделей
 persistence:
-	enabled: true
-	size: 50Gi
-	storageClass: ""
-	accessModes:
-		- ReadWriteOnce
+  enabled: true
+  size: 50Gi
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
 
 # Настройки безопасности
 securityContext:
-	runAsUser: 1000
-	runAsGroup: 1000
-	fsGroup: 1000
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
 
 # Настройки сети
 networkPolicy:
-	enabled: true
-	allowedNamespaces:
-		- prod
+  enabled: true
+  allowedNamespaces:
+    - prod

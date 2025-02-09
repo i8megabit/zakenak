@@ -5,9 +5,9 @@ type: application
 version: 0.1.0
 appVersion: "latest"
 keywords:
-	- llm
-	- ai
-	- ollama
+  - llm
+  - ai
+  - ollama
 maintainers:
-	- name: "DevSecMLOps"
-		email: "i8megabit@gmail.com"
+  - name: "DevSecMLOps"
+    email: "i8megabit@gmail.com"
