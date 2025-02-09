@@ -16,7 +16,6 @@ deployment:
     limits:
       cpu: "4"
       memory: "8Gi"
-      nvidia.com/gpu: "1"
     requests:
       cpu: "2"
       memory: "4Gi"
