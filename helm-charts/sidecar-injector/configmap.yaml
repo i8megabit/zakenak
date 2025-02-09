@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sidecar-injector.fullname" . }}-nginx-config
+  namespace: {{ .Values.release.namespace }}
+data:
+  {{- if .Values.sidecar.ingressSidecar.enabled }}
+  ingress-default.conf: |
+    {{ .Values.sidecar.ingressSidecar.config | nindent 4 }}
+  {{- end }}
+  {{- if .Values.sidecar.egressSidecar.enabled }}
+  egress-default.conf: |
+    {{ .Values.sidecar.egressSidecar.config | nindent 4 }}
+  {{- end }}

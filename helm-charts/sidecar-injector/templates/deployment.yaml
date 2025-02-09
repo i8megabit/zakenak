@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "sidecar-injector.fullname" . }}
+  namespace: {{ .Values.release.namespace }}
 spec:
   replicas: 1
   selector:
@@ -16,24 +17,63 @@ spec:
       - name: tls-certs
         secret:
           secretName: {{ include "sidecar-injector.fullname" . }}-tls
+      - name: nginx-config
+        configMap:
+          name: {{ include "sidecar-injector.fullname" . }}-nginx-config
+      containers:
+      - name: main
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sidecar-injector.fullname" . }}
+  namespace: {{ .Values.release.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "sidecar-injector.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sidecar-injector.selectorLabels" . | nindent 8 }}
+    spec:
+      volumes:
+      - name: tls-certs
+        secret:
+          secretName: {{ include "sidecar-injector.fullname" . }}-tls
+      - name: nginx-config
+        configMap:
+          name: {{ include "sidecar-injector.fullname" . }}-nginx-config
       containers:
       - name: main
         image: {{ .Values.image }}
-        # ... основной контейнер
-      {{- if .Values.sidecar.ingressSidecar.enabled }}
-      - name: ingress-sidecar
+        ports:
+        - containerPort: {{ .Values.containerPort }}
+        {{- if .Values.sidecar.ingressSidecar.enabled }}
+        - name: ingress-sidecar
         image: {{ .Values.sidecar.image }}
         ports:
-        - containerPort: {{ .Values.sidecar.ingressSidecar.port }}
+        - containerPort: {{ .Values.sidecar.ingressSidecar.containerPort }}
         volumeMounts:
-        {{- toYaml .Values.sidecar.ingressSidecar.volumeMounts | nindent 8 }}
-      {{- end }}
-      {{- if .Values.sidecar.egressSidecar.enabled }}
-      - name: egress-sidecar
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: nginx-ingress.conf
+        - name: tls-certs
+          mountPath: /etc/tls
+          readOnly: true
+        {{- end }}
+        {{- if .Values.sidecar.egressSidecar.enabled }}
+        - name: egress-sidecar
         image: {{ .Values.sidecar.image }}
         ports:
-        - containerPort: {{ .Values.sidecar.egressSidecar.port }}
+        - containerPort: {{ .Values.sidecar.egressSidecar.containerPort }}
         volumeMounts:
-        {{- toYaml .Values.sidecar.egressSidecar.volumeMounts | nindent 8 }}
-      {{- end }}
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: nginx-egress.conf
+        - name: tls-certs
+          mountPath: /etc/tls
+          readOnly: true
+        {{- end }}
+
 

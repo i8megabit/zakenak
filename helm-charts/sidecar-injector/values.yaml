@@ -46,17 +46,40 @@ sidecar:
   ingressSidecar:
     enabled: true
     port: 8443
-    containerPort: 8081
+    containerPort: 8443
+    config: |
+      server {
+          listen 8443;
+          server_name localhost;
+          location / {
+              proxy_pass http://localhost:8080;
+          }
+      }
     volumeMounts:
     - name: tls-certs
       mountPath: /etc/tls
       readOnly: true
+    - name: nginx-config
+      mountPath: /etc/nginx/conf.d/default.conf
+      subPath: default.conf
 
   egressSidecar:
     enabled: true
     port: 8444
-    containerPort: 8082
+    containerPort: 8444
+    config: |
+      server {
+          listen 8444;
+          server_name localhost;
+          location / {
+              proxy_pass http://localhost:8080;
+          }
+      }
     volumeMounts:
     - name: tls-certs
       mountPath: /etc/tls
       readOnly: true
+    - name: nginx-config
+      mountPath: /etc/nginx/conf.d/default.conf
+      subPath: default.conf
+
