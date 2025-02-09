@@ -1,7 +1,7 @@
 # Параметры релиза
 release:
   name: sidecar-injector
-  namespace: default
+  namespace: prod
 
 nameOverride: ""
 fullnameOverride: ""
