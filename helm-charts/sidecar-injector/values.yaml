@@ -7,14 +7,21 @@ nameOverride: ""
 fullnameOverride: ""
 
 # Основные настройки
-image: nginx:alpine  # Добавлено значение для основного контейнера
-containerPort: 8080  # Изменен порт основного контейнера
+image: nginx:alpine
+containerPort: 8080
 
 certManager:
   enabled: true
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
+
+# Добавляем настройки для RBAC
+rbac:
+  create: true
+  serviceAccount:
+    create: true
+    name: ""
 
 ingress:
   enabled: true

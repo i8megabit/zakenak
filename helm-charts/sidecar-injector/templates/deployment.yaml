@@ -1,42 +1,54 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
- name: {{ include "sidecar-injector.fullname" . }}
+  name: {{ include "sidecar-injector.fullname" . }}
+  namespace: {{ .Values.release.namespace }}
 spec:
- replicas: 1
- selector:
-  matchLabels:
-   {{- include "sidecar-injector.selectorLabels" . | nindent 4 }}
- template:
-  metadata:
-   labels:
-    {{- include "sidecar-injector.selectorLabels" . | nindent 4 }}
-  spec:
-   volumes:
-   - name: tls-certs
-     secret:
-      secretName: {{ include "sidecar-injector.fullname" . }}-tls
-   containers:
-   - name: main
-     image: {{ .Values.image }}
-     ports:
-     - containerPort: {{ .Values.containerPort }}
-     resources:
-     {{- toYaml .Values.resources | nindent 6 }}
-   {{- if .Values.sidecar.ingressSidecar.enabled }}
-   - name: ingress-sidecar
-     image: {{ .Values.sidecar.image }}
-     ports:
-     - containerPort: {{ .Values.sidecar.ingressSidecar.containerPort }}
-     volumeMounts:
-     {{- toYaml .Values.sidecar.ingressSidecar.volumeMounts | nindent 6 }}
-   {{- end }}
-   {{- if .Values.sidecar.egressSidecar.enabled }}
-   - name: egress-sidecar
-     image: {{ .Values.sidecar.image }}
-     ports:
-     - containerPort: {{ .Values.sidecar.egressSidecar.containerPort }}
-     volumeMounts:
-     {{- toYaml .Values.sidecar.egressSidecar.volumeMounts | nindent 6 }}
-   {{- end }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "sidecar-injector.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sidecar-injector.selectorLabels" . | nindent 8 }}
+    spec:
+      initContainers:
+        - name: wait-for-secret
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until kubectl get secret {{ include "sidecar-injector.fullname" . }}-tls -n {{ .Values.release.namespace }}; do
+                echo "Waiting for secret {{ include "sidecar-injector.fullname" . }}-tls to be created..."
+                sleep 5
+              done
+      volumes:
+  - name: tls-certs
+    secret:
+    secretName: {{ include "sidecar-injector.fullname" . }}-tls
+  containers:
+  - name: main
+    image: {{ .Values.image }}
+    ports:
+    - containerPort: {{ .Values.containerPort }}
+    resources:
+    {{- toYaml .Values.resources | nindent 12 }}
+  {{- if .Values.sidecar.ingressSidecar.enabled }}
+  - name: ingress-sidecar
+    image: {{ .Values.sidecar.image }}
+    ports:
+    - containerPort: {{ .Values.sidecar.ingressSidecar.containerPort }}
+    volumeMounts:
+    {{- toYaml .Values.sidecar.ingressSidecar.volumeMounts | nindent 12 }}
+  {{- end }}
+  {{- if .Values.sidecar.egressSidecar.enabled }}
+  - name: egress-sidecar
+    image: {{ .Values.sidecar.image }}
+    ports:
+    - containerPort: {{ .Values.sidecar.egressSidecar.containerPort }}
+    volumeMounts:
+    {{- toYaml .Values.sidecar.egressSidecar.volumeMounts | nindent 12 }}
+  {{- end }}
 
