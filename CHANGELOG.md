@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [1.2.7] - 2024-01-09
+### Fixed
+- Исправлены конфигурации Ingress для Open WebUI
+- Исправлен конфликт портов в Sidecar Injector
+- Обновлены настройки портов для избежания конфликтов с nginx-ingress
+- Добавлен rewrite-target в аннотации ingress
+
 ## [1.2.6] - 2024-01-09
 ### Added
 - Создан Helm чарт для Ollama

@@ -1,6 +1,6 @@
 # GitOps Tools
 
-Версия: 1.2.6
+Версия: 1.2.7
 ## Инструменты
 
 ### [Reset-WSL](./tools/reset-wsl)
@@ -32,7 +32,11 @@
 
 ### [Open WebUI](./helm-charts/open-webui)
 Helm чарт для развертывания Open WebUI - веб-интерфейса для различных LLM бэкендов.
-Включает поддержку безопасного хранения API ключей и других чувствительных данных.
+Доступ через: http://open-webui.local
+
+### [Sidecar Injector](./helm-charts/sidecar-injector)
+Helm чарт для инжекции TLS сайдкаров.
+Исправлены конфликты портов и улучшена конфигурация.
 
 ### [Ollama](./helm-charts/ollama)
 Helm чарт для развертывания Ollama - сервера LLM моделей.

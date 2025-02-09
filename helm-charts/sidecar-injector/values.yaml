@@ -39,7 +39,7 @@ sidecar:
   ingressSidecar:
     enabled: true
     port: 8443
-    containerPort: 8081  # Добавлен порт для ingress сайдкара
+    containerPort: 8443  # Изменен порт для избежания конфликтов
     volumeMounts:
     - name: tls-certs
       mountPath: /etc/tls
@@ -48,7 +48,7 @@ sidecar:
   egressSidecar:
     enabled: true
     port: 8444
-    containerPort: 8082  # Добавлен порт для egress сайдкара
+    containerPort: 8444  # Изменен порт для избежания конфликтов
     volumeMounts:
     - name: tls-certs
       mountPath: /etc/tls

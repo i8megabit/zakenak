@@ -16,7 +16,7 @@ deployment:
 		limits:
 			cpu: "4"
 			memory: "8Gi"
-			nvidia.com/gpu: "1"  # Раскомментируйте если есть GPU
+			nvidia.com/gpu: "1"
 		requests:
 			cpu: "2"
 			memory: "4Gi"
@@ -26,6 +26,23 @@ service:
 	type: ClusterIP
 	port: 11434
 	targetPort: 11434
+
+# Настройки Ingress
+ingress:
+	enabled: true
+	className: nginx
+	annotations:
+		cert-manager.io/cluster-issuer: letsencrypt-prod
+		nginx.ingress.kubernetes.io/ssl-redirect: "true"
+	hosts:
+		- host: ollama.example.com
+			paths:
+				- path: /
+					pathType: Prefix
+	tls:
+		- secretName: ollama-tls
+			hosts:
+				- ollama.example.com
 
 # Настройки хранилища для моделей
 persistence:
@@ -45,4 +62,4 @@ securityContext:
 networkPolicy:
 	enabled: true
 	allowedNamespaces:
-		- prod  # Namespace где запущен Open WebUI
+		- prod

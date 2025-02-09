@@ -15,12 +15,26 @@ spec:
 			labels:
 				app: ollama
 		spec:
-			securityContext:
-				{{- toYaml .Values.securityContext | nindent 8 }}
+			initContainers:
+				- name: init-ollama-dir
+					image: busybox:latest
+					command:
+						- /bin/sh
+						- -c
+						- |
+							mkdir -p /data/.ollama && \
+							chown -R 1000:1000 /data/.ollama && \
+							chmod -R 755 /data/.ollama
+					volumeMounts:
+						- name: ollama-data
+							mountPath: /data
 			containers:
 				- name: ollama
 					image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
 					imagePullPolicy: {{ .Values.image.pullPolicy }}
+					env:
+						- name: HOME
+							value: /data
 					ports:
 						- containerPort: {{ .Values.service.targetPort }}
 							protocol: TCP
@@ -29,7 +43,7 @@ spec:
 					{{- if .Values.persistence.enabled }}
 					volumeMounts:
 						- name: ollama-data
-							mountPath: /root/.ollama
+							mountPath: /data
 					{{- end }}
 			{{- if .Values.persistence.enabled }}
 			volumes:

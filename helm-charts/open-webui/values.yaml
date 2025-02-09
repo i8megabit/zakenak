@@ -23,11 +23,11 @@ deployment:
 # Секреты
 secrets:
   openai:
-    apiKey: ""  # Заполните своим API ключом
-    apiBase: "https://api.openai.com/v1"  # Базовый URL API OpenAI
+    apiKey: ""
+    apiBase: "https://api.openai.com/v1"
   ollama:
-    apiBase: "http://ollama:11434/api"  # URL API Ollama
-  custom: {}  # Дополнительные пользовательские секреты
+    apiBase: "http://ollama.prod.svc.cluster.local:11434/api"
+  custom: {}
 
 # Настройки окружения (не секретные)
 env:
@@ -39,7 +39,7 @@ env:
 # Настройки сервиса
 service:
   type: ClusterIP
-  port: 3000
+  port: 8080
   targetPort: 8080
 
 # Настройки Ingress
@@ -48,17 +48,17 @@ ingress:
   className: nginx
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rewrite-target: /
   hosts:
-    - host: localhost
+    - host: open-webui.local
       paths:
-        - path: /open-webui
+        - path: /
           pathType: Prefix
   tls:
     - secretName: open-webui-tls
       hosts:
-        - localhost
+        - open-webui.local
 
-# Настройки хранилища
 persistence:
   enabled: true
   size: 1Gi
