@@ -1,6 +1,26 @@
 # GitOps Tools
 
-Версия: 1.3.4
+Версия: 1.3.5
+
+## Описание
+Скрипты для настройки локального Kubernetes кластера с использованием Kind.
+
+## Компоненты
+- Nginx Ingress Controller
+- Автоматическое создание Certificate ресурсов для доменов
+- Интеграция с существующим cert-manager в namespace prod
+
+## Предварительные требования
+- Установленный и настроенный cert-manager в namespace prod
+- Настроенный ClusterIssuer letsencrypt-prod
+
+## Использование
+1. Убедитесь, что у вас установлены:
+   - kubectl
+   - helm
+2. Запустите скрипт setup-ingress.sh:
+   ```bash
+   ./setup-ingress.sh
 
 ## Инструменты
 
