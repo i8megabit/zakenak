@@ -6,6 +6,9 @@ echo "Installing Nginx Ingress Controller..."
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
 
+# Создание namespace prod если он не существует
+kubectl create namespace prod --dry-run=client -o yaml | kubectl apply -f -
+
 # Создание ClusterIssuer для локальной среды
 echo "Creating ClusterIssuer for local environment..."
 cat <<EOF | kubectl apply -f -
@@ -15,14 +18,6 @@ metadata:
 	name: selfsigned-issuer
 spec:
 	selfSigned: {}
----
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-	name: local-ca-issuer
-spec:
-	ca:
-		secretName: local-ca-key-pair
 EOF
 
 # Создание корневого CA сертификата
@@ -45,6 +40,21 @@ spec:
 		kind: ClusterIssuer
 		group: cert-manager.io
 EOF
+
+# Создание ClusterIssuer использующего CA сертификат
+cat <<EOF | kubectl apply -f -
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+	name: local-ca-issuer
+spec:
+	ca:
+		secretName: local-ca-key-pair
+EOF
+
+# Ожидание создания секрета CA
+echo "Waiting for CA secret to be created..."
+kubectl wait --for=condition=Ready certificate -n prod local-ca --timeout=60s
 
 # Создание Certificate ресурсов
 echo "Creating Certificate resources..."
