@@ -20,7 +20,7 @@ spec:
 		name: letsencrypt-prod
 		kind: ClusterIssuer
 	dnsNames:
-		- "ollama.local.dev"
+		- "ollama.prod.local"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -33,7 +33,7 @@ spec:
 		name: letsencrypt-prod
 		kind: ClusterIssuer
 	dnsNames:
-		- "webui.local.dev"
+		- "webui.prod.local"
 EOF
 
 # Установка ingress-nginx

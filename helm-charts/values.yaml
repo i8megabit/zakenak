@@ -1,11 +1,11 @@
 # Глобальные настройки для всех чартов
 global:
  environment: production
- domain: example.com
+ domain: prod.local
 
 # Настройки cert-manager
 cert-manager:
- email: "default@example.com"
+ email: "i8megabit@gmail.com"
  server: "https://acme-v02.api.letsencrypt.org/directory"
 
 # Настройки для сайдкаров
@@ -18,4 +18,4 @@ sidecar-injector:
  ingress:
   enabled: true
   hosts:
-  - host: example.com
+  - host: prod.local

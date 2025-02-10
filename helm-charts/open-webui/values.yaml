@@ -26,7 +26,7 @@ secrets:
     apiKey: ""
     apiBase: "https://api.openai.com/v1"
   ollama:
-    apiBase: "http://ollama.prod.svc.cluster.local:11434/api"
+    apiBase: "http://ollama.prod.svc.cluster.prod.local:11434/api"
   custom: {}
 
 # Настройки окружения (не секретные)
@@ -55,14 +55,14 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
   hosts:
-    - host: webui.local.dev
+    - host: webui.prod.local
       paths:
         - path: /(.*)
           pathType: Prefix
   tls:
     - secretName: open-webui-tls
       hosts:
-        - webui.local.dev
+        - webui.prod.local
 
 persistence:
   enabled: true

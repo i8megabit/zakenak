@@ -1,4 +1,6 @@
 # Порядок установки чартов
 charts:
-- cert-manager
 - sidecar-injector
+- cert-manager
+- ollama
+- open-webui

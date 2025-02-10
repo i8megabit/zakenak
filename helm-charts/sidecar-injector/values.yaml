@@ -28,7 +28,7 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-  - host: sidecar-injector.local
+  - host: sidecar-injector.prod.local
     paths:
     - path: /
       pathType: Prefix

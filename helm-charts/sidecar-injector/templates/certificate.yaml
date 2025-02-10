@@ -17,7 +17,7 @@ spec:
   commonName: {{ include "sidecar-injector.fullname" . }}.{{ .Values.release.namespace }}.svc
   dnsNames:
     - {{ include "sidecar-injector.fullname" . }}.{{ .Values.release.namespace }}.svc
-    - {{ include "sidecar-injector.fullname" . }}.{{ .Values.release.namespace }}.svc.cluster.local
+    - {{ include "sidecar-injector.fullname" . }}.{{ .Values.release.namespace }}.svc.cluster.prod.local
   issuerRef:
     name: {{ .Values.certManager.issuerRef.name }}
     kind: {{ .Values.certManager.issuerRef.kind }}

@@ -66,16 +66,17 @@ cd tools/k8s-kind-setup
 
 ### [Open WebUI](./helm-charts/open-webui)
 Helm чарт для развертывания Open WebUI - веб-интерфейса для различных LLM бэкендов.
-Доступ через: http://localhost/open-webui
+Доступ через: https://webui.prod.local
 
 ### [Ollama](./helm-charts/ollama)
 Helm чарт для развертывания Ollama - сервера LLM моделей.
-Доступ через: http://ollama.local
+Доступ через: http://ollama.prod.local
 
 Для доступа к интерфейсам:
 1. Добавьте записи в /etc/hosts и Windows hosts (C:\Windows\System32\drivers\etc\hosts):
 ```bash
-127.0.0.1 ollama.local
+127.0.0.1 ollama.prod.local
+127.0.0.1 webui.prod.local
 ```
 
 2. Убедитесь, что Kind кластер правильно настроен:
@@ -107,5 +108,5 @@ kubectl get ingress -A
 	 ```
 
 5. Порты по умолчанию:
-   - Open WebUI: http://localhost/open-webui (порт 80)
-   - Ollama: http://ollama.local (порт 80)
+   - Open WebUI: https://webui.prod.local (порт 443)
+   - Ollama: http://ollama.prod.local (порт 443)
