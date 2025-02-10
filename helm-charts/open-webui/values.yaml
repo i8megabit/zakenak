@@ -48,16 +48,21 @@ ingress:
   className: nginx
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
   hosts:
-    - host: open-webui.local
+    - host: webui.local.dev
       paths:
-        - path: /
+        - path: /(.*)
           pathType: Prefix
   tls:
     - secretName: open-webui-tls
       hosts:
-        - open-webui.local
+        - webui.local.dev
 
 persistence:
   enabled: true

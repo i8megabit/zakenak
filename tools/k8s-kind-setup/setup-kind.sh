@@ -67,13 +67,34 @@ nodes:
 EOF
 }
 
+# Функция для проверки работоспособности сервисов
+check_services() {
+    echo -e "${CYAN}Проверка статуса сервисов...${NC}"
+    if ! systemctl is-active --quiet docker; then
+        echo -e "${RED}Docker не запущен. Запускаем...${NC}"
+        sudo systemctl start docker
+        sleep 5
+    fi
+    
+    # Проверка kind-кластера
+    if ! kind get clusters | grep -q "kind"; then
+        echo -e "${RED}Kind кластер не найден. Пересоздаем...${NC}"
+        create_kind_config
+        kind create cluster --config kind-config.yaml
+        sleep 10
+    fi
+}
+
 # Функция для установки Dashboard
 install_dashboard() {
- echo -e "${CYAN}Установка Kubernetes Dashboard...${NC}"
- kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
-
- # Создание админского аккаунта
- cat << EOF | kubectl apply -f -
+    echo -e "${CYAN}Установка Kubernetes Dashboard...${NC}"
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+    
+    # Настройка доступа через NodePort
+    kubectl patch svc kubernetes-dashboard -n kubernetes-dashboard -p '{"spec": {"type": "NodePort", "ports": [{"port": 443, "nodePort": 30443}]}}'
+    
+    # Создание админского аккаунта
+    cat << EOF | kubectl apply -f -
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -102,35 +123,60 @@ check_cluster() {
  kubectl get pods --all-namespaces
 }
 
+# Функция восстановления
+restore_cluster() {
+    echo -e "${YELLOW}Начинаем восстановление кластера...${NC}"
+    
+    # Проверка и восстановление сервисов
+    check_services
+    
+    # Ожидание готовности кластера
+    echo -e "${CYAN}Ожидание готовности кластера...${NC}"
+    kubectl wait --for=condition=Ready nodes --all --timeout=300s
+    
+    # Переустановка dashboard
+    echo -e "${CYAN}Переустановка Dashboard...${NC}"
+    kubectl delete -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+    sleep 5
+    install_dashboard
+    
+    # Проверка работоспособности
+    check_cluster
+    
+    echo -e "${GREEN}Восстановление завершено!${NC}"
+    echo -e "${YELLOW}Для доступа к Dashboard:${NC}"
+    echo -e "1. Выполните: ${CYAN}kubectl proxy${NC}"
+    echo -e "2. Откройте в браузере: ${CYAN}https://localhost:30443${NC}"
+    echo -e "Или используйте: ${CYAN}http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/${NC}"
+}
+
 # Основная функция
 main() {
- echo -e "${YELLOW}Начинаем установку Kubernetes кластера...${NC}"
-
- # Установка необходимых компонентов
- install_docker
- install_kubectl
- install_kind
-
- # Создание кластера
- echo -e "${CYAN}Создание Kind кластера...${NC}"
- create_kind_config
- kind create cluster --config kind-config.yaml
-
- # Установка Dashboard
- install_dashboard
-
- # Проверка кластера
- check_cluster
-
- # Получение токена для Dashboard
- echo -e "${GREEN}Токен для входа в Dashboard:${NC}"
- kubectl -n kubernetes-dashboard create token admin-user
-
- echo -e "${GREEN}Установка завершена успешно!${NC}"
- echo -e "${YELLOW}Для доступа к Dashboard:${NC}"
- echo -e "1. Выполните: ${CYAN}kubectl proxy${NC}"
- echo -e "2. Откройте в браузере: ${CYAN}http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/${NC}"
+    if [ "$1" == "restore" ]; then
+        restore_cluster
+    else
+        echo -e "${YELLOW}Начинаем установку Kubernetes кластера...${NC}"
+        install_docker
+        install_kubectl
+        install_kind
+        
+        echo -e "${CYAN}Создание Kind кластера...${NC}"
+        create_kind_config
+        kind create cluster --config kind-config.yaml
+        
+        install_dashboard
+        check_cluster
+        
+        echo -e "${GREEN}Токен для входа в Dashboard:${NC}"
+        kubectl -n kubernetes-dashboard create token admin-user
+        
+        echo -e "${GREEN}Установка завершена успешно!${NC}"
+        echo -e "${YELLOW}Для доступа к Dashboard:${NC}"
+        echo -e "1. Выполните: ${CYAN}kubectl proxy${NC}"
+        echo -e "2. Откройте в браузере: ${CYAN}https://localhost:30443${NC}"
+        echo -e "Или используйте: ${CYAN}http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/${NC}"
+    fi
 }
 
 # Запуск скрипта
-main
+main "$@"
