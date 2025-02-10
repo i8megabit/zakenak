@@ -7,7 +7,13 @@ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
 
 # Создание namespace prod если он не существует
+echo "Creating prod namespace..."
 kubectl create namespace prod --dry-run=client -o yaml | kubectl apply -f -
+
+# Проверка готовности cert-manager
+echo "Waiting for cert-manager to be ready..."
+kubectl wait --for=condition=Available deployment --timeout=120s -n prod cert-manager
+kubectl wait --for=condition=Available deployment --timeout=120s -n prod cert-manager-webhook
 
 # Создание ClusterIssuer для локальной среды
 echo "Creating ClusterIssuer for local environment..."
@@ -19,6 +25,10 @@ metadata:
 spec:
 	selfSigned: {}
 EOF
+
+# Ожидание готовности первого ClusterIssuer
+echo "Waiting for selfsigned-issuer to be ready..."
+kubectl wait --for=condition=Ready clusterissuer selfsigned-issuer --timeout=60s
 
 # Создание корневого CA сертификата
 echo "Creating root CA certificate..."
@@ -41,6 +51,10 @@ spec:
 		group: cert-manager.io
 EOF
 
+# Ожидание создания CA сертификата
+echo "Waiting for CA certificate to be ready..."
+kubectl wait --for=condition=Ready certificate -n prod local-ca --timeout=60s
+
 # Создание ClusterIssuer использующего CA сертификат
 cat <<EOF | kubectl apply -f -
 apiVersion: cert-manager.io/v1
@@ -52,9 +66,9 @@ spec:
 		secretName: local-ca-key-pair
 EOF
 
-# Ожидание создания секрета CA
-echo "Waiting for CA secret to be created..."
-kubectl wait --for=condition=Ready certificate -n prod local-ca --timeout=60s
+# Ожидание готовности второго ClusterIssuer
+echo "Waiting for local-ca-issuer to be ready..."
+kubectl wait --for=condition=Ready clusterissuer local-ca-issuer --timeout=60s
 
 # Создание Certificate ресурсов
 echo "Creating Certificate resources..."
@@ -92,6 +106,24 @@ spec:
 		name: local-ca-issuer
 		kind: ClusterIssuer
 		group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+	name: sidecar-injector-tls
+	namespace: prod
+spec:
+	secretName: sidecar-injector-tls
+	duration: 2160h
+	renewBefore: 360h
+	commonName: sidecar-injector.prod.svc
+	dnsNames:
+		- "sidecar-injector.prod.svc"
+		- "sidecar-injector.prod.svc.cluster.local"
+	issuerRef:
+		name: local-ca-issuer
+		kind: ClusterIssuer
+		group: cert-manager.io
 EOF
 
 # Установка ingress-nginx с поддержкой TLS
@@ -113,6 +145,7 @@ kubectl get svc -n ingress-nginx
 echo "Waiting for Certificate resources to be ready..."
 kubectl wait --for=condition=Ready certificate -n prod ollama-tls --timeout=120s
 kubectl wait --for=condition=Ready certificate -n prod open-webui-tls --timeout=120s
+kubectl wait --for=condition=Ready certificate -n prod sidecar-injector-tls --timeout=120s
 
 echo "Checking Certificate and Secret resources..."
 kubectl get certificates -n prod

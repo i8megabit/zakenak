@@ -6,6 +6,11 @@ release:
 nameOverride: ""
 fullnameOverride: ""
 
+volumes:
+  - name: tls-certs
+    secret:
+      secretName: sidecar-injector-tls
+
 # Основные настройки
 image: nginx:alpine
 containerPort: 8080
