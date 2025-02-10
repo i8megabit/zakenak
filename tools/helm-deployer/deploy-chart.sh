@@ -15,6 +15,7 @@ ENVIRONMENT=""
 CHART_PATH=""
 DEBUG=false
 HELM_EXTRA_ARGS=""
+ACTION="install" # По умолчанию - установка
 
 # Функция вывода справки
 usage() {
@@ -26,11 +27,13 @@ usage() {
 	-c, --chart         Путь к Helm чарту
 	-d, --debug         Включить режим отладки
 	-x, --extra-args    Дополнительные аргументы для helm upgrade
+	-u, --uninstall     Удалить релиз
 	-h, --help          Показать эту справку
 
-Пример:
+Примеры:
 	$(basename $0) -e prod -c ./helm-charts/my-chart
 	$(basename $0) -e dev --debug
+	$(basename $0) -e prod -c ./helm-charts/my-chart -u
 EOF
 	exit 1
 }
@@ -75,6 +78,10 @@ ensure_namespace() {
 # Парсинг аргументов
 while [[ $# -gt 0 ]]; do
 	case $1 in
+		-u|--uninstall)
+			ACTION="uninstall"
+			shift
+			;;
 		-e|--environment)
 			ENVIRONMENT="$2"
 			shift 2
@@ -207,5 +214,35 @@ deploy_chart() {
 	fi
 }
 
-# Выполнение деплоя
-deploy_chart "$CHART_PATH"
+# Функция удаления релиза
+uninstall_chart() {
+	local chart_path=$1
+	
+	# Определение values файла для окружения
+	VALUES_FILE="${chart_path}/values-${ENVIRONMENT}.yaml"
+	if [ ! -f "$VALUES_FILE" ]; then
+		VALUES_FILE="${chart_path}/values.yaml"
+	fi
+	
+	# Получение имени релиза из values файла или использование имени чарта
+	RELEASE_NAME=$(yq eval '.release.name' "$VALUES_FILE" 2>/dev/null || basename "$chart_path")
+	
+	echo -e "${CYAN}Удаление релиза:${NC}"
+	echo -e "Релиз: ${GREEN}$RELEASE_NAME${NC}"
+	echo -e "Namespace: ${GREEN}$ENVIRONMENT${NC}"
+	
+	# Выполнение удаления
+	if helm uninstall "$RELEASE_NAME" --namespace "$ENVIRONMENT"; then
+		echo -e "${GREEN}Релиз успешно удален!${NC}"
+	else
+		echo -e "${RED}Ошибка при удалении релиза${NC}"
+		exit 1
+	fi
+}
+
+# Выполнение действия в зависимости от выбранной операции
+if [ "$ACTION" = "uninstall" ]; then
+	uninstall_chart "$CHART_PATH"
+else
+	deploy_chart "$CHART_PATH"
+fi
