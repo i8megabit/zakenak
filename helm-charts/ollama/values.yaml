@@ -31,8 +31,7 @@ ingress:
   enabled: true
   className: nginx
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    cert-manager.io/cluster-issuer: local-ca-issuer
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
@@ -47,6 +46,7 @@ ingress:
     - secretName: ollama-tls
       hosts:
         - ollama.prod.local
+
 
 # Настройки хранилища для моделей
 persistence:

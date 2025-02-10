@@ -6,6 +6,46 @@ echo "Installing Nginx Ingress Controller..."
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
 
+# Создание ClusterIssuer для локальной среды
+echo "Creating ClusterIssuer for local environment..."
+cat <<EOF | kubectl apply -f -
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+	name: selfsigned-issuer
+spec:
+	selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+	name: local-ca-issuer
+spec:
+	ca:
+		secretName: local-ca-key-pair
+EOF
+
+# Создание корневого CA сертификата
+echo "Creating root CA certificate..."
+cat <<EOF | kubectl apply -f -
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+	name: local-ca
+	namespace: prod
+spec:
+	isCA: true
+	commonName: local-ca
+	secretName: local-ca-key-pair
+	privateKey:
+		algorithm: ECDSA
+		size: 256
+	issuerRef:
+		name: selfsigned-issuer
+		kind: ClusterIssuer
+		group: cert-manager.io
+EOF
+
 # Создание Certificate ресурсов
 echo "Creating Certificate resources..."
 cat <<EOF | kubectl apply -f -
@@ -16,11 +56,15 @@ metadata:
 	namespace: prod
 spec:
 	secretName: ollama-tls
-	issuerRef:
-		name: letsencrypt-prod
-		kind: ClusterIssuer
+	duration: 2160h
+	renewBefore: 360h
+	commonName: ollama.prod.local
 	dnsNames:
 		- "ollama.prod.local"
+	issuerRef:
+		name: local-ca-issuer
+		kind: ClusterIssuer
+		group: cert-manager.io
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -29,14 +73,18 @@ metadata:
 	namespace: prod
 spec:
 	secretName: open-webui-tls
-	issuerRef:
-		name: letsencrypt-prod
-		kind: ClusterIssuer
+	duration: 2160h
+	renewBefore: 360h
+	commonName: webui.prod.local
 	dnsNames:
 		- "webui.prod.local"
+	issuerRef:
+		name: local-ca-issuer
+		kind: ClusterIssuer
+		group: cert-manager.io
 EOF
 
-# Установка ingress-nginx
+# Установка ingress-nginx с поддержкой TLS
 helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
 		--namespace ingress-nginx \
 		--create-namespace \
@@ -44,12 +92,18 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
 		--set controller.hostPort.enabled=true \
 		--set controller.service.ports.http=80 \
 		--set controller.service.ports.https=443 \
+		--set controller.extraArgs.default-ssl-certificate=prod/ollama-tls \
 		--wait
 
-# Проверка установки
+# Проверка установки и ожидание создания секретов
 echo "Checking ingress-nginx installation..."
 kubectl get pods -n ingress-nginx
 kubectl get svc -n ingress-nginx
-echo "Checking Certificate resources..."
+
+echo "Waiting for Certificate resources to be ready..."
+kubectl wait --for=condition=Ready certificate -n prod ollama-tls --timeout=120s
+kubectl wait --for=condition=Ready certificate -n prod open-webui-tls --timeout=120s
+
+echo "Checking Certificate and Secret resources..."
 kubectl get certificates -n prod
 kubectl get secrets -n prod

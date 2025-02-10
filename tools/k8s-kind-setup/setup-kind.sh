@@ -69,13 +69,6 @@ EOF
 
 # Функция для проверки работоспособности сервисов
 check_services() {
-    echo -e "${CYAN}Проверка статуса сервисов...${NC}"
-    if ! systemctl is-active --quiet docker; then
-        echo -e "${RED}Docker не запущен. Запускаем...${NC}"
-        sudo systemctl start docker
-        sleep 5
-    fi
-    
     # Проверка kind-кластера
     if ! kind get clusters | grep -q "kind"; then
         echo -e "${RED}Kind кластер не найден. Пересоздаем...${NC}"
