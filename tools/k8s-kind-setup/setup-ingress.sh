@@ -137,7 +137,7 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
 		--set controller.extraArgs.default-ssl-certificate=prod/ollama-tls \
 		--wait
 
-# Проверка установки и ожидание создания секретов
+# Проверка установки и готовности сервисов
 echo "Checking ingress-nginx installation..."
 kubectl get pods -n ingress-nginx
 kubectl get svc -n ingress-nginx
@@ -147,6 +147,17 @@ kubectl wait --for=condition=Ready certificate -n prod ollama-tls --timeout=120s
 kubectl wait --for=condition=Ready certificate -n prod open-webui-tls --timeout=120s
 kubectl wait --for=condition=Ready certificate -n prod sidecar-injector-tls --timeout=120s
 
+echo "Waiting for services to be ready..."
+kubectl wait --for=condition=Ready pod -l app=open-webui -n prod --timeout=180s
+kubectl wait --for=condition=Ready pod -l app=ollama -n prod --timeout=180s
+
+echo "Checking service endpoints..."
+kubectl get endpoints -n prod open-webui
+kubectl get endpoints -n prod ollama
+
 echo "Checking Certificate and Secret resources..."
 kubectl get certificates -n prod
 kubectl get secrets -n prod
+
+echo "Checking Ingress resources..."
+kubectl get ingress -n prod

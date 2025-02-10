@@ -1,4 +1,19 @@
 apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.release.namespace }}
+  labels:
+    app: open-webui
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    app: open-webui
 kind: Secret
 metadata:
   name: {{ .Release.Name }}-secrets
