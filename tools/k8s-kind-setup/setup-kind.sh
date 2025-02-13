@@ -159,7 +159,7 @@ restore_cert_manager() {
     
     # Установка/обновление cert-manager
     helm upgrade --install cert-manager jetstack/cert-manager \
-        --namespace cert-manager \
+        --namespace prod \
         --set installCRDs=true \
         --wait
 }
