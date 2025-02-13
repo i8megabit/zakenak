@@ -10,6 +10,20 @@ helm repo update
 echo "Creating prod namespace..."
 kubectl create namespace prod --dry-run=client -o yaml | kubectl apply -f -
 
+# Настройка CoreDNS
+echo "Configuring CoreDNS..."
+kubectl get configmap -n kube-system coredns -o yaml | \
+sed 's/\/etc\/resolv.conf/8.8.8.8 8.8.4.4/g' | \
+kubectl apply -f -
+
+# Перезапуск CoreDNS для применения изменений
+echo "Restarting CoreDNS..."
+kubectl rollout restart deployment coredns -n kube-system
+
+# Ожидание готовности CoreDNS
+echo "Waiting for CoreDNS to be ready..."
+kubectl rollout status deployment coredns -n kube-system --timeout=120s
+
 # Проверка готовности cert-manager
 echo "Waiting for cert-manager to be ready..."
 kubectl wait --for=condition=Available deployment --timeout=120s -n prod cert-manager
@@ -161,3 +175,12 @@ kubectl get secrets -n prod
 
 echo "Checking Ingress resources..."
 kubectl get ingress -n prod
+
+# Проверка DNS резолвинга
+echo "Checking DNS resolution..."
+for domain in "ollama.prod.local" "webui.prod.local"; do
+	echo "Testing DNS resolution for $domain..."
+	if ! kubectl run -it --rm --restart=Never --image=busybox dns-test-$RANDOM -- nslookup $domain > /dev/null 2>&1; then
+		echo "Warning: DNS resolution failed for $domain"
+	fi
+done
