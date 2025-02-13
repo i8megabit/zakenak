@@ -233,6 +233,24 @@ EOF
     kubectl -n kubernetes-dashboard create token admin-user
 }
 
+# Функция для создания кластера
+create_cluster() {
+    echo -e "${CYAN}Проверка существующего кластера...${NC}"
+    if kind get clusters | grep -q "^kind$"; then
+        echo -e "${YELLOW}Обнаружен существующий кластер 'kind'. Удаляем...${NC}"
+        kind delete cluster
+        sleep 5
+    fi
+    
+    echo -e "${CYAN}Создание нового кластера Kind...${NC}"
+    create_kind_config
+    kind create cluster --config kind-config.yaml
+    
+    # Ожидание готовности узлов
+    echo -e "${CYAN}Ожидание готовности узлов кластера...${NC}"
+    kubectl wait --for=condition=Ready nodes --all --timeout=300s
+}
+
 # Основная функция
 main() {
     if [ "$1" == "restore" ]; then
@@ -243,9 +261,8 @@ main() {
         install_kubectl
         install_kind
         
-        echo -e "${CYAN}Создание Kind кластера...${NC}"
-        create_kind_config
-        kind create cluster --config kind-config.yaml
+        # Создание кластера с проверкой существующего
+        create_cluster
         
         install_dashboard
         check_cluster
