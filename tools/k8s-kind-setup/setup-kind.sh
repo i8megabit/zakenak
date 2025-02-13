@@ -116,31 +116,121 @@ check_cluster() {
  kubectl get pods --all-namespaces
 }
 
+# Функция для проверки и восстановления CoreDNS
+restore_coredns() {
+    echo -e "${CYAN}Восстановление конфигурации CoreDNS...${NC}"
+    
+    # Применение конфигурации CoreDNS
+    kubectl apply -f ./manifests/coredns-custom-config.yaml || true
+    kubectl apply -f ./manifests/coredns-patch.yaml || true
+    
+    # Перезапуск CoreDNS
+    kubectl rollout restart deployment coredns -n kube-system
+    kubectl rollout status deployment coredns -n kube-system --timeout=60s
+}
+
+# Функция для проверки и восстановления Ingress
+restore_ingress() {
+    echo -e "${CYAN}Восстановление Ingress Controller...${NC}"
+    
+    # Проверка существования namespace
+    kubectl create namespace ingress-nginx --dry-run=client -o yaml | kubectl apply -f -
+    
+    # Установка/обновление Ingress контроллера
+    helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+        --namespace ingress-nginx \
+        --set controller.service.type=NodePort \
+        --set controller.hostPort.enabled=true \
+        --set controller.service.ports.http=80 \
+        --set controller.service.ports.https=443 \
+        --wait
+}
+
+# Функция для проверки и восстановления cert-manager
+restore_cert_manager() {
+    echo -e "${CYAN}Восстановление cert-manager...${NC}"
+    
+    # Проверка существования namespace
+    kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
+    
+    # Добавление репозитория Jetstack
+    helm repo add jetstack https://charts.jetstack.io
+    helm repo update
+    
+    # Установка/обновление cert-manager
+    helm upgrade --install cert-manager jetstack/cert-manager \
+        --namespace cert-manager \
+        --set installCRDs=true \
+        --wait
+}
+
 # Функция восстановления
 restore_cluster() {
-    echo -e "${YELLOW}Начинаем восстановление кластера...${NC}"
+    echo -e "${YELLOW}Начинаем полное восстановление кластера...${NC}"
+    
+    # Проверка наличия необходимых утилит
+    for cmd in kubectl helm kind; do
+        if ! command -v $cmd &> /dev/null; then
+            echo -e "${RED}Ошибка: $cmd не установлен${NC}"
+            exit 1
+        fi
+    done
     
     # Проверка и восстановление сервисов
     check_services
     
-    # Ожидание готовности кластера
-    echo -e "${CYAN}Ожидание готовности кластера...${NC}"
+    # Ожидание готовности узлов
+    echo -e "${CYAN}Ожидание готовности узлов кластера...${NC}"
     kubectl wait --for=condition=Ready nodes --all --timeout=300s
     
-    # Переустановка dashboard
-    echo -e "${CYAN}Переустановка Dashboard...${NC}"
-    kubectl delete -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
-    sleep 5
-    install_dashboard
+    # Восстановление компонентов в правильном порядке
+    restore_coredns
+    restore_cert_manager
+    restore_ingress
     
-    # Проверка работоспособности
-    check_cluster
+    # Восстановление Dashboard
+    echo -e "${CYAN}Восстановление Kubernetes Dashboard...${NC}"
+    kubectl delete -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml 2>/dev/null || true
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
     
+    # Настройка доступа через NodePort для Dashboard
+    kubectl patch svc kubernetes-dashboard -n kubernetes-dashboard -p '{"spec": {"type": "NodePort", "ports": [{"port": 443, "nodePort": 30443}]}}'
+    
+    # Создание админского аккаунта для Dashboard
+    cat << EOF | kubectl apply -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: kubernetes-dashboard
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: kubernetes-dashboard
+EOF
+    
+    # Проверка состояния всех компонентов
+    echo -e "${CYAN}Проверка состояния компонентов...${NC}"
+    kubectl get pods --all-namespaces
+    
+    # Вывод информации о доступе
     echo -e "${GREEN}Восстановление завершено!${NC}"
     echo -e "${YELLOW}Для доступа к Dashboard:${NC}"
     echo -e "1. Выполните: ${CYAN}kubectl proxy${NC}"
     echo -e "2. Откройте в браузере: ${CYAN}https://localhost:30443${NC}"
-    echo -e "Или используйте: ${CYAN}http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/${NC}"
+    
+    # Получение токена для входа
+    echo -e "${YELLOW}Токен для входа в Dashboard:${NC}"
+    kubectl -n kubernetes-dashboard create token admin-user
 }
 
 # Основная функция
