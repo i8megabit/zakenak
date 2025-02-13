@@ -16,7 +16,11 @@ data:
 					 fallthrough in-addr.arpa ip6.arpa
 					 ttl 30
 				}
-				import /etc/coredns/prod.local.server
+				hosts {
+					 10.96.130.21 webui.prod.local
+					 10.96.130.21 ollama.prod.local
+					 fallthrough
+				}
 				prometheus :9153
 				forward . /etc/resolv.conf {
 					 max_concurrent 1000
