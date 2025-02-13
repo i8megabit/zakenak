@@ -35,9 +35,9 @@ cat <<EOF | kubectl apply -f -
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-	name: selfsigned-issuer
+  name: selfsigned-issuer
 spec:
-	selfSigned: {}
+  selfSigned: {}
 EOF
 
 # Ожидание готовности первого ClusterIssuer
@@ -50,19 +50,19 @@ cat <<EOF | kubectl apply -f -
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-	name: local-ca
-	namespace: prod
+  name: local-ca
+  namespace: prod
 spec:
-	isCA: true
-	commonName: local-ca
-	secretName: local-ca-key-pair
-	privateKey:
-		algorithm: ECDSA
-		size: 256
-	issuerRef:
-		name: selfsigned-issuer
-		kind: ClusterIssuer
-		group: cert-manager.io
+  isCA: true
+  commonName: local-ca
+  secretName: local-ca-key-pair
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
 EOF
 
 # Ожидание создания CA сертификата
@@ -74,10 +74,10 @@ cat <<EOF | kubectl apply -f -
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-	name: local-ca-issuer
+  name: local-ca-issuer
 spec:
-	ca:
-		secretName: local-ca-key-pair
+  ca:
+    secretName: local-ca-key-pair
 EOF
 
 # Ожидание готовности второго ClusterIssuer
@@ -90,54 +90,54 @@ cat <<EOF | kubectl apply -f -
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-	name: ollama-tls
-	namespace: prod
+  name: ollama-tls
+  namespace: prod
 spec:
-	secretName: ollama-tls
-	duration: 2160h
-	renewBefore: 360h
-	commonName: ollama.prod.local
-	dnsNames:
-		- "ollama.prod.local"
-	issuerRef:
-		name: local-ca-issuer
-		kind: ClusterIssuer
-		group: cert-manager.io
+  secretName: ollama-tls
+  duration: 2160h
+  renewBefore: 360h
+  commonName: ollama.prod.local
+  dnsNames:
+    - "ollama.prod.local"
+  issuerRef:
+    name: local-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-	name: open-webui-tls
-	namespace: prod
+  name: open-webui-tls
+  namespace: prod
 spec:
-	secretName: open-webui-tls
-	duration: 2160h
-	renewBefore: 360h
-	commonName: webui.prod.local
-	dnsNames:
-		- "webui.prod.local"
-	issuerRef:
-		name: local-ca-issuer
-		kind: ClusterIssuer
-		group: cert-manager.io
+  secretName: open-webui-tls
+  duration: 2160h
+  renewBefore: 360h
+  commonName: webui.prod.local
+  dnsNames:
+    - "webui.prod.local"
+  issuerRef:
+    name: local-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-	name: sidecar-injector-tls
-	namespace: prod
+  name: sidecar-injector-tls
+  namespace: prod
 spec:
-	secretName: sidecar-injector-tls
-	duration: 2160h
-	renewBefore: 360h
-	commonName: sidecar-injector.prod.svc
-	dnsNames:
-		- "sidecar-injector.prod.svc"
-		- "sidecar-injector.prod.svc.cluster.local"
-	issuerRef:
-		name: local-ca-issuer
-		kind: ClusterIssuer
-		group: cert-manager.io
+  secretName: sidecar-injector-tls
+  duration: 2160h
+  renewBefore: 360h
+  commonName: sidecar-injector.prod.svc
+  dnsNames:
+    - "sidecar-injector.prod.svc"
+    - "sidecar-injector.prod.svc.cluster.local"
+  issuerRef:
+    name: local-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
 EOF
 
 # Установка ingress-nginx с поддержкой TLS
@@ -179,8 +179,8 @@ kubectl get ingress -n prod
 # Проверка DNS резолвинга
 echo "Checking DNS resolution..."
 for domain in "ollama.prod.local" "webui.prod.local"; do
-	echo "Testing DNS resolution for $domain..."
-	if ! kubectl run -it --rm --restart=Never --image=busybox dns-test-$RANDOM -- nslookup $domain > /dev/null 2>&1; then
-		echo "Warning: DNS resolution failed for $domain"
-	fi
+  echo "Testing DNS resolution for $domain..."
+  if ! kubectl run -n prod -it --rm --restart=Never --image=busybox dns-test-$RANDOM -- nslookup $domain > /dev/null 2>&1; then
+    echo "Warning: DNS resolution failed for $domain"
+  fi
 done
