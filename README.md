@@ -1,29 +1,26 @@
 # GitOps Repository
 
 ## Версия
-1.3.8
+1.0.4
 
 ## Описание
 Монорепозиторий для управления Kubernetes-инфраструктурой и приложениями.
 
-## Последние изменения
-- Добавлена поддержка локального DNS-резолвинга
-- Настроена маршрутизация для сервисов ollama и open-webui
+## Настройка DNS
+1. Запустите скрипт настройки DNS:
+```bash
+./tools/k8s-kind-setup/setup-dns.sh
+```
+
+2. Проверьте резолвинг доменов:
+```bash
+kubectl run -i --rm --restart=Never busybox --image=busybox:1.28 -- nslookup webui.prod.local
+kubectl run -i --rm --restart=Never busybox --image=busybox:1.28 -- nslookup ollama.prod.local
+```
 
 ## Структура репозитория
 - /helm-charts - Helm чарты для приложений
-- /tools - Инструменты для управления кластером
-    - /k8s-kind-setup - Скрипты настройки локального кластера
+- /tools
+    - /k8s-kind-setup - Скрипты настройки кластера и DNS
     - /helm-deployer - Инструменты для деплоя
 
-## Использование
-1. Настройка кластера:
-```bash
-./tools/k8s-kind-setup/setup-ingress.sh
-```
-
-2. Проверка DNS:
-```bash
-ping ollama.prod.local
-ping webui.prod.local
-```
