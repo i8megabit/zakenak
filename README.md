@@ -1,112 +1,29 @@
-# GitOps Tools
+# GitOps Repository
 
-Версия: 1.3.7
+## Версия
+1.3.8
 
 ## Описание
-Скрипты для настройки локального Kubernetes кластера с использованием Kind.
+Монорепозиторий для управления Kubernetes-инфраструктурой и приложениями.
 
-## Компоненты
-- Nginx Ingress Controller
-- Автоматическое создание Certificate ресурсов для доменов
-- Интеграция с существующим cert-manager в namespace prod
+## Последние изменения
+- Добавлена поддержка локального DNS-резолвинга
+- Настроена маршрутизация для сервисов ollama и open-webui
 
-## Предварительные требования
-- Установленный и настроенный cert-manager в namespace prod
-- Настроенный ClusterIssuer letsencrypt-prod
+## Структура репозитория
+- /helm-charts - Helm чарты для приложений
+- /tools - Инструменты для управления кластером
+    - /k8s-kind-setup - Скрипты настройки локального кластера
+    - /helm-deployer - Инструменты для деплоя
 
 ## Использование
-1. Убедитесь, что у вас установлены:
-   - kubectl
-   - helm
-2. Запустите скрипт setup-ingress.sh:
-   ```bash
-   ./setup-ingress.sh
-
-## Инструменты
-
-### [Reset-WSL](./tools/reset-wsl)
-Инструмент для полного сброса и переустановки WSL. Подробная документация находится в директории инструмента.
-
-### [K8s-Kind-Setup](./tools/k8s-kind-setup)
-Инструмент для автоматической установки и настройки локального Kubernetes кластера с использованием Kind в WSL2. Включает настройку Kubernetes Dashboard и все необходимые компоненты.
-
-### [Helm Deployer](./tools/helm-deployer)
-Универсальный инструмент для деплоя Helm чартов с поддержкой различных конфигураций и окружений.
-
-#### Автоматический деплой всех чартов
+1. Настройка кластера:
 ```bash
-# Базовое использование
-./deploy-chart.sh
-
-# Деплой с указанием окружения
-./deploy-chart.sh -e prod
-
-# Деплой с отладкой
-./deploy-chart.sh --debug
+./tools/k8s-kind-setup/setup-ingress.sh
 ```
 
-### [Helm Setup](./tools/helm-setup)
-Инструмент для автоматической установки и настройки Helm в Linux-системах. Включает установку Helm и добавление популярных репозиториев.
-
-### [K8s Dashboard Token](./tools/k8s-dashboard-token)
-Инструмент для автоматического получения токена доступа к Kubernetes Dashboard с поддержкой различных версий Kubernetes.
-
-### [Sidecar Injector](./helm-charts/sidecar-injector)
-Helm чарт для инжекции TLS сайдкаров.
-Исправлены проблемы с генерацией TLS сертификатов.
-
-### Важное замечание по работе с Ingress
-
-Для корректной работы Ollama и Open WebUI необходим установленный Nginx Ingress Controller. Если вы видите ошибку "No resources found in ingress-nginx namespace", выполните следующие действия:
-
-1. Установите Ingress Controller:
+2. Проверка DNS:
 ```bash
-cd tools/k8s-kind-setup
-./setup-ingress.sh
-
-### [Open WebUI](./helm-charts/open-webui)
-Helm чарт для развертывания Open WebUI - веб-интерфейса для различных LLM бэкендов.
-Доступ через: https://webui.prod.local
-
-### [Ollama](./helm-charts/ollama)
-Helm чарт для развертывания Ollama - сервера LLM моделей.
-Доступ через: http://ollama.prod.local
-
-Для доступа к интерфейсам:
-1. Добавьте записи в /etc/hosts и Windows hosts (C:\Windows\System32\drivers\etc\hosts):
-```bash
-127.0.0.1 ollama.prod.local
-127.0.0.1 webui.prod.local
+ping ollama.prod.local
+ping webui.prod.local
 ```
-
-2. Убедитесь, что Kind кластер правильно настроен:
-```bash
-kubectl cluster-info
-```
-
-3. Проверьте статус сервисов:
-```bash
-# Проверка статуса подов
-kubectl get pods -A | grep -E 'ollama|webui'
-
-# Проверка ingress
-kubectl get ingress -A
-```
-
-4. Если сервисы недоступны:
-   - Убедитесь, что Ingress контроллер работает:
-	 ```bash
-	 kubectl get pods -n ingress-nginx
-	 ```
-   - Проверьте логи подов:
-	 ```bash
-	 kubectl logs -n <namespace> <pod-name>
-	 ```
-   - Используйте скрипт диагностики:
-	 ```bash
-	 ./tools/connectivity-check/check-services.sh
-	 ```
-
-5. Порты по умолчанию:
-   - Open WebUI: https://webui.prod.local (порт 443)
-   - Ollama: http://ollama.prod.local (порт 443)
