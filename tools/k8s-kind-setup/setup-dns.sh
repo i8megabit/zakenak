@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Создание директории manifests, если она не существует
-mkdir -p ./manifests
+mkdir -p ./tools/k8s-kind-setup/manifests
 
 echo "Applying CoreDNS custom configuration..."
-kubectl apply -f ./manifests/coredns-custom-config.yaml
+kubectl apply -f ./tools/k8s-kind-setup/manifests/coredns-custom-config.yaml
 
 echo "Patching CoreDNS ConfigMap..."
-kubectl apply -f ./manifests/coredns-patch.yaml
+kubectl apply -f ./tools/k8s-kind-setup/manifests/coredns-patch.yaml
 
 echo "Restarting CoreDNS pods..."
 kubectl rollout restart deployment coredns -n kube-system
