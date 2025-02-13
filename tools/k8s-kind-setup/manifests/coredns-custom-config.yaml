@@ -1,16 +1,16 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-	name: coredns-custom
-	namespace: kube-system
+  name: coredns-custom
+  namespace: kube-system
 data:
-	prod.local.server: |
-		prod.local:53 {
-				errors
-				cache 30
-				hosts {
-						10.96.130.21 webui.prod.local
-						10.96.130.21 ollama.prod.local
-				}
-				forward . /etc/resolv.conf
-		}
+  prod.local.server: |
+    prod.local:53 {
+        errors
+        cache 30
+        hosts {
+            10.96.130.21 webui.prod.local
+            10.96.130.21 ollama.prod.local
+        }
+        forward . /etc/resolv.conf
+    }
