@@ -14,13 +14,15 @@ spec:
     metadata:
       labels:
         app: ollama
+      annotations:
+        nvidia.com/cuda-version: "12.8"
     spec:
+      nodeSelector:
+        accelerator: nvidia-gpu
       tolerations:
       - key: "nvidia.com/gpu"
         operator: "Exists"
         effect: "NoSchedule"
-      nodeSelector:
-        accelerator: nvidia-gpu
       initContainers:
         - name: init-ollama-dir
           image: busybox:latest
@@ -28,9 +30,9 @@ spec:
             - /bin/sh
             - -c
             - |
-              mkdir -p /data/.ollama && \
-              chown -R 1000:1000 /data/.ollama && \
-              chmod -R 755 /data/.ollama
+              mkdir -p /data/.ollama /data/.cuda-cache && \
+              chown -R 1000:1000 /data && \
+              chmod -R 755 /data
           volumeMounts:
             - name: ollama-data
               mountPath: /data
@@ -41,33 +43,24 @@ spec:
           env:
             - name: HOME
               value: /data
-            - name: NVIDIA_VISIBLE_DEVICES
-              value: "all"
-            - name: NVIDIA_DRIVER_CAPABILITIES
-              value: "compute,utility"
             {{- with .Values.deployment.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           resources:
-            limits:
-              nvidia.com/gpu: "1"
-              cpu: {{ .Values.deployment.resources.limits.cpu }}
-              memory: {{ .Values.deployment.resources.limits.memory }}
-            requests:
-              cpu: {{ .Values.deployment.resources.requests.cpu }}
-              memory: {{ .Values.deployment.resources.requests.memory }}
-
-          ports:
-            - containerPort: {{ .Values.service.targetPort }}
-              protocol: TCP
-          {{- if .Values.persistence.enabled }}
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
+          securityContext:
+            capabilities:
+              add: ["SYS_NICE"]
           volumeMounts:
             - name: ollama-data
               mountPath: /data
-          {{- end }}
-      {{- if .Values.persistence.enabled }}
+            - name: nvidia-driver
+              mountPath: /usr/local/nvidia
+              readOnly: true
       volumes:
         - name: ollama-data
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-pvc
-      {{- end }}
+        - name: nvidia-driver
+          hostPath:
+            path: /usr/lib/nvidia

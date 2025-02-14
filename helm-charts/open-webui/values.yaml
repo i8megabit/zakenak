@@ -14,13 +14,11 @@ deployment:
   replicas: 1
   resources:
     limits:
-      cpu: "2"
-      memory: "4Gi"
+      cpu: "8"
+      memory: "16Gi"
     requests:
-      cpu: "1"
-      memory: "2Gi"
-
-
+      cpu: "4"
+      memory: "8Gi"
 
 # Секреты
 secrets:
@@ -44,24 +42,23 @@ env:
   - name: COMPUTE_SHAPES
     value: "false"
   - name: MAX_PARALLEL_REQUESTS
-    value: "2"
-  - name: NODE_OPTIONS
-    value: "--max-old-space-size=3072"
-  - name: MODEL_CONTEXT_WINDOW
-    value: "4096"
-  - name: BATCH_SIZE
     value: "8"
+  - name: NODE_OPTIONS
+    value: "--max-old-space-size=12288"
+  - name: MODEL_CONTEXT_WINDOW
+    value: "16384"
+  - name: BATCH_SIZE
+    value: "32"
   - name: MAX_TOKENS
-    value: "2048"
+    value: "8192"
   - name: TEMPERATURE
     value: "0.7"
   - name: TOP_P
     value: "0.9"
-
-
-
-
-
+  - name: ENABLE_RESPONSE_STREAMING
+    value: "true"
+  - name: ENABLE_AGGRESSIVE_GC
+    value: "true"
 
 # Настройки сервиса
 service:

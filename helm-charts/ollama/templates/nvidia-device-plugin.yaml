@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+	name: nvidia-device-plugin-daemonset
+	namespace: {{ .Release.Namespace }}
+spec:
+	selector:
+		matchLabels:
+			name: nvidia-device-plugin-ds
+	template:
+		metadata:
+			labels:
+				name: nvidia-device-plugin-ds
+		spec:
+			tolerations:
+			- key: nvidia.com/gpu
+				operator: Exists
+				effect: NoSchedule
+			priorityClassName: system-node-critical
+			containers:
+			- name: nvidia-device-plugin-ctr
+				image: nvidia/k8s-device-plugin:v0.14.1
+				args: ["--fail-on-init-error=false"]
+				env:
+					- name: NVIDIA_VISIBLE_DEVICES
+						value: all
+					- name: NVIDIA_DRIVER_CAPABILITIES
+						value: "compute,utility,video"
+					- name: NVIDIA_REQUIRE_CUDA
+						value: "cuda>=12.8"
+				securityContext:
+					allowPrivilegeEscalation: false
+					capabilities:
+						drop: ["ALL"]
+				volumeMounts:
+					- name: device-plugin
+						mountPath: /var/lib/kubelet/device-plugins
+			volumes:
+				- name: device-plugin
+					hostPath:
+						path: /var/lib/kubelet/device-plugins

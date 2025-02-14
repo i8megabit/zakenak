@@ -12,15 +12,14 @@ image:
 # Настройки развертывания
 deployment:
   replicas: 1
-  useGPU: true  # Включаем поддержку GPU
   resources:
     limits:
-      cpu: "16"
-      memory: "32Gi"
+      cpu: "32"
+      memory: "64Gi"
       nvidia.com/gpu: "1"
     requests:
-      cpu: "8"
-      memory: "16Gi"
+      cpu: "16"
+      memory: "32Gi"
   env:
     - name: OLLAMA_MODELS
       value: "deepseek-r1:14b"
@@ -31,21 +30,25 @@ deployment:
     - name: NVIDIA_VISIBLE_DEVICES
       value: "all"
     - name: NVIDIA_DRIVER_CAPABILITIES
-      value: "compute,utility"
+      value: "compute,utility,video"
     - name: CUDA_VISIBLE_DEVICES
       value: "all"
-    - name: CUDA_DEVICE_ORDER
-      value: "PCI_BUS_ID"
-    - name: OLLAMA_CUDA_DEVICE
+    - name: CUDA_VERSION
+      value: "12.8"
+    - name: CUDA_CACHE_DISABLE
       value: "0"
+    - name: CUDA_CACHE_MAXSIZE
+      value: "8589934592"
+    - name: CUDA_CACHE_PATH
+      value: "/data/.cuda-cache"
     - name: OLLAMA_CUDA_MEMORY_LIMIT
-      value: "24G"
+      value: "56G"
     - name: OLLAMA_BATCH_SIZE
-      value: "8"
+      value: "32"
     - name: OLLAMA_PARALLEL_REQUESTS
-      value: "2"
+      value: "4"
     - name: OLLAMA_THREAD_COUNT
-      value: "8"
+      value: "32"
     - name: OLLAMA_GPU_LAYERS
       value: "all"
     - name: OLLAMA_F16
@@ -58,6 +61,14 @@ deployment:
       value: "true"
     - name: OLLAMA_KV_CACHE_STRATEGY
       value: "dynamic"
+    - name: OLLAMA_CUDA_FORCE_P2P
+      value: "1"
+    - name: OLLAMA_CUBLAS_WORKSPACE_CONFIG
+      value: ":16:8"
+    - name: OLLAMA_CONTEXT_WINDOW
+      value: "16384"
+    - name: OLLAMA_MAX_TOKENS
+      value: "8192"
 
 
 # Настройки сервиса
