@@ -14,33 +14,49 @@ deployment:
   replicas: 1
   useGPU: false  # Флаг для включения/отключения GPU
   resources:
-    limits:
-      cpu: "4"
-      memory: "8Gi"
-    requests:
-      cpu: "2"
-      memory: "4Gi"
+    # Ресурсы для CPU режима
+    cpu:
+      limits:
+        cpu: "4"
+        memory: "8Gi"
+      requests:
+        cpu: "2"
+        memory: "4Gi"
+    # Ресурсы для GPU режима
+    gpu:
+      limits:
+        cpu: "8"
+        memory: "16Gi"
+        nvidia.com/gpu: "1"
+      requests:
+        cpu: "4"
+        memory: "8Gi"
   env:
     - name: OLLAMA_MODELS
       value: "deepseek-r1:14b"
     - name: OLLAMA_HOST
       value: "0.0.0.0"
     - name: OLLAMA_COMPUTE_TYPE
-      value: "cpu"  # По умолчанию используем CPU
+      value: "auto"  # Автоматическое определение режима
     - name: OLLAMA_BATCH_SIZE
-      value: "4"
+      value: "8"
     - name: OLLAMA_PARALLEL_REQUESTS
       value: "2"
     - name: OLLAMA_THREAD_COUNT
       value: "4"
-    - name: OLLAMA_CONTEXT_WINDOW
-      value: "4096"
-    - name: OLLAMA_MAX_TOKENS
-      value: "2048"
-    - name: OLLAMA_ENABLE_MEMORY_REDUCTION
+    # GPU-специфичные настройки (будут применены только в GPU режиме)
+    - name: OLLAMA_GPU_LAYERS
+      value: "43"
+    - name: OLLAMA_F16
       value: "true"
-    - name: OLLAMA_ENABLE_AGGRESSIVE_GC
+    - name: OLLAMA_TENSOR_PARALLEL
       value: "true"
+    - name: OLLAMA_GPU_MEMORY_UTILIZATION
+      value: "0.75"
+    - name: OLLAMA_FLASH_ATTENTION
+      value: "true"
+    - name: OLLAMA_KV_CACHE_STRATEGY
+      value: "dynamic"
 
 
 

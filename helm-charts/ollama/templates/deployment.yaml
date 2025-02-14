@@ -43,20 +43,13 @@ spec:
             {{- with .Values.deployment.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-          resources:
+            resources:
             {{- if .Values.deployment.useGPU }}
-            limits:
-              nvidia.com/gpu: "1"
-              cpu: {{ .Values.deployment.resources.limits.cpu }}
-              memory: {{ .Values.deployment.resources.limits.memory }}
+            {{- toYaml .Values.deployment.resources.gpu | nindent 12 }}
             {{- else }}
-            limits:
-              cpu: {{ .Values.deployment.resources.limits.cpu }}
-              memory: {{ .Values.deployment.resources.limits.memory }}
+            {{- toYaml .Values.deployment.resources.cpu | nindent 12 }}
             {{- end }}
-            requests:
-              cpu: {{ .Values.deployment.resources.requests.cpu }}
-              memory: {{ .Values.deployment.resources.requests.memory }}
+
           volumeMounts:
             - name: ollama-data
               mountPath: /data

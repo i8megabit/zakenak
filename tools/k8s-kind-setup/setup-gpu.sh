@@ -1,30 +1,33 @@
 #!/bin/bash
 
-# Добавление меток для GPU на control-plane ноду
-kubectl label node kind-control-plane nvidia.com/gpu=present --overwrite
-
-# Добавление taint для GPU
-kubectl taint nodes kind-control-plane nvidia.com/gpu=present:NoSchedule --overwrite
-
-# Проверка драйверов NVIDIA
-if ! command -v nvidia-smi &> /dev/null; then
-	echo "NVIDIA drivers not found. Installing..."
-	sudo apt-get update
-	sudo apt-get install -y nvidia-driver-550-server
+# Проверка наличия GPU
+if nvidia-smi &> /dev/null; then
+	echo "GPU обнаружен, настраиваем поддержку CUDA..."
+	
+	# Добавление меток для GPU на control-plane ноду
+	kubectl label node kind-control-plane nvidia.com/gpu=present --overwrite
+	
+	# Добавление taint для GPU
+	kubectl taint nodes kind-control-plane nvidia.com/gpu=present:NoSchedule --overwrite
+	
+	# Обновление значений для ollama
+	helm upgrade ollama ./helm-charts/ollama \
+		--namespace prod \
+		--set deployment.useGPU=true \
+		--reuse-values
+	
+	echo "GPU настройка завершена"
+else
+	echo "GPU не обнаружен, используем CPU режим"
+	
+	# Удаление меток GPU если они есть
+	kubectl label node kind-control-plane nvidia.com/gpu- --overwrite
+	kubectl taint nodes kind-control-plane nvidia.com/gpu- --overwrite
+	
+	# Обновление значений для ollama
+	helm upgrade ollama ./helm-charts/ollama \
+		--namespace prod \
+		--set deployment.useGPU=false \
+		--reuse-values
 fi
-
-# Проверка CUDA
-if ! command -v nvcc &> /dev/null; then
-	echo "CUDA not found. Installing CUDA 12.8..."
-	wget https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda_12.8.0_545.23.06_linux.run
-	sudo sh cuda_12.8.0_545.23.06_linux.run --silent --toolkit
-fi
-
-# Проверка настроек
-echo "Проверка меток и taint узла:"
-kubectl get node kind-control-plane --show-labels
-kubectl describe node kind-control-plane | grep Taints
-
-echo "Проверка статуса NVIDIA:"
-nvidia-smi
 
