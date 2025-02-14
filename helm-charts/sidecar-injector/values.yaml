@@ -42,16 +42,23 @@ sidecar:
   image: nginx:alpine
   resources:
     limits:
-      cpu: 100m
-      memory: 128Mi
-    requests:
       cpu: 50m
       memory: 64Mi
+    requests:
+      cpu: 25m
+      memory: 32Mi
   
   ingressSidecar:
     enabled: true
     port: 8443
     containerPort: 8443
+    resources:
+      limits:
+        cpu: 50m
+        memory: 64Mi
+      requests:
+        cpu: 25m
+        memory: 32Mi
     config: |
       server {
           listen 8443;
@@ -72,6 +79,13 @@ sidecar:
     enabled: true
     port: 8444
     containerPort: 8444
+    resources:
+      limits:
+        cpu: 50m
+        memory: 64Mi
+      requests:
+        cpu: 25m
+        memory: 32Mi
     config: |
       server {
           listen 8444;

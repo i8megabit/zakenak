@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [1.0.5.a] - 2024-02-13
+
+### Changed
+- Оптимизированы ресурсы cert-manager:
+  - Основной компонент: 100m CPU, 128Mi RAM
+  - Webhook: 50m CPU, 64Mi RAM
+  - CAInjector: 50m CPU, 64Mi RAM
+- Оптимизированы ресурсы sidecar-injector:
+  - Основной контейнер: 25m/50m CPU, 32Mi/64Mi RAM
+  - Сайдкары: 25m/50m CPU, 32Mi/64Mi RAM
+- Сохранены оригинальные ресурсы для open-webui и ollama
+
 ## [1.0.5] - 2024-02-13
 
 ### Added
