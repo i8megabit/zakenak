@@ -29,6 +29,7 @@ export WEBUI_HOST="webui.$DOMAIN_SUFFIX"
 
 # Настройки GPU для WSL2
 export PATH="/usr/lib/wsl/lib:$PATH"
+export LD_LIBRARY_PATH="/usr/lib/wsl/lib:$LD_LIBRARY_PATH"
 export NVIDIA_DRIVER_VERSION="535"
 export CUDA_VERSION="12.8"
 export NVIDIA_VISIBLE_DEVICES="all"

@@ -30,7 +30,7 @@ spec:
       containers:
       - name: nvidia-device-plugin-ctr
         image: nvcr.io/nvidia/k8s-device-plugin:v0.14.1
-        args: ["--fail-on-init-error=false"]
+        args: ["--fail-on-init-error=false", "--device-plugin-version=v1beta1"]
         env:
           - name: NVIDIA_VISIBLE_DEVICES
             value: all
@@ -39,9 +39,9 @@ spec:
           - name: NVIDIA_REQUIRE_CUDA
             value: "cuda>=12.8"
           - name: PATH
-            value: "/usr/lib/wsl/lib:/usr/local/cuda/bin:$(PATH)"
+            value: "/usr/lib/wsl/lib:/usr/local/nvidia/bin:/usr/local/cuda/bin:$(PATH)"
           - name: LD_LIBRARY_PATH
-            value: "/usr/lib/wsl/lib:/usr/local/cuda/lib64:$(LD_LIBRARY_PATH)"
+            value: "/usr/lib/wsl/lib:/usr/local/nvidia/lib64:/usr/local/cuda/lib64:$(LD_LIBRARY_PATH)"
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -51,6 +51,8 @@ spec:
             mountPath: /var/lib/kubelet/device-plugins
           - name: nvidia-wsl
             mountPath: /usr/lib/wsl/lib
+          - name: nvidia-capabilities
+            mountPath: /usr/local/nvidia/capabilities
       volumes:
         - name: device-plugin
           hostPath:
@@ -58,3 +60,6 @@ spec:
         - name: nvidia-wsl
           hostPath:
             path: /usr/lib/wsl/lib
+        - name: nvidia-capabilities
+          hostPath:
+            path: /usr/lib/wsl/lib/nvidia/capabilities

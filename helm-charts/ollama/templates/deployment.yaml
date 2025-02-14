@@ -27,9 +27,9 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: PATH
-              value: "/usr/lib/wsl/lib:/usr/local/cuda/bin:$(PATH)"
+              value: "/usr/lib/wsl/lib:/usr/local/nvidia/bin:/usr/local/cuda/bin:$(PATH)"
             - name: LD_LIBRARY_PATH
-              value: "/usr/lib/wsl/lib:/usr/local/cuda/lib64:$(LD_LIBRARY_PATH)"
+              value: "/usr/lib/wsl/lib:/usr/local/nvidia/lib64:/usr/local/cuda/lib64:$(LD_LIBRARY_PATH)"
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
             - name: NVIDIA_DRIVER_CAPABILITIES
@@ -46,6 +46,8 @@ spec:
               mountPath: /data
             - name: nvidia-wsl
               mountPath: /usr/lib/wsl/lib
+            - name: nvidia-capabilities
+              mountPath: /usr/local/nvidia/capabilities
       volumes:
         - name: ollama-data
           persistentVolumeClaim:
@@ -53,7 +55,7 @@ spec:
         - name: nvidia-wsl
           hostPath:
             path: /usr/lib/wsl/lib
-
-
-
+        - name: nvidia-capabilities
+          hostPath:
+            path: /usr/lib/wsl/lib/nvidia/capabilities
 

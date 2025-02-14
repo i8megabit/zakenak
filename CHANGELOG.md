@@ -1,5 +1,26 @@
 # CHANGELOG
 
+# CHANGELOG
+
+## [1.2.4] - 2024-02-13
+
+### Added
+- Добавлена поддержка nvidia-smi из WSL2
+- Оптимизированы пути монтирования для GPU в WSL2
+- Обновлены переменные окружения для NVIDIA
+- Улучшена интеграция с NVIDIA Container Toolkit
+
+### Changed
+- Обновлен NVIDIA Device Plugin для работы с WSL2
+- Модифицирован деплоймент Ollama для корректной работы с GPU
+- Добавлены дополнительные тома для NVIDIA capabilities
+- Обновлена документация по настройке GPU в WSL2
+
+### Fixed
+- Исправлен путь к nvidia-smi в WSL2
+- Оптимизирована работа с GPU через Docker
+- Улучшена совместимость с NVIDIA Container Runtime
+
 ## [1.2.3] - 2024-02-13
 
 ### Added
