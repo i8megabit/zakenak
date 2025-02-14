@@ -14,8 +14,8 @@ deployment:
   replicas: 1
   resources:
     limits:
-      cpu: "2"
-      memory: "4Gi"
+      cpu: "1"
+      memory: "2Gi"
     requests:
       cpu: "500m"
       memory: "1Gi"
@@ -33,8 +33,6 @@ secrets:
 env:
   - name: MODEL
     value: "deepseek-r1:14b"
-  - name: OLLAMA_API_BASE
-    value: "http://ollama.prod.svc.cluster.local:11434/api"
   - name: DEBUG
     value: "false"
   - name: ENABLE_MEMORY_REDUCTION
@@ -44,21 +42,12 @@ env:
   - name: MAX_PARALLEL_REQUESTS
     value: "2"
   - name: NODE_OPTIONS
-    value: "--max-old-space-size=3072"
-  - name: MODEL_CONTEXT_WINDOW
-    value: "4096"
-  - name: BATCH_SIZE
-    value: "4"
-  - name: MAX_TOKENS
-    value: "2048"
-  - name: TEMPERATURE
-    value: "0.7"
-  - name: TOP_P
-    value: "0.9"
-  - name: ENABLE_RESPONSE_STREAMING
-    value: "true"
+    value: "--max-old-space-size=1536"
   - name: ENABLE_AGGRESSIVE_GC
     value: "true"
+  - name: OLLAMA_API_BASE
+    value: "http://ollama.prod.svc.cluster.local:11434/api"
+
 
 # Настройки сервиса
 service:

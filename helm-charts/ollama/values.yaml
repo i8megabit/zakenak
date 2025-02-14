@@ -12,11 +12,11 @@ image:
 # Настройки развертывания
 deployment:
   replicas: 1
+  useGPU: false  # Флаг для включения/отключения GPU
   resources:
     limits:
       cpu: "4"
       memory: "8Gi"
-      nvidia.com/gpu: "1"
     requests:
       cpu: "2"
       memory: "4Gi"
@@ -26,43 +26,22 @@ deployment:
     - name: OLLAMA_HOST
       value: "0.0.0.0"
     - name: OLLAMA_COMPUTE_TYPE
-      value: "cuda"
-    - name: NVIDIA_VISIBLE_DEVICES
-      value: "0"
-    - name: NVIDIA_DRIVER_CAPABILITIES
-      value: "compute,utility"
-    - name: CUDA_VISIBLE_DEVICES
-      value: "0"
-    - name: CUDA_CACHE_DISABLE
-      value: "0"
-    - name: CUDA_CACHE_MAXSIZE
-      value: "2147483648" # 2GB cache
-    - name: CUDA_CACHE_PATH
-      value: "/data/.cuda-cache"
-    - name: OLLAMA_CUDA_MEMORY_LIMIT
-      value: "6G"  # 75% от доступной памяти GPU
+      value: "cpu"  # По умолчанию используем CPU
     - name: OLLAMA_BATCH_SIZE
       value: "4"
     - name: OLLAMA_PARALLEL_REQUESTS
       value: "2"
     - name: OLLAMA_THREAD_COUNT
       value: "4"
-    - name: OLLAMA_GPU_LAYERS
-      value: "43" # Оптимизировано для deepseek-r1:14b
-    - name: OLLAMA_F16
-      value: "true"
-    - name: OLLAMA_TENSOR_PARALLEL
-      value: "true"
-    - name: OLLAMA_GPU_MEMORY_UTILIZATION
-      value: "0.75"
-    - name: OLLAMA_FLASH_ATTENTION
-      value: "true"
-    - name: OLLAMA_KV_CACHE_STRATEGY
-      value: "dynamic"
     - name: OLLAMA_CONTEXT_WINDOW
       value: "4096"
     - name: OLLAMA_MAX_TOKENS
       value: "2048"
+    - name: OLLAMA_ENABLE_MEMORY_REDUCTION
+      value: "true"
+    - name: OLLAMA_ENABLE_AGGRESSIVE_GC
+      value: "true"
+
 
 
 
