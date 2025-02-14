@@ -7,7 +7,7 @@ release:
 image:
   repository: ollama/ollama
   tag: latest
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
 # Настройки развертывания
 deployment:

@@ -17,11 +17,11 @@ data:
           "code": "async def search_documentation(query: str, max_results: int = 5) -> list:\n    # Реализация поиска\n    pass"
         },
         {
-        "name": "code_analyzer",
+          "name": "code_analyzer",
           "description": "Анализ и оптимизация кода",
           "parameters": {
             "code": "string",
-          "language": "string"
+            "language": "string"
           },
           "code": "async def code_analyzer(code: str, language: str) -> dict:\n    # Анализ кода\n    pass"
         },
@@ -29,9 +29,99 @@ data:
           "name": "memory_optimizer",
           "description": "Оптимизация использования памяти",
           "parameters": {
-          "process_id": "integer"
-        },
+            "process_id": "integer"
+          },
           "code": "async def memory_optimizer(process_id: int) -> dict:\n    # Оптимизация памяти\n    pass"
+        },
+        {
+          "name": "context_manager",
+          "description": "Управление контекстом диалога",
+          "parameters": {
+            "context_size": "integer",
+            "priority": "string"
+          },
+          "code": "async def context_manager(context_size: int, priority: str) -> dict:\n    # Управление контекстом\n    pass"
+        },
+        {
+          "name": "token_analyzer",
+          "description": "Анализ использования токенов",
+          "parameters": {
+            "text": "string",
+            "model": "string"
+          },
+          "code": "async def token_analyzer(text: str, model: str) -> dict:\n    # Анализ токенов\n    pass"
+        },
+        {
+          "name": "prompt_optimizer",
+          "description": "Оптимизация промптов",
+          "parameters": {
+            "prompt": "string",
+            "target_tokens": "integer"
+          },
+          "code": "async def prompt_optimizer(prompt: str, target_tokens: int) -> str:\n    # Оптимизация промптов\n    pass"
+        },
+        {
+          "name": "conversation_summarizer",
+          "description": "Создание саммари диалога",
+          "parameters": {
+            "conversation": "string",
+            "max_length": "integer"
+          },
+          "code": "async def conversation_summarizer(conversation: str, max_length: int) -> str:\n    # Создание саммари\n    pass"
+        },
+        {
+          "name": "semantic_search",
+          "description": "Семантический поиск по истории",
+          "parameters": {
+            "query": "string",
+            "threshold": "float"
+          },
+          "code": "async def semantic_search(query: str, threshold: float) -> list:\n    # Семантический поиск\n    pass"
+        },
+        {
+          "name": "style_adapter",
+          "description": "Адаптация стиля общения",
+          "parameters": {
+            "text": "string",
+            "style": "string"
+          },
+          "code": "async def style_adapter(text: str, style: str) -> str:\n    # Адаптация стиля\n    pass"
+        },
+        {
+          "name": "format_converter",
+          "description": "Конвертация форматов ответов",
+          "parameters": {
+            "content": "string",
+            "target_format": "string"
+          },
+          "code": "async def format_converter(content: str, target_format: str) -> str:\n    # Конвертация форматов\n    pass"
+        },
+        {
+          "name": "template_manager",
+          "description": "Управление шаблонами ответов",
+          "parameters": {
+            "template_id": "string",
+            "variables": "object"
+          },
+          "code": "async def template_manager(template_id: str, variables: dict) -> str:\n    # Управление шаблонами\n    pass"
+        },
+        {
+          "name": "error_analyzer",
+          "description": "Анализ ошибок в ответах",
+          "parameters": {
+            "response": "string",
+            "context": "string"
+          },
+          "code": "async def error_analyzer(response: str, context: str) -> dict:\n    # Анализ ошибок\n    pass"
+        },
+        {
+          "name": "knowledge_validator",
+          "description": "Валидация знаний",
+          "parameters": {
+            "statement": "string",
+            "sources": "array"
+          },
+          "code": "async def knowledge_validator(statement: str, sources: list) -> dict:\n    # Валидация знаний\n    pass"
         }
       ]
     }

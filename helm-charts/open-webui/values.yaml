@@ -6,19 +6,20 @@ release:
 # Основные настройки приложения
 image:
   repository: ghcr.io/open-webui/open-webui
-  tag: ollama
-  pullPolicy: Always
+  tag: latest
+  pullPolicy: IfNotPresent
 
 # Настройки развертывания
 deployment:
   replicas: 1
   resources:
     limits:
-      cpu: 400m        # Дополнительно уменьшено для оптимизации
-      memory: 768Mi    # Оптимизировано под текущие настройки
+      cpu: "4"
+      memory: "16Gi"
+      nvidia.com/gpu: "1"
     requests:
-      cpu: 200m        # Уменьшено для более эффективного использования
-      memory: 384Mi    # Оптимизировано под включенную память
+      cpu: "2"
+      memory: "8Gi"
 
 # Секреты
 secrets:
@@ -31,26 +32,36 @@ secrets:
 
 # Настройки окружения (не секретные)
 env:
-#  - name: MODEL
-#    value: "llama2"
+  - name: MODEL
+    value: "deepseek-r1:14b"
   - name: DEBUG
-    value: "false"  # Отключаем отладку для уменьшения потребления памяти
-#  - name: OLLAMA_MODEL
-#    value: "llama2"
-#  - name: DEFAULT_MODEL
-#    value: "llama2"
+    value: "false"
   - name: ENABLE_MEMORY_REDUCTION
-    value: "true"   # Включаем оптимизацию памяти
+    value: "true"
   - name: COMPUTE_SHAPES
-    value: "false"  # Отключаем вычисление форм для экономии памяти
+    value: "false"
   - name: CUDA_LAUNCH_BLOCKING
-    value: "1"      # Улучшаем управление памятью GPU
+    value: "1"
   - name: MAX_PARALLEL_REQUESTS
-    value: "2"      # Уменьшаем количество параллельных запросов для экономии памяти
+    value: "2"
   - name: ENABLE_AGGRESSIVE_GC
-    value: "true"   # Включаем агрессивный сборщик мусора
+    value: "true"
   - name: NODE_OPTIONS
-    value: "--max-old-space-size=384"  # Ограничиваем использование памяти Node.js
+    value: "--max-old-space-size=384"
+  - name: MODEL_CONTEXT_WINDOW
+    value: "4096"
+  - name: BATCH_SIZE
+    value: "8"
+  - name: MAX_TOKENS
+    value: "2048"
+  - name: TEMPERATURE
+    value: "0.7"
+  - name: TOP_P
+    value: "0.9"
+  - name: FREQUENCY_PENALTY
+    value: "0.1"
+  - name: PRESENCE_PENALTY
+    value: "0.1"
 
 # Настройки сервиса
 service:
