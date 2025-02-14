@@ -15,14 +15,6 @@ spec:
       labels:
         app: ollama
     spec:
-      {{- if .Values.deployment.useGPU }}
-      nodeSelector:
-        nvidia.com/gpu: "present"
-      tolerations:
-      - key: "nvidia.com/gpu"
-        operator: "Exists"
-        effect: "NoSchedule"
-      {{- end }}
       containers:
         - name: ollama
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -30,26 +22,17 @@ spec:
           env:
             - name: HOME
               value: /data
-            {{- if .Values.deployment.useGPU }}
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "compute,utility"
             - name: CUDA_VISIBLE_DEVICES
               value: "all"
-            - name: OLLAMA_COMPUTE_TYPE
-              value: "cuda"
-            {{- end }}
             {{- with .Values.deployment.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-            resources:
-            {{- if .Values.deployment.useGPU }}
-            {{- toYaml .Values.deployment.resources.gpu | nindent 12 }}
-            {{- else }}
+          resources:
             {{- toYaml .Values.deployment.resources.cpu | nindent 12 }}
-            {{- end }}
-
           volumeMounts:
             - name: ollama-data
               mountPath: /data
@@ -57,6 +40,7 @@ spec:
         - name: ollama-data
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-pvc
+
 
 
 
