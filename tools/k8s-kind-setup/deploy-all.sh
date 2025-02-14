@@ -74,27 +74,20 @@ check_error "Не удалось установить cert-manager"
 
 # 4. Настройка CoreDNS
 echo -e "${CYAN}Настройка CoreDNS...${NC}"
+mkdir -p ./manifests
 kubectl apply -f ./manifests/coredns-custom-config.yaml
 kubectl apply -f ./manifests/coredns-patch.yaml
 kubectl rollout restart deployment coredns -n kube-system
 check_error "Не удалось настроить CoreDNS"
 
-# 5. Установка NVIDIA device plugin
-echo -e "${CYAN}Установка NVIDIA device plugin...${NC}"
-kubectl apply -f ../helm-charts/ollama/templates/nvidia-device-plugin.yaml
-check_error "Не удалось установить NVIDIA device plugin"
-
-# 6. Добавление метки GPU для Ollama
-echo -e "${CYAN}Добавление метки GPU для узлов...${NC}"
-kubectl label nodes --all nvidia.com/gpu=present --overwrite
-check_error "Не удалось добавить метку GPU"
-
-# 7. Установка Ollama
+# 5. Установка Ollama с поддержкой GPU
 echo -e "${CYAN}Установка Ollama...${NC}"
 helm upgrade --install ollama ../helm-charts/ollama \
 	--namespace prod \
+	--create-namespace \
 	--values ../helm-charts/ollama/values.yaml \
 	--wait
+
 check_error "Не удалось установить Ollama"
 
 # 8. Установка Open WebUI

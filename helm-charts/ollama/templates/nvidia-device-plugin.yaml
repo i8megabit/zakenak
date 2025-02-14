@@ -2,7 +2,15 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: nvidia-device-plugin-daemonset
-  namespace: prod
+  namespace: {{ .Values.release.namespace }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: nvidia-device-plugin
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Values.release.namespace }}
 spec:
   selector:
     matchLabels:
@@ -11,6 +19,8 @@ spec:
     metadata:
       labels:
         name: nvidia-device-plugin-ds
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       tolerations:
       - key: nvidia.com/gpu
