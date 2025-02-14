@@ -1,28 +1,7 @@
 #!/bin/bash
 
-# Цвета для вывода
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m'
-
-# Функция проверки ошибок
-check_error() {
-	if [ $? -ne 0 ]; then
-		echo -e "${RED}Ошибка: $1${NC}"
-		exit 1
-	fi
-}
-
-# Функция ожидания готовности подов
-wait_for_pods() {
-	namespace=$1
-	label=$2
-	echo -e "${CYAN}Ожидание готовности подов в namespace $namespace с меткой $label...${NC}"
-	kubectl wait --for=condition=Ready pods -l $label -n $namespace --timeout=300s
-	check_error "Поды не готовы в namespace $namespace"
-}
+# Загрузка общих переменных
+source ./env.sh
 
 echo -e "${YELLOW}Начинаем развертывание компонентов...${NC}"
 
@@ -53,8 +32,8 @@ recreate_cluster
 echo -e "${CYAN}Установка Ingress Controller...${NC}"
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
-helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
-	--namespace ingress-nginx \
+helm upgrade --install $RELEASE_INGRESS ingress-nginx/ingress-nginx \
+	--namespace $NAMESPACE_INGRESS \
 	--create-namespace \
 	--set controller.service.type=NodePort \
 	--set controller.hostPort.enabled=true \
@@ -65,9 +44,9 @@ check_error "Не удалось установить Ingress Controller"
 echo -e "${CYAN}Установка cert-manager...${NC}"
 helm repo add jetstack https://charts.jetstack.io
 helm repo update
-kubectl create namespace prod --dry-run=client -o yaml | kubectl apply -f -
-helm upgrade --install cert-manager jetstack/cert-manager \
-	--namespace prod \
+kubectl create namespace $NAMESPACE_PROD --dry-run=client -o yaml | kubectl apply -f -
+helm upgrade --install $RELEASE_CERT_MANAGER jetstack/cert-manager \
+	--namespace $NAMESPACE_CERT_MANAGER \
 	--set installCRDs=true \
 	--wait
 check_error "Не удалось установить cert-manager"
@@ -82,29 +61,28 @@ check_error "Не удалось настроить CoreDNS"
 
 # 5. Установка Ollama с поддержкой GPU
 echo -e "${CYAN}Установка Ollama...${NC}"
-helm upgrade --install ollama ../helm-charts/ollama \
-	--namespace prod \
+helm upgrade --install $RELEASE_OLLAMA $CHART_PATH_OLLAMA \
+	--namespace $NAMESPACE_PROD \
 	--create-namespace \
-	--values ../helm-charts/ollama/values.yaml \
+	--values $CHART_PATH_OLLAMA/values.yaml \
 	--wait
-
 check_error "Не удалось установить Ollama"
 
-# 8. Установка Open WebUI
+# 6. Установка Open WebUI
 echo -e "${CYAN}Установка Open WebUI...${NC}"
-helm upgrade --install open-webui ../helm-charts/open-webui \
-	--namespace prod \
-	--values ../helm-charts/open-webui/values.yaml \
+helm upgrade --install $RELEASE_WEBUI $CHART_PATH_WEBUI \
+	--namespace $NAMESPACE_PROD \
+	--values $CHART_PATH_WEBUI/values.yaml \
 	--wait
 check_error "Не удалось установить Open WebUI"
 
 # Проверка статуса развертывания
 echo -e "${CYAN}Проверка статуса всех компонентов...${NC}"
-kubectl get pods -n prod
-kubectl get pods -n ingress-nginx
-kubectl get ingress -n prod
+kubectl get pods -n $NAMESPACE_PROD
+kubectl get pods -n $NAMESPACE_INGRESS
+kubectl get ingress -n $NAMESPACE_PROD
 
 echo -e "${GREEN}Развертывание успешно завершено!${NC}"
 echo -e "${YELLOW}Для проверки доступности сервисов:${NC}"
-echo -e "1. Ollama API: https://ollama.prod.local"
-echo -e "2. Open WebUI: https://webui.prod.local"
+echo -e "1. Ollama API: https://$OLLAMA_HOST"
+echo -e "2. Open WebUI: https://$WEBUI_HOST"

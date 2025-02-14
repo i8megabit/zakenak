@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Загрузка общих переменных
+source ./env.sh
+
 echo "Installing Nginx Ingress Controller..."
 
 # Добавление репозитория ingress-nginx
@@ -8,7 +11,7 @@ helm repo update
 
 # Создание namespace prod если он не существует
 echo "Creating prod namespace..."
-kubectl create namespace prod --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace $NAMESPACE_PROD --dry-run=client -o yaml | kubectl apply -f -
 
 # Настройка CoreDNS
 echo "Configuring CoreDNS..."
@@ -35,14 +38,14 @@ cat <<EOF | kubectl apply -f -
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: selfsigned-issuer
+  name: $CA_ISSUER_NAME
 spec:
   selfSigned: {}
 EOF
 
 # Ожидание готовности первого ClusterIssuer
 echo "Waiting for selfsigned-issuer to be ready..."
-kubectl wait --for=condition=Ready clusterissuer selfsigned-issuer --timeout=60s
+kubectl wait --for=condition=Ready clusterissuer $CA_ISSUER_NAME --timeout=60s
 
 # Создание корневого CA сертификата
 echo "Creating root CA certificate..."
@@ -50,34 +53,34 @@ cat <<EOF | kubectl apply -f -
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: local-ca
-  namespace: prod
+  name: $CA_CERT_NAME
+  namespace: $NAMESPACE_PROD
 spec:
   isCA: true
-  commonName: local-ca
-  secretName: local-ca-key-pair
+  commonName: $CA_CERT_NAME
+  secretName: $CA_SECRET_NAME
   privateKey:
     algorithm: ECDSA
     size: 256
   issuerRef:
-    name: selfsigned-issuer
+    name: $CA_ISSUER_NAME
     kind: ClusterIssuer
     group: cert-manager.io
 EOF
 
 # Ожидание создания CA сертификата
 echo "Waiting for CA certificate to be ready..."
-kubectl wait --for=condition=Ready certificate -n prod local-ca --timeout=60s
+kubectl wait --for=condition=Ready certificate -n $NAMESPACE_PROD $CA_CERT_NAME --timeout=60s
 
 # Создание ClusterIssuer использующего CA сертификат
 cat <<EOF | kubectl apply -f -
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: local-ca-issuer
+  name: $CA_ISSUER_NAME
 spec:
   ca:
-    secretName: local-ca-key-pair
+    secretName: $CA_SECRET_NAME
 EOF
 
 # Ожидание готовности второго ClusterIssuer
@@ -91,16 +94,16 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: ollama-tls
-  namespace: prod
+  namespace: $NAMESPACE_PROD
 spec:
   secretName: ollama-tls
   duration: 2160h
   renewBefore: 360h
-  commonName: ollama.prod.local
+  commonName: $OLLAMA_HOST
   dnsNames:
-    - "ollama.prod.local"
+    - "$OLLAMA_HOST"
   issuerRef:
-    name: local-ca-issuer
+    name: $CA_ISSUER_NAME
     kind: ClusterIssuer
     group: cert-manager.io
 ---
@@ -113,9 +116,9 @@ spec:
   secretName: open-webui-tls
   duration: 2160h
   renewBefore: 360h
-  commonName: webui.prod.local
+  commonName: $WEBUI_HOST
   dnsNames:
-    - "webui.prod.local"
+    - "$WEBUI_HOST"
   issuerRef:
     name: local-ca-issuer
     kind: ClusterIssuer
@@ -142,45 +145,45 @@ EOF
 
 # Установка ingress-nginx с поддержкой TLS
 helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
-		--namespace ingress-nginx \
+--namespace $NAMESPACE_INGRESS \
 		--create-namespace \
 		--set controller.service.type=NodePort \
 		--set controller.hostPort.enabled=true \
 		--set controller.service.ports.http=80 \
 		--set controller.service.ports.https=443 \
-		--set controller.extraArgs.default-ssl-certificate=prod/ollama-tls \
+--set controller.extraArgs.default-ssl-certificate=$NAMESPACE_PROD/ollama-tls \
 		--wait
 
 # Проверка установки и готовности сервисов
 echo "Checking ingress-nginx installation..."
-kubectl get pods -n ingress-nginx
-kubectl get svc -n ingress-nginx
+kubectl get pods -n $NAMESPACE_INGRESS
+kubectl get svc -n $NAMESPACE_INGRESS
 
 echo "Waiting for Certificate resources to be ready..."
-kubectl wait --for=condition=Ready certificate -n prod ollama-tls --timeout=120s
-kubectl wait --for=condition=Ready certificate -n prod open-webui-tls --timeout=120s
-kubectl wait --for=condition=Ready certificate -n prod sidecar-injector-tls --timeout=120s
+kubectl wait --for=condition=Ready certificate -n $NAMESPACE_PROD ollama-tls --timeout=120s
+kubectl wait --for=condition=Ready certificate -n $NAMESPACE_PROD open-webui-tls --timeout=120s
+kubectl wait --for=condition=Ready certificate -n $NAMESPACE_PROD sidecar-injector-tls --timeout=120s
 
 echo "Waiting for services to be ready..."
-kubectl wait --for=condition=Ready pod -l app=open-webui -n prod --timeout=180s
-kubectl wait --for=condition=Ready pod -l app=ollama -n prod --timeout=180s
+kubectl wait --for=condition=Ready pod -l app=open-webui -n $NAMESPACE_PROD --timeout=180s
+kubectl wait --for=condition=Ready pod -l app=ollama -n $NAMESPACE_PROD --timeout=180s
 
 echo "Checking service endpoints..."
-kubectl get endpoints -n prod open-webui
-kubectl get endpoints -n prod ollama
+kubectl get endpoints -n $NAMESPACE_PROD open-webui
+kubectl get endpoints -n $NAMESPACE_PROD ollama
 
 echo "Checking Certificate and Secret resources..."
-kubectl get certificates -n prod
-kubectl get secrets -n prod
+kubectl get certificates -n $NAMESPACE_PROD
+kubectl get secrets -n $NAMESPACE_PROD
 
 echo "Checking Ingress resources..."
-kubectl get ingress -n prod
+kubectl get ingress -n $NAMESPACE_PROD
 
 # Проверка DNS резолвинга
 echo "Checking DNS resolution..."
-for domain in "ollama.prod.local" "webui.prod.local"; do
+for domain in "$OLLAMA_HOST" "$WEBUI_HOST"; do
   echo "Testing DNS resolution for $domain..."
-  if ! kubectl run -n prod -it --rm --restart=Never --image=busybox dns-test-$RANDOM -- nslookup $domain > /dev/null 2>&1; then
+  if ! kubectl run -n $NAMESPACE_PROD -it --rm --restart=Never --image=busybox dns-test-$RANDOM -- nslookup $domain > /dev/null 2>&1; then
     echo "Warning: DNS resolution failed for $domain"
   fi
 done
