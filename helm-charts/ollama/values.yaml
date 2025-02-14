@@ -16,7 +16,7 @@ deployment:
     limits:
       cpu: "8"
       memory: "16Gi"
-      nvidia.com/gpu: "0"
+      nvidia.com/gpu: "1"
     requests:
       cpu: "4"
       memory: "8Gi"
@@ -28,7 +28,7 @@ deployment:
     - name: OLLAMA_COMPUTE_TYPE
       value: "cuda"
     - name: NVIDIA_VISIBLE_DEVICES
-      value: "all"
+      value: "0"
     - name: NVIDIA_DRIVER_CAPABILITIES
       value: "compute,utility"
     - name: CUDA_VISIBLE_DEVICES
@@ -36,7 +36,7 @@ deployment:
     - name: CUDA_CACHE_DISABLE
       value: "0"
     - name: CUDA_CACHE_MAXSIZE
-      value: "2147483648"
+      value: "2147483648" # 2GB cache
     - name: CUDA_CACHE_PATH
       value: "/data/.cuda-cache"
     - name: OLLAMA_CUDA_MEMORY_LIMIT

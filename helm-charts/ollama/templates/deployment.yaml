@@ -14,10 +14,9 @@ spec:
     metadata:
       labels:
         app: ollama
-      annotations:
-        nvidia.com/cuda-version: "12.8"
     spec:
       nodeSelector:
+        kubernetes.io/os: linux
         nvidia.com/gpu: "present"
       tolerations:
       - key: "nvidia.com/gpu"
@@ -54,15 +53,16 @@ spec:
             {{- end }}
           resources:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
-          volumeMounts:
-            - name: ollama-data
-              mountPath: /data
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+          volumeMounts:
+            - name: ollama-data
+              mountPath: /data
       volumes:
         - name: ollama-data
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-pvc
+
 
