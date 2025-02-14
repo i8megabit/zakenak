@@ -19,7 +19,7 @@ spec:
       priorityClassName: system-node-critical
       containers:
       - name: nvidia-device-plugin-ctr
-        image: nvidia/k8s-device-plugin:v0.14.1
+        image: nvcr.io/nvidia/k8s-device-plugin:v0.14.1
         args: ["--fail-on-init-error=false"]
         env:
           - name: NVIDIA_VISIBLE_DEVICES
