@@ -15,7 +15,6 @@ spec:
       labels:
         app: open-webui
     spec:
-      runtimeClassName: nvidia
       containers:
       - name: open-webui
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -30,14 +29,8 @@ spec:
         {{- with .Values.env }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-
         resources:
           {{- toYaml .Values.deployment.resources | nindent 10 }}
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-          drop:
-          - ALL
         {{- if .Values.persistence.enabled }}
         volumeMounts:
         - name: data
@@ -49,3 +42,4 @@ spec:
         persistentVolumeClaim:
           claimName: {{ .Release.Name }}-pvc
       {{- end }}
+
