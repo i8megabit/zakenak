@@ -14,11 +14,11 @@ deployment:
   replicas: 1
   resources:
     limits:
+      cpu: "2"
+      memory: "4Gi"
+    requests:
       cpu: "1"
       memory: "2Gi"
-    requests:
-      cpu: "500m"
-      memory: "1Gi"
 
 
 
@@ -33,22 +33,20 @@ secrets:
 
 # Настройки окружения (не секретные)
 env:
-  - name: OLLAMA_MODEL
+  - name: MODEL
     value: "deepseek-r1:14b"
+  - name: OLLAMA_API_BASE
+    value: "http://ollama.prod.svc.cluster.local:11434/api"
   - name: DEBUG
     value: "false"
   - name: ENABLE_MEMORY_REDUCTION
     value: "true"
   - name: COMPUTE_SHAPES
     value: "false"
-  - name: CUDA_LAUNCH_BLOCKING
-    value: "1"
   - name: MAX_PARALLEL_REQUESTS
     value: "2"
-  - name: ENABLE_AGGRESSIVE_GC
-    value: "true"
   - name: NODE_OPTIONS
-    value: "--max-old-space-size=8192"
+    value: "--max-old-space-size=3072"
   - name: MODEL_CONTEXT_WINDOW
     value: "4096"
   - name: BATCH_SIZE
@@ -59,10 +57,7 @@ env:
     value: "0.7"
   - name: TOP_P
     value: "0.9"
-  - name: FREQUENCY_PENALTY
-    value: "0.1"
-  - name: PRESENCE_PENALTY
-    value: "0.1"
+
 
 
 
