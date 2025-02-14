@@ -62,18 +62,17 @@ env:
     value: "0.1"
   - name: PRESENCE_PENALTY
     value: "0.1"
-  - name: ENABLE_GRAMMAR_OPTIMIZATION
+  - name: ENABLE_TENSOR_PARALLEL
     value: "true"
-  - name: GRAMMAR_CACHE_SIZE
-    value: "1024"
-  - name: REQUEST_OPTIMIZATION_LEVEL
-    value: "aggressive"
-  - name: ENABLE_BATCH_PROCESSING
+  - name: GPU_MEMORY_UTILIZATION
+    value: "0.95"
+  - name: ENABLE_FLASH_ATTENTION
     value: "true"
-  - name: ENABLE_GPU_OPTIMIZATION
+  - name: KV_CACHE_STRATEGY
+    value: "dynamic"
+  - name: ENABLE_CUDA_GRAPHS
     value: "true"
-  - name: DEEPSEEK_SPECIFIC_OPTIMIZATIONS
-    value: "true"
+
 
 # Настройки сервиса
 service:

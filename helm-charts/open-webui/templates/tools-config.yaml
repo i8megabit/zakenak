@@ -214,37 +214,94 @@ data:
           "code": "async def response_validator(response: str, criteria: dict, threshold: float) -> dict:\n    # Валидация ответов\n    pass"
         },
         {
-          "name": "batch_request_optimizer",
-          "description": "Оптимизация пакетной обработки запросов",
+          "name": "deepseek_optimizer",
+          "description": "Оптимизация параметров для модели deepseek-r1:14b",
           "parameters": {
-          "requests": "array",
-          "batch_size": "integer",
-          "priority": "string"
+          "model_config": "object",
+          "performance_metrics": "object"
           },
-          "code": "async def batch_request_optimizer(requests: list, batch_size: int, priority: str) -> dict:\n    # Оптимизация пакетных запросов\n    pass"
+          "code": "async def deepseek_optimizer(model_config: dict, performance_metrics: dict) -> dict:\n    try:\n        optimized_config = optimize_model_parameters(model_config, performance_metrics)\n        return {\n            'optimized_config': optimized_config,\n            'estimated_performance': calculate_performance_impact(optimized_config)\n        }\n    except Exception as e:\n        return {'error': str(e)}"
         },
         {
-          "name": "advanced_grammar_optimizer",
-          "description": "Улучшение лексики и грамматики текста с использованием продвинутых алгоритмов",
+          "name": "memory_profiler",
+          "description": "Профилирование использования памяти",
           "parameters": {
-          "text": "string",
-          "language": "string",
-          "style": "string",
-          "formality_level": "string",
-          "domain": "string"
+          "process_name": "string",
+          "duration": "integer"
           },
-          "code": "async def advanced_grammar_optimizer(text: str, language: str = 'ru', style: str = 'formal', formality_level: str = 'high', domain: str = 'general') -> dict:\n    try:\n        # Морфологический анализ\n        morphological_analysis = analyze_morphology(text)\n        \n        # Синтаксический анализ\n        syntax_analysis = analyze_syntax(text)\n        \n        # Семантический анализ\n        semantic_analysis = analyze_semantics(text, domain)\n        \n        # Стилистический анализ\n        style_analysis = analyze_style(text, style, formality_level)\n        \n        # Применение оптимизаций\n        optimized_text = apply_grammar_optimizations(\n            text,\n            morphological_analysis,\n            syntax_analysis,\n            semantic_analysis,\n            style_analysis\n        )\n        \n        return {\n            'original_text': text,\n            'optimized_text': optimized_text,\n            'improvements': {\n              
-        },  'morphological': morphological_analysis['improvements'],\n                'syntactic': syntax_analysis['improvements'],\n                'semantic': semantic_analysis['improvements'],\n                'stylistic': style_analysis['improvements']\n            },\n            'metrics': {\n                'readability_score': calculate_readability(optimized_text),\n                'formality_score': calculate_formality(optimized_text),\n                'domain_relevance': calculate_domain_relevance(optimized_text, domain)\n            }\n        }\n    except Exception as e:\n        return {'error': str(e)}"
+          "code": "async def memory_profiler(process_name: str, duration: int) -> dict:\n    try:\n        profile_data = collect_memory_metrics(process_name, duration)\n        return analyze_memory_usage(profile_data)\n    except Exception as e:\n        return {'error': str(e)}"
+        },
         {
-          "name": "deepseek_request_optimizer",
-          "description": "Оптимизация запросов для модели deepseek-r1:14b",
+          "name": "gpu_optimizer",
+          "description": "Оптимизация использования GPU",
           "parameters": {
-          "request": "object",
-          "context_size": "integer",
-          "priority": "string",
-          "optimization_level": "string"
+          "gpu_config": "object",
+          "workload_type": "string"
           },
-          "code": "async def deepseek_request_optimizer(request: dict, context_size: int = 4096, priority: str = 'normal', optimization_level: str = 'aggressive') -> dict:\n    try:\n        # Оптимизация параметров модели\n        model_params = {\n            'temperature': 0.7,\n            'top_p': 0.9,\n            'frequency_penalty': 0.1,\n            'presence_penalty': 0.1,\n            'max_tokens': min(2048, context_size // 2),\n            'stop_sequences': request.get('stop_sequences', [])\n        }\n        \n        # Оптимизация контекста\n        optimized_context = optimize_context(\n            request.get('context', ''),\n            context_size,\n            optimization_level\n        )\n        \n        # Оптимизация промпта\n        optimized_prompt = optimize_prompt(\n            request.get('prompt', ''),\n            model_params['max_tokens'],\n            optimization_level\n        )\n        \n        # Настройка параллельной обработки\n        paralle
-        }l_config = {\n            'batch_size': 8,\n            'max_parallel_requests': 2,\n            'priority_level': priority,\n            'memory_optimization': True\n        }\n        \n        # Применение оптимизаций\n        optimized_request = {\n            'model': 'deepseek-r1:14b',\n            'prompt': optimized_prompt,\n            'context': optimized_context,\n            'parameters': model_params,\n            'processing_config': parallel_config\n        }\n        \n        return {\n            'optimized_request': optimized_request,\n            'estimated_tokens': estimate_tokens(optimized_prompt, optimized_context),\n            'optimization_metrics': {\n                'context_reduction': calculate_reduction(request.get('context', ''), optimized_context),\n                'prompt_efficiency': calculate_prompt_efficiency(optimized_prompt),\n                'memory_usage': estimate_memory_usage(optimized_request)\n            }\n        }\n    except Ex
-        ]ception as e:\n        return {'error': str(e)}"
+          "code": "async def gpu_optimizer(gpu_config: dict, workload_type: str) -> dict:\n    try:\n        return optimize_gpu_settings(gpu_config, workload_type)\n    except Exception as e:\n        return {'error': str(e)}"
+        },
+        {
+          "name": "batch_size_optimizer",
+          "description": "Оптимизация размера батча",
+          "parameters": {
+          "current_batch_size": "integer",
+          "memory_limit": "integer"
+          },
+          "code": "async def batch_size_optimizer(current_batch_size: int, memory_limit: int) -> dict:\n    try:\n        return calculate_optimal_batch_size(current_batch_size, memory_limit)\n    except Exception as e:\n        return {'error': str(e)}"
+        },
+        {
+          "name": "context_window_manager",
+          "description": "Управление размером контекстного окна",
+          "parameters": {
+          "text_length": "integer",
+          "max_context": "integer"
+          },
+          "code": "async def context_window_manager(text_length: int, max_context: int) -> dict:\n    try:\n        return optimize_context_window(text_length, max_context)\n    except Exception as e:\n        return {'error': str(e)}"
+        },
+        {
+          "name": "performance_monitor",
+          "description": "Мониторинг производительности модели",
+          "parameters": {
+          "metrics": "array",
+          "interval": "integer"
+          },
+          "code": "async def performance_monitor(metrics: list, interval: int) -> dict:\n    try:\n        return collect_performance_metrics(metrics, interval)\n    except Exception as e:\n        return {'error': str(e)}"
+        },
+        {
+          "name": "resource_allocator",
+          "description": "Оптимальное распределение ресурсов",
+          "parameters": {
+          "available_resources": "object",
+          "priority": "string"
+          },
+          "code": "async def resource_allocator(available_resources: dict, priority: str) -> dict:\n    try:\n        return allocate_resources(available_resources, priority)\n    except Exception as e:\n        return {'error': str(e)}"
+        },
+        {
+          "name": "cache_optimizer",
+          "description": "Оптимизация кэширования",
+          "parameters": {
+          "cache_config": "object",
+          "usage_patterns": "array"
+          },
+          "code": "async def cache_optimizer(cache_config: dict, usage_patterns: list) -> dict:\n    try:\n        return optimize_cache_settings(cache_config, usage_patterns)\n    except Exception as e:\n        return {'error': str(e)}"
+        },
+        {
+          "name": "thread_manager",
+          "description": "Управление потоками обработки",
+          "parameters": {
+          "thread_count": "integer",
+          "workload": "object"
+          },
+          "code": "async def thread_manager(thread_count: int, workload: dict) -> dict:\n    try:\n        return optimize_thread_allocation(thread_count, workload)\n    except Exception as e:\n        return {'error': str(e)}"
+        },
+        {
+          "name": "response_time_optimizer",
+          "description": "Оптимизация времени отклика",
+          "parameters": {
+          "current_latency": "integer",
+          "target_latency": "integer"
+          },
+          "code": "async def response_time_optimizer(current_latency: int, target_latency: int) -> dict:\n    try:\n        return optimize_response_time(current_latency, target_latency)\n    except Exception as e:\n        return {'error': str(e)}"
+        }
+        ]
       }
