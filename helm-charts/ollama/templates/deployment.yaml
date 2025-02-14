@@ -5,6 +5,10 @@ metadata:
   namespace: {{ .Values.release.namespace }}
   labels:
     app: ollama
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Values.release.namespace }}
 spec:
   replicas: {{ .Values.deployment.replicas }}
   selector:
@@ -18,12 +22,16 @@ spec:
         nvidia.com/cuda-version: "12.8"
     spec:
       nodeSelector:
-        accelerator: nvidia-gpu
+        kubernetes.io/os: linux
+        nvidia.com/gpu: "present"
       tolerations:
       - key: "nvidia.com/gpu"
         operator: "Exists"
         effect: "NoSchedule"
       initContainers:
+        - name: nvidia-driver-validation
+          image: "nvidia/cuda:12.8.0-base-ubuntu22.04"
+          command: ["nvidia-smi"]
         - name: init-ollama-dir
           image: busybox:latest
           command:
@@ -43,24 +51,27 @@ spec:
           env:
             - name: HOME
               value: /data
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility,video"
+            - name: CUDA_VISIBLE_DEVICES
+              value: "all"
             {{- with .Values.deployment.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           resources:
-            {{- toYaml .Values.deployment.resources | nindent 12 }}
-          securityContext:
-            capabilities:
-              add: ["SYS_NICE"]
+            limits:
+              nvidia.com/gpu: "1"
+              cpu: {{ .Values.deployment.resources.limits.cpu }}
+              memory: {{ .Values.deployment.resources.limits.memory }}
+            requests:
+              cpu: {{ .Values.deployment.resources.requests.cpu }}
+              memory: {{ .Values.deployment.resources.requests.memory }}
           volumeMounts:
             - name: ollama-data
               mountPath: /data
-            - name: nvidia-driver
-              mountPath: /usr/local/nvidia
-              readOnly: true
       volumes:
         - name: ollama-data
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-pvc
-        - name: nvidia-driver
-          hostPath:
-            path: /usr/lib/nvidia
