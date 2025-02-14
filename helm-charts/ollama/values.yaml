@@ -14,12 +14,12 @@ deployment:
   replicas: 1
   resources:
     limits:
-      cpu: "8"
-      memory: "16Gi"
-      nvidia.com/gpu: "1"
-    requests:
       cpu: "4"
       memory: "8Gi"
+      nvidia.com/gpu: "1"
+    requests:
+      cpu: "2"
+      memory: "4Gi"
   env:
     - name: OLLAMA_MODELS
       value: "deepseek-r1:14b"
@@ -40,15 +40,15 @@ deployment:
     - name: CUDA_CACHE_PATH
       value: "/data/.cuda-cache"
     - name: OLLAMA_CUDA_MEMORY_LIMIT
-      value: "12G"
+      value: "6G"  # 75% от доступной памяти GPU
     - name: OLLAMA_BATCH_SIZE
       value: "4"
     - name: OLLAMA_PARALLEL_REQUESTS
       value: "2"
     - name: OLLAMA_THREAD_COUNT
-      value: "8"
+      value: "4"
     - name: OLLAMA_GPU_LAYERS
-      value: "43"
+      value: "43" # Оптимизировано для deepseek-r1:14b
     - name: OLLAMA_F16
       value: "true"
     - name: OLLAMA_TENSOR_PARALLEL

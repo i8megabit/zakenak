@@ -15,9 +15,9 @@ spec:
       labels:
         app: ollama
     spec:
-      nodeSelector:
-        kubernetes.io/os: linux
+        nodeSelector:
         nvidia.com/gpu: "present"
+
       tolerations:
       - key: "nvidia.com/gpu"
         operator: "Exists"
@@ -53,10 +53,12 @@ spec:
             {{- end }}
           resources:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
-          securityContext:
+            securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+            runAsUser: 1000
+            runAsGroup: 1000
           volumeMounts:
             - name: ollama-data
               mountPath: /data
