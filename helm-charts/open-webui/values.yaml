@@ -14,11 +14,11 @@ deployment:
   replicas: 1
   resources:
     limits:
-      cpu: "8"
-      memory: "16Gi"
+      cpu: "2"
+      memory: "4Gi"
     requests:
-      cpu: "4"
-      memory: "8Gi"
+      cpu: "500m"
+      memory: "1Gi"
 
 # Секреты
 secrets:
@@ -42,15 +42,15 @@ env:
   - name: COMPUTE_SHAPES
     value: "false"
   - name: MAX_PARALLEL_REQUESTS
-    value: "8"
+    value: "2"
   - name: NODE_OPTIONS
-    value: "--max-old-space-size=12288"
+    value: "--max-old-space-size=3072"
   - name: MODEL_CONTEXT_WINDOW
-    value: "16384"
+    value: "4096"
   - name: BATCH_SIZE
-    value: "32"
+    value: "4"
   - name: MAX_TOKENS
-    value: "8192"
+    value: "2048"
   - name: TEMPERATURE
     value: "0.7"
   - name: TOP_P

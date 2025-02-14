@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         app: ollama
+      annotations:
+        nvidia.com/cuda-version: "12.8"
     spec:
       nodeSelector:
         nvidia.com/gpu: "present"
@@ -21,13 +23,14 @@ spec:
       - key: "nvidia.com/gpu"
         operator: "Exists"
         effect: "NoSchedule"
-      - key: "nvidia.com/gpu"
-        operator: "Equal"
-        value: "present"
-        effect: "NoSchedule"
       initContainers:
+        - name: nvidia-driver-validation
+          image: "nvidia/cuda:12.8.0-base-ubuntu22.04"
+          command: ["nvidia-smi"]
+          resources:
+            limits:
+              nvidia.com/gpu: "1"
         - name: init-ollama-dir
-
           image: busybox:latest
           command:
             - /bin/sh
@@ -46,27 +49,20 @@ spec:
           env:
             - name: HOME
               value: /data
-            - name: NVIDIA_VISIBLE_DEVICES
-              value: "all"
-            - name: NVIDIA_DRIVER_CAPABILITIES
-                value: "compute,utility"
-            - name: CUDA_VISIBLE_DEVICES
-              value: "all"
             {{- with .Values.deployment.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           resources:
-            limits:
-              nvidia.com/gpu: "1"
-              cpu: {{ .Values.deployment.resources.limits.cpu }}
-              memory: {{ .Values.deployment.resources.limits.memory }}
-            requests:
-              cpu: {{ .Values.deployment.resources.requests.cpu }}
-              memory: {{ .Values.deployment.resources.requests.memory }}
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
           volumeMounts:
             - name: ollama-data
               mountPath: /data
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
       volumes:
         - name: ollama-data
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-pvc
+
