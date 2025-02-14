@@ -24,17 +24,21 @@ deployment:
 secrets:
   openai:
     apiKey: ""
-    apiBase: "https://api.openai.com/v1"
+    apiBase: ""
   ollama:
-    apiBase: "http://ollama.prod.svc.cluster.prod.local:11434/api"
+    apiBase: "http://ollama.prod.svc.cluster.local:11434/api"
   custom: {}
 
 # Настройки окружения (не секретные)
 env:
   - name: MODEL
-    value: "gpt-3.5-turbo"
+    value: "llama2"
   - name: DEBUG
     value: "true"
+  - name: OLLAMA_MODEL
+    value: "llama2"
+  - name: DEFAULT_MODEL
+    value: "llama2"
 
 # Настройки сервиса
 service:
