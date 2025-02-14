@@ -47,7 +47,7 @@ env:
   - name: ENABLE_AGGRESSIVE_GC
     value: "true"
   - name: NODE_OPTIONS
-    value: "--max-old-space-size=384"
+    value: "--max-old-space-size=8192"
   - name: MODEL_CONTEXT_WINDOW
     value: "4096"
   - name: BATCH_SIZE
@@ -62,6 +62,18 @@ env:
     value: "0.1"
   - name: PRESENCE_PENALTY
     value: "0.1"
+  - name: ENABLE_GRAMMAR_OPTIMIZATION
+    value: "true"
+  - name: GRAMMAR_CACHE_SIZE
+    value: "1024"
+  - name: REQUEST_OPTIMIZATION_LEVEL
+    value: "aggressive"
+  - name: ENABLE_BATCH_PROCESSING
+    value: "true"
+  - name: ENABLE_GPU_OPTIMIZATION
+    value: "true"
+  - name: DEEPSEEK_SPECIFIC_OPTIMIZATIONS
+    value: "true"
 
 # Настройки сервиса
 service:

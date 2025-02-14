@@ -15,10 +15,44 @@ deployment:
   resources:
     limits:
       cpu: "16"
-      memory: "24Gi"
+      memory: "32Gi"
+      nvidia.com/gpu: "1"
     requests:
-      cpu: "2"
-      memory: "4Gi"
+      cpu: "8"
+      memory: "16Gi"
+  env:
+    - name: OLLAMA_MODELS
+      value: "deepseek-r1:14b"
+    - name: OLLAMA_HOST
+      value: "0.0.0.0"
+    - name: OLLAMA_COMPUTE_TYPE
+      value: "cuda"
+    - name: OLLAMA_BATCH_SIZE
+      value: "8"
+    - name: OLLAMA_PARALLEL_REQUESTS
+      value: "2"
+    - name: OLLAMA_GRAMMAR_CACHE
+      value: "true"
+    - name: OLLAMA_GRAMMAR_CACHE_SIZE
+      value: "1024"
+    - name: OLLAMA_REQUEST_TIMEOUT
+      value: "300"
+    - name: OLLAMA_ENABLE_OPTIMIZATION
+      value: "true"
+    - name: OLLAMA_MEMORY_UTILIZATION
+      value: "high"
+    - name: OLLAMA_THREAD_COUNT
+      value: "8"
+    - name: OLLAMA_CONTEXT_WINDOW
+      value: "4096"
+    - name: OLLAMA_MAX_TOKENS
+      value: "2048"
+    - name: OLLAMA_ENABLE_GRAMMAR_CHECK
+      value: "true"
+    - name: OLLAMA_ENABLE_REQUEST_OPTIMIZATION
+      value: "true"
+    - name: OLLAMA_MODEL_SPECIFIC_OPTS
+      value: "deepseek-r1:14b=high_performance"
 
 # Настройки сервиса
 service:

@@ -122,6 +122,129 @@ data:
             "sources": "array"
           },
           "code": "async def knowledge_validator(statement: str, sources: list) -> dict:\n    # Валидация знаний\n    pass"
-        }
-      ]
-    }
+        },
+        {
+          "name": "model_performance_analyzer",
+          "description": "Анализ производительности и использования ресурсов модели",
+          "parameters": {
+            "model_name": "string",
+            "time_period": "integer",
+            "metrics": "array"
+          },
+          "code": "async def model_performance_analyzer(model_name: str, time_period: int, metrics: list) -> dict:\n    # Анализ производительности модели\n    pass"
+        },
+        {
+          "name": "context_window_optimizer",
+          "description": "Оптимизация размера контекстного окна для различных моделей",
+          "parameters": {
+            "model_name": "string",
+            "text_length": "integer",
+            "memory_limit": "integer"
+          },
+          "code": "async def context_window_optimizer(model_name: str, text_length: int, memory_limit: int) -> dict:\n    # Оптимизация контекстного окна\n    pass"
+        },
+        {
+          "name": "model_switcher",
+          "description": "Интеллектуальное переключение между моделями на основе запроса",
+          "parameters": {
+            "query": "string",
+            "available_models": "array",
+            "requirements": "object"
+          },
+          "code": "async def model_switcher(query: str, available_models: list, requirements: dict) -> str:\n    # Выбор оптимальной модели\n    pass"
+        },
+        {
+          "name": "response_formatter",
+          "description": "Форматирование и структурирование ответов модели",
+          "parameters": {
+            "response": "string",
+            "format": "string",
+            "style": "string"
+          },
+          "code": "async def response_formatter(response: str, format: str, style: str) -> str:\n    # Форматирование ответа\n    pass"
+        },
+        {
+          "name": "conversation_archiver",
+          "description": "Архивация и индексация истории диалогов",
+          "parameters": {
+            "conversation_id": "string",
+            "metadata": "object",
+            "tags": "array"
+          },
+          "code": "async def conversation_archiver(conversation_id: str, metadata: dict, tags: list) -> dict:\n    # Архивация диалога\n    pass"
+        },
+        {
+          "name": "prompt_template_manager",
+          "description": "Управление и применение шаблонов промптов",
+          "parameters": {
+            "template_name": "string",
+            "variables": "object",
+            "model": "string"
+          },
+          "code": "async def prompt_template_manager(template_name: str, variables: dict, model: str) -> str:\n    # Управление шаблонами\n    pass"
+        },
+        {
+          "name": "token_usage_tracker",
+          "description": "Отслеживание и оптимизация использования токенов",
+          "parameters": {
+            "text": "string",
+            "model": "string",
+            "max_tokens": "integer"
+          },
+          "code": "async def token_usage_tracker(text: str, model: str, max_tokens: int) -> dict:\n    # Отслеживание токенов\n    pass"
+        },
+        {
+          "name": "model_config_manager",
+          "description": "Управление конфигурациями различных моделей",
+          "parameters": {
+            "model_name": "string",
+            "config": "object",
+            "validate": "boolean"
+          },
+          "code": "async def model_config_manager(model_name: str, config: dict, validate: bool) -> dict:\n    # Управление конфигурациями\n    pass"
+        },
+        {
+          "name": "response_validator",
+          "description": "Валидация и проверка качества ответов модели",
+          "parameters": {
+            "response": "string",
+            "criteria": "object",
+            "threshold": "float"
+          },
+          "code": "async def response_validator(response: str, criteria: dict, threshold: float) -> dict:\n    # Валидация ответов\n    pass"
+        },
+        {
+          "name": "batch_request_optimizer",
+          "description": "Оптимизация пакетной обработки запросов",
+          "parameters": {
+          "requests": "array",
+          "batch_size": "integer",
+          "priority": "string"
+          },
+          "code": "async def batch_request_optimizer(requests: list, batch_size: int, priority: str) -> dict:\n    # Оптимизация пакетных запросов\n    pass"
+        },
+        {
+          "name": "advanced_grammar_optimizer",
+          "description": "Улучшение лексики и грамматики текста с использованием продвинутых алгоритмов",
+          "parameters": {
+          "text": "string",
+          "language": "string",
+          "style": "string",
+          "formality_level": "string",
+          "domain": "string"
+          },
+          "code": "async def advanced_grammar_optimizer(text: str, language: str = 'ru', style: str = 'formal', formality_level: str = 'high', domain: str = 'general') -> dict:\n    try:\n        # Морфологический анализ\n        morphological_analysis = analyze_morphology(text)\n        \n        # Синтаксический анализ\n        syntax_analysis = analyze_syntax(text)\n        \n        # Семантический анализ\n        semantic_analysis = analyze_semantics(text, domain)\n        \n        # Стилистический анализ\n        style_analysis = analyze_style(text, style, formality_level)\n        \n        # Применение оптимизаций\n        optimized_text = apply_grammar_optimizations(\n            text,\n            morphological_analysis,\n            syntax_analysis,\n            semantic_analysis,\n            style_analysis\n        )\n        \n        return {\n            'original_text': text,\n            'optimized_text': optimized_text,\n            'improvements': {\n              
+        },  'morphological': morphological_analysis['improvements'],\n                'syntactic': syntax_analysis['improvements'],\n                'semantic': semantic_analysis['improvements'],\n                'stylistic': style_analysis['improvements']\n            },\n            'metrics': {\n                'readability_score': calculate_readability(optimized_text),\n                'formality_score': calculate_formality(optimized_text),\n                'domain_relevance': calculate_domain_relevance(optimized_text, domain)\n            }\n        }\n    except Exception as e:\n        return {'error': str(e)}"
+        {
+          "name": "deepseek_request_optimizer",
+          "description": "Оптимизация запросов для модели deepseek-r1:14b",
+          "parameters": {
+          "request": "object",
+          "context_size": "integer",
+          "priority": "string",
+          "optimization_level": "string"
+          },
+          "code": "async def deepseek_request_optimizer(request: dict, context_size: int = 4096, priority: str = 'normal', optimization_level: str = 'aggressive') -> dict:\n    try:\n        # Оптимизация параметров модели\n        model_params = {\n            'temperature': 0.7,\n            'top_p': 0.9,\n            'frequency_penalty': 0.1,\n            'presence_penalty': 0.1,\n            'max_tokens': min(2048, context_size // 2),\n            'stop_sequences': request.get('stop_sequences', [])\n        }\n        \n        # Оптимизация контекста\n        optimized_context = optimize_context(\n            request.get('context', ''),\n            context_size,\n            optimization_level\n        )\n        \n        # Оптимизация промпта\n        optimized_prompt = optimize_prompt(\n            request.get('prompt', ''),\n            model_params['max_tokens'],\n            optimization_level\n        )\n        \n        # Настройка параллельной обработки\n        paralle
+        }l_config = {\n            'batch_size': 8,\n            'max_parallel_requests': 2,\n            'priority_level': priority,\n            'memory_optimization': True\n        }\n        \n        # Применение оптимизаций\n        optimized_request = {\n            'model': 'deepseek-r1:14b',\n            'prompt': optimized_prompt,\n            'context': optimized_context,\n            'parameters': model_params,\n            'processing_config': parallel_config\n        }\n        \n        return {\n            'optimized_request': optimized_request,\n            'estimated_tokens': estimate_tokens(optimized_prompt, optimized_context),\n            'optimization_metrics': {\n                'context_reduction': calculate_reduction(request.get('context', ''), optimized_context),\n                'prompt_efficiency': calculate_prompt_efficiency(optimized_prompt),\n                'memory_usage': estimate_memory_usage(optimized_request)\n            }\n        }\n    except Ex
+        ]ception as e:\n        return {'error': str(e)}"
+      }
