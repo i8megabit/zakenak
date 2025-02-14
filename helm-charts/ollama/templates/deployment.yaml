@@ -15,7 +15,6 @@ spec:
       labels:
         app: ollama
     spec:
-      runtimeClassName: nvidia
       nodeSelector:
         nvidia.com/gpu: "present"
       priorityClassName: high-priority
