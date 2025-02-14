@@ -1,0 +1,21 @@
+{{- range .Values.certificates }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+	name: {{ .name }}
+	namespace: {{ $.Values.release.namespace }}
+spec:
+	secretName: {{ .name }}
+	duration: {{ $.Values.ca.validityDuration }}
+	renewBefore: {{ $.Values.ca.renewBefore }}
+	commonName: {{ .commonName }}
+	dnsNames:
+	{{- range .dnsNames }}
+		- {{ . }}
+	{{- end }}
+	issuerRef:
+		name: local-ca-issuer
+		kind: ClusterIssuer
+		group: cert-manager.io
+---
+{{- end }}

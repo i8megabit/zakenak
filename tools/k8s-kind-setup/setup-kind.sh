@@ -121,8 +121,8 @@ restore_coredns() {
     echo -e "${CYAN}Восстановление конфигурации CoreDNS...${NC}"
     
     # Применение конфигурации CoreDNS
-    kubectl apply -f ./manifests/coredns-custom-config.yaml || true
-    kubectl apply -f ./manifests/coredns-patch.yaml || true
+    kubectl apply -f ./tools/k8s-kind-setup/manifests/coredns-custom-config.yaml || true
+    kubectl apply -f ./tools/k8s-kind-setup/manifests/coredns-patch.yaml || true
     
     # Перезапуск CoreDNS
     kubectl rollout restart deployment coredns -n kube-system

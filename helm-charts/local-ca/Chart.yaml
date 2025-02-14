@@ -1,0 +1,8 @@
+apiVersion: v2
+name: local-ca
+description: Local Certificate Authority for internal services
+version: 0.1.0
+appVersion: "1.0.0"
+maintainers:
+	- name: "DevSecMLOps"
+		email: "i8megabit@gmail.com"

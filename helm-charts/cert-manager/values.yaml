@@ -3,7 +3,6 @@ release:
   name: cert-manager
   namespace: prod
 
-# Настройки cert-manager
 cert-manager:
   installCRDs: true
   replicaCount: 1
@@ -14,35 +13,16 @@ cert-manager:
     limits:
       cpu: 200m
       memory: 256Mi
-  webhook:
-    resources:
-      requests:
-        cpu: 50m
-        memory: 64Mi
-      limits:
-        cpu: 100m
-        memory: 128Mi
-  cainjector:
-    resources:
-      requests:
-        cpu: 50m
-        memory: 64Mi
-      limits:
-        cpu: 100m
-        memory: 128Mi
-  extraArgs:
-    - '--dns01-recursive-nameservers=8.8.8.8:53,1.1.1.1:53'
-  webhook:
-    timeoutSeconds: 30
-    securePort: 10250
 
 # Настройки для ClusterIssuer
 clusterIssuer:
   enabled: true
-  email: "i8megabit@gmail.com"
-  server: "https://acme-v02.api.letsencrypt.org/directory"
-  privateKeySecretRef: "letsencrypt-prod"
-  solvers:
-    - http01:
-        ingress:
-          class: nginx
+  name: selfsigned-issuer
+  type: selfsigned
+  commonName: "*.prod.local"
+  dnsNames:
+    - "*.prod.local"
+    - "prod.local"
+  duration: "8760h" # 1 год
+  renewBefore: "720h" # 30 дней
+
