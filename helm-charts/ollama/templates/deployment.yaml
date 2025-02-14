@@ -15,6 +15,7 @@ spec:
       labels:
         app: ollama
     spec:
+      runtimeClassName: nvidia
       initContainers:
         - name: init-ollama-dir
           image: busybox:latest
@@ -35,11 +36,26 @@ spec:
           env:
             - name: HOME
               value: /data
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility"
+            - name: CUDA_VISIBLE_DEVICES
+              value: "all"
+            {{- with .Values.deployment.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            limits:
+              nvidia.com/gpu: {{ .Values.deployment.resources.limits.gpu | default "1" }}
+              cpu: {{ .Values.deployment.resources.limits.cpu }}
+              memory: {{ .Values.deployment.resources.limits.memory }}
+            requests:
+              cpu: {{ .Values.deployment.resources.requests.cpu }}
+              memory: {{ .Values.deployment.resources.requests.memory }}
           ports:
             - containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
-          resources:
-            {{- toYaml .Values.deployment.resources | nindent 12 }}
           {{- if .Values.persistence.enabled }}
           volumeMounts:
             - name: ollama-data
@@ -51,4 +67,3 @@ spec:
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-pvc
       {{- end }}
-

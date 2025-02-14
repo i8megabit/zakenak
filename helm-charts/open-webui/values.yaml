@@ -72,7 +72,12 @@ env:
     value: "dynamic"
   - name: ENABLE_CUDA_GRAPHS
     value: "true"
-
+  - name: NVIDIA_VISIBLE_DEVICES
+    value: "all"
+  - name: NVIDIA_DRIVER_CAPABILITIES
+    value: "compute,utility"
+  - name: CUDA_VISIBLE_DEVICES
+    value: "all"
 
 # Настройки сервиса
 service:
