@@ -236,19 +236,43 @@ EOF
 # Функция для создания кластера
 create_cluster() {
     echo -e "${CYAN}Проверка существующего кластера...${NC}"
-    if kind get clusters | grep -q "^kind$"; then
+    
+    # Проверка и удаление существующего кластера
+    if kind get clusters 2>/dev/null | grep -q "^kind$"; then
         echo -e "${YELLOW}Обнаружен существующий кластер 'kind'. Удаляем...${NC}"
-        kind delete cluster
+        if ! kind delete cluster; then
+            echo -e "${RED}Ошибка при удалении существующего кластера${NC}"
+            return 1
+        fi
         sleep 5
     fi
     
-    echo -e "${CYAN}Создание нового кластера Kind...${NC}"
-    create_kind_config
-    kind create cluster --config kind-config.yaml
+    echo -e "${CYAN}Создание конфигурации кластера...${NC}"
+    if ! create_kind_config; then
+        echo -e "${RED}Ошибка при создании конфигурации кластера${NC}"
+        return 1
+    fi
     
-    # Ожидание готовности узлов
+    echo -e "${CYAN}Создание нового кластера Kind...${NC}"
+    if ! kind create cluster --config kind-config.yaml; then
+        echo -e "${RED}Ошибка при создании кластера${NC}"
+        return 1
+    fi
+    
+    # Проверка создания кластера
+    if ! kind get clusters | grep -q "^kind$"; then
+        echo -e "${RED}Кластер не был создан корректно${NC}"
+        return 1
+    fi
+    
     echo -e "${CYAN}Ожидание готовности узлов кластера...${NC}"
-    kubectl wait --for=condition=Ready nodes --all --timeout=300s
+    if ! kubectl wait --for=condition=Ready nodes --all --timeout=300s; then
+        echo -e "${RED}Тайм-аут ожидания готовности узлов${NC}"
+        return 1
+    fi
+    
+    echo -e "${GREEN}Кластер Kind успешно создан и готов к работе${NC}"
+    return 0
 }
 
 # Основная функция
@@ -262,10 +286,20 @@ main() {
         install_kind
         
         # Создание кластера с проверкой существующего
-        create_cluster
+        if ! create_cluster; then
+            echo -e "${RED}Ошибка при создании кластера. Прерываем установку.${NC}"
+            exit 1
+        fi
         
-        install_dashboard
-        check_cluster
+        if ! install_dashboard; then
+            echo -e "${RED}Ошибка при установке dashboard. Прерываем установку.${NC}"
+            exit 1
+        fi
+        
+        if ! check_cluster; then
+            echo -e "${RED}Ошибка при проверке кластера. Прерываем установку.${NC}"
+            exit 1
+        fi
         
         echo -e "${GREEN}Токен для входа в Dashboard:${NC}"
         kubectl -n kubernetes-dashboard create token admin-user
