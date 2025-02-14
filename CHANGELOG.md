@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## [1.0.6] - 2024-02-13
+
+### Added
+- Добавлен шаблон промпта на русском языке для Open WebUI
+- Созданы инструменты для улучшения работы LLM:
+  - search_documentation: поиск в технической документации
+  - code_analyzer: анализ и оптимизация кода
+  - memory_optimizer: оптимизация использования памяти
+- Оптимизированы параметры Open WebUI для снижения потребления памяти
+
+### Changed
+- Уменьшены лимиты ресурсов для Open WebUI:
+  - CPU: с 1000m до 500m
+  - Memory: с 2Gi до 1Gi
+- Включены параметры оптимизации памяти:
+  - ENABLE_MEMORY_REDUCTION=true
+  - COMPUTE_SHAPES=false
+  - MAX_PARALLEL_REQUESTS=3
+
 ## [1.0.5.a] - 2024-02-13
 
 ### Changed

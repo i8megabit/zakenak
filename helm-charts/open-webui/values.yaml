@@ -14,11 +14,11 @@ deployment:
   replicas: 1
   resources:
     limits:
-      cpu: 1000m
-      memory: 2Gi
+      cpu: 400m        # Дополнительно уменьшено для оптимизации
+      memory: 768Mi    # Оптимизировано под текущие настройки
     requests:
-      cpu: 500m
-      memory: 1Gi
+      cpu: 200m        # Уменьшено для более эффективного использования
+      memory: 384Mi    # Оптимизировано под включенную память
 
 # Секреты
 secrets:
@@ -34,11 +34,24 @@ env:
   - name: MODEL
     value: "llama2"
   - name: DEBUG
-    value: "true"
+    value: "false"  # Отключаем отладку для уменьшения потребления памяти
   - name: OLLAMA_MODEL
     value: "llama2"
   - name: DEFAULT_MODEL
     value: "llama2"
+  - name: ENABLE_MEMORY_REDUCTION
+    value: "true"   # Включаем оптимизацию памяти
+  - name: COMPUTE_SHAPES
+    value: "false"  # Отключаем вычисление форм для экономии памяти
+  - name: CUDA_LAUNCH_BLOCKING
+    value: "1"      # Улучшаем управление памятью GPU
+  - name: MAX_PARALLEL_REQUESTS
+    value: "2"      # Уменьшаем количество параллельных запросов для экономии памяти
+  - name: ENABLE_AGGRESSIVE_GC
+    value: "true"   # Включаем агрессивный сборщик мусора
+  - name: NODE_OPTIONS
+    value: "--max-old-space-size=384"  # Ограничиваем использование памяти Node.js
+
 
 # Настройки сервиса
 service:
