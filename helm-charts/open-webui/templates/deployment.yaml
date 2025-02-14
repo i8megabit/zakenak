@@ -30,7 +30,12 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
         resources:
-          {{- toYaml .Values.deployment.resources | nindent 10 }}
+          limits:
+            cpu: {{ .Values.deployment.resources.limits.cpu }}
+            memory: {{ .Values.deployment.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.deployment.resources.requests.cpu }}
+            memory: {{ .Values.deployment.resources.requests.memory }}
         {{- if .Values.persistence.enabled }}
         volumeMounts:
         - name: data
