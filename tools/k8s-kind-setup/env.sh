@@ -27,11 +27,16 @@ export DOMAIN_SUFFIX="prod.local"
 export OLLAMA_HOST="ollama.$DOMAIN_SUFFIX"
 export WEBUI_HOST="webui.$DOMAIN_SUFFIX"
 
-# Настройки GPU
+# Настройки GPU для WSL2
+export PATH="/usr/lib/wsl/lib:$PATH"
 export NVIDIA_DRIVER_VERSION="535"
 export CUDA_VERSION="12.8"
 export NVIDIA_VISIBLE_DEVICES="all"
-export NVIDIA_DRIVER_CAPABILITIES="compute,utility"
+export NVIDIA_DRIVER_CAPABILITIES="compute,utility,video"
+export WSL_NVIDIA_SMI_PATH="/usr/lib/wsl/lib/nvidia-smi"
+export NVIDIA_CONTAINER_RUNTIME="nvidia"
+export NVIDIA_CONTAINER_CLI="nvidia-container-cli"
+export NVIDIA_CONTAINER_RUNTIME_ARGS="--gpus all"
 
 # Настройки сертификатов
 export CA_ISSUER_NAME="local-ca-issuer"

@@ -26,14 +26,16 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            - name: HOME
-              value: /data
+            - name: PATH
+              value: "/usr/lib/wsl/lib:/usr/local/cuda/bin:$(PATH)"
+            - name: LD_LIBRARY_PATH
+              value: "/usr/lib/wsl/lib:/usr/local/cuda/lib64:$(LD_LIBRARY_PATH)"
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
             - name: NVIDIA_DRIVER_CAPABILITIES
-              value: "compute,utility"
-            - name: CUDA_VISIBLE_DEVICES
-              value: "all"
+              value: "compute,utility,video"
+            - name: NVIDIA_REQUIRE_CUDA
+              value: "cuda>=12.8"
             {{- with .Values.deployment.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -42,10 +44,15 @@ spec:
           volumeMounts:
             - name: ollama-data
               mountPath: /data
+            - name: nvidia-wsl
+              mountPath: /usr/lib/wsl/lib
       volumes:
         - name: ollama-data
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-pvc
+        - name: nvidia-wsl
+          hostPath:
+            path: /usr/lib/wsl/lib
 
 
 

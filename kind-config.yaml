@@ -16,16 +16,19 @@ nodes:
     hostPort: 443
     protocol: TCP
   extraMounts:
+  # WSL2 specific NVIDIA paths
+  - hostPath: /usr/lib/wsl/lib
+    containerPath: /usr/lib/wsl/lib
   # CUDA toolkit
   - hostPath: /usr/local/cuda-12.8
     containerPath: /usr/local/cuda-12.8
   - hostPath: /usr/local/cuda
     containerPath: /usr/local/cuda
-  # NVIDIA драйверы и библиотеки
-  - hostPath: /usr/lib/x86_64-linux-gnu/libcuda.so.1
-    containerPath: /usr/lib/x86_64-linux-gnu/libcuda.so.1
-  - hostPath: /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1
-    containerPath: /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1
+  # NVIDIA драйверы и библиотеки для WSL2
+  - hostPath: /usr/lib/wsl/lib/libcuda.so.1
+    containerPath: /usr/lib/wsl/lib/libcuda.so.1
+  - hostPath: /usr/lib/wsl/lib/libnvidia-ml.so.1
+    containerPath: /usr/lib/wsl/lib/libnvidia-ml.so.1
   # NVIDIA устройства
   - hostPath: /dev/nvidia0
     containerPath: /dev/nvidia0
