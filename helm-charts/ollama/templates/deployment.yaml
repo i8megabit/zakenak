@@ -15,6 +15,12 @@ spec:
       labels:
         app: ollama
     spec:
+      nodeSelector:
+        nvidia.com/gpu: "present"
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
       containers:
         - name: ollama
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -32,7 +38,7 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           resources:
-            {{- toYaml .Values.deployment.resources.cpu | nindent 12 }}
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
           volumeMounts:
             - name: ollama-data
               mountPath: /data
