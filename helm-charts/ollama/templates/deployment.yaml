@@ -14,21 +14,20 @@ spec:
     metadata:
       labels:
         app: ollama
-      annotations:
-        nvidia.com/cuda-version: "12.8"
     spec:
       nodeSelector:
-        kubernetes.io/os: linux
-
+        nvidia.com/gpu: "present"
       tolerations:
       - key: "nvidia.com/gpu"
         operator: "Exists"
         effect: "NoSchedule"
+      - key: "nvidia.com/gpu"
+        operator: "Equal"
+        value: "present"
+        effect: "NoSchedule"
       initContainers:
-        - name: nvidia-driver-validation
-          image: "nvidia/cuda:12.8.0-base-ubuntu22.04"
-          command: ["nvidia-smi"]
         - name: init-ollama-dir
+
           image: busybox:latest
           command:
             - /bin/sh
@@ -50,7 +49,7 @@ spec:
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
             - name: NVIDIA_DRIVER_CAPABILITIES
-              value: "compute,utility,video"
+                value: "compute,utility"
             - name: CUDA_VISIBLE_DEVICES
               value: "all"
             {{- with .Values.deployment.env }}
