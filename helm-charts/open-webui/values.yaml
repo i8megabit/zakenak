@@ -16,10 +16,11 @@ deployment:
     limits:
       cpu: "4"
       memory: "16Gi"
-      nvidia.com/gpu: "1"
+      nvidia.com/gpu: "0"
     requests:
       cpu: "2"
       memory: "8Gi"
+
 
 # Секреты
 secrets:
@@ -32,7 +33,7 @@ secrets:
 
 # Настройки окружения (не секретные)
 env:
-  - name: MODEL
+  - name: OLLAMA_MODEL
     value: "deepseek-r1:14b"
   - name: DEBUG
     value: "false"
@@ -62,22 +63,10 @@ env:
     value: "0.1"
   - name: PRESENCE_PENALTY
     value: "0.1"
-  - name: ENABLE_TENSOR_PARALLEL
-    value: "true"
-  - name: GPU_MEMORY_UTILIZATION
-    value: "0.95"
-  - name: ENABLE_FLASH_ATTENTION
-    value: "true"
-  - name: KV_CACHE_STRATEGY
-    value: "dynamic"
-  - name: ENABLE_CUDA_GRAPHS
-    value: "true"
-  - name: NVIDIA_VISIBLE_DEVICES
-    value: "all"
-  - name: NVIDIA_DRIVER_CAPABILITIES
-    value: "compute,utility"
-  - name: CUDA_VISIBLE_DEVICES
-    value: "all"
+
+
+
+
 
 # Настройки сервиса
 service:

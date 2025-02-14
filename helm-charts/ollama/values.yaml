@@ -27,32 +27,42 @@ deployment:
       value: "0.0.0.0"
     - name: OLLAMA_COMPUTE_TYPE
       value: "cuda"
+    - name: NVIDIA_VISIBLE_DEVICES
+      value: "all"
+    - name: NVIDIA_DRIVER_CAPABILITIES
+      value: "compute,utility"
+    - name: CUDA_VISIBLE_DEVICES
+      value: "all"
+    - name: CUDA_DEVICE_ORDER
+      value: "PCI_BUS_ID"
+    - name: OLLAMA_CUDA_DEVICE
+      value: "0"
+    - name: OLLAMA_CUDA_MEMORY_LIMIT
+      value: "24G"
     - name: OLLAMA_BATCH_SIZE
       value: "8"
     - name: OLLAMA_PARALLEL_REQUESTS
       value: "2"
-    - name: OLLAMA_GRAMMAR_CACHE
-      value: "true"
-    - name: OLLAMA_GRAMMAR_CACHE_SIZE
-      value: "1024"
-    - name: OLLAMA_REQUEST_TIMEOUT
-      value: "300"
-    - name: OLLAMA_ENABLE_OPTIMIZATION
-      value: "true"
-    - name: OLLAMA_MEMORY_UTILIZATION
-      value: "high"
     - name: OLLAMA_THREAD_COUNT
       value: "8"
+    - name: OLLAMA_GPU_LAYERS
+      value: "all"
+    - name: OLLAMA_F16
+      value: "true"
+    - name: OLLAMA_TENSOR_PARALLEL
+      value: "true"
+    - name: OLLAMA_GPU_MEMORY_UTILIZATION
+      value: "0.95"
+    - name: OLLAMA_FLASH_ATTENTION
+      value: "true"
+    - name: OLLAMA_KV_CACHE_STRATEGY
+      value: "dynamic"
+    - name: OLLAMA_CUDA_GRAPHS
+      value: "true"
     - name: OLLAMA_CONTEXT_WINDOW
       value: "4096"
     - name: OLLAMA_MAX_TOKENS
       value: "2048"
-    - name: OLLAMA_ENABLE_GRAMMAR_CHECK
-      value: "true"
-    - name: OLLAMA_ENABLE_REQUEST_OPTIMIZATION
-      value: "true"
-    - name: OLLAMA_MODEL_SPECIFIC_OPTS
-      value: "deepseek-r1:14b=high_performance"
 
 # Настройки сервиса
 service:
