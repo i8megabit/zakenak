@@ -15,12 +15,12 @@ spec:
       labels:
         app: ollama
     spec:
-      nodeSelector:
-        nvidia.com/gpu: "present"
       tolerations:
       - key: "nvidia.com/gpu"
         operator: "Exists"
         effect: "NoSchedule"
+      nodeSelector:
+        accelerator: nvidia-gpu
       initContainers:
         - name: init-ollama-dir
           image: busybox:latest
@@ -45,19 +45,18 @@ spec:
               value: "all"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "compute,utility"
-            - name: CUDA_VISIBLE_DEVICES
-              value: "all"
             {{- with .Values.deployment.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           resources:
             limits:
-              nvidia.com/gpu: {{ .Values.deployment.resources.limits.gpu | default "1" }}
+              nvidia.com/gpu: "1"
               cpu: {{ .Values.deployment.resources.limits.cpu }}
               memory: {{ .Values.deployment.resources.limits.memory }}
             requests:
               cpu: {{ .Values.deployment.resources.requests.cpu }}
               memory: {{ .Values.deployment.resources.requests.memory }}
+
           ports:
             - containerPort: {{ .Values.service.targetPort }}
               protocol: TCP

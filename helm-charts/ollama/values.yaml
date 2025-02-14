@@ -14,12 +14,11 @@ deployment:
   replicas: 1
   resources:
     limits:
-      cpu: "16"
-      memory: "32Gi"
-      nvidia.com/gpu: "1"
-    requests:
-      cpu: "8"
+      cpu: "4"
       memory: "16Gi"
+    requests:
+      cpu: "2"
+      memory: "8Gi"
   env:
     - name: OLLAMA_MODELS
       value: "deepseek-r1:14b"
@@ -27,18 +26,8 @@ deployment:
       value: "0.0.0.0"
     - name: OLLAMA_COMPUTE_TYPE
       value: "cuda"
-    - name: NVIDIA_VISIBLE_DEVICES
-      value: "all"
-    - name: NVIDIA_DRIVER_CAPABILITIES
-      value: "compute,utility"
-    - name: CUDA_VISIBLE_DEVICES
-      value: "all"
-    - name: CUDA_DEVICE_ORDER
-      value: "PCI_BUS_ID"
     - name: OLLAMA_CUDA_DEVICE
       value: "0"
-    - name: OLLAMA_CUDA_MEMORY_LIMIT
-      value: "24G"
     - name: OLLAMA_BATCH_SIZE
       value: "8"
     - name: OLLAMA_PARALLEL_REQUESTS
@@ -59,10 +48,7 @@ deployment:
       value: "dynamic"
     - name: OLLAMA_CUDA_GRAPHS
       value: "true"
-    - name: OLLAMA_CONTEXT_WINDOW
-      value: "4096"
-    - name: OLLAMA_MAX_TOKENS
-      value: "2048"
+
 
 # Настройки сервиса
 service:
