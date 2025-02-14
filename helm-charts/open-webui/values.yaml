@@ -6,7 +6,7 @@ release:
 # Основные настройки приложения
 image:
   repository: ghcr.io/open-webui/open-webui
-  tag: latest
+  tag: ollama
   pullPolicy: Always
 
 # Настройки развертывания
@@ -31,14 +31,14 @@ secrets:
 
 # Настройки окружения (не секретные)
 env:
-  - name: MODEL
-    value: "llama2"
+#  - name: MODEL
+#    value: "llama2"
   - name: DEBUG
     value: "false"  # Отключаем отладку для уменьшения потребления памяти
-  - name: OLLAMA_MODEL
-    value: "llama2"
-  - name: DEFAULT_MODEL
-    value: "llama2"
+#  - name: OLLAMA_MODEL
+#    value: "llama2"
+#  - name: DEFAULT_MODEL
+#    value: "llama2"
   - name: ENABLE_MEMORY_REDUCTION
     value: "true"   # Включаем оптимизацию памяти
   - name: COMPUTE_SHAPES
@@ -51,7 +51,6 @@ env:
     value: "true"   # Включаем агрессивный сборщик мусора
   - name: NODE_OPTIONS
     value: "--max-old-space-size=384"  # Ограничиваем использование памяти Node.js
-
 
 # Настройки сервиса
 service:

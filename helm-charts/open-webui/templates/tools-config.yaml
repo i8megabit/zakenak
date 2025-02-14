@@ -1,37 +1,37 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-	name: {{ .Release.Name }}-tools-config
-	namespace: {{ .Values.release.namespace }}
+  name: {{ .Release.Name }}-tools-config
+  namespace: {{ .Values.release.namespace }}
 data:
-	tools.json: |
-		{
-			"tools": [
-				{
-					"name": "search_documentation",
-					"description": "Поиск в технической документации",
-					"parameters": {
-						"query": "string",
-						"max_results": "integer"
-					},
-					"code": "async def search_documentation(query: str, max_results: int = 5) -> list:\n    # Реализация поиска\n    pass"
-				},
-				{
-					"name": "code_analyzer",
-					"description": "Анализ и оптимизация кода",
-					"parameters": {
-						"code": "string",
-						"language": "string"
-					},
-					"code": "async def code_analyzer(code: str, language: str) -> dict:\n    # Анализ кода\n    pass"
-				},
-				{
-					"name": "memory_optimizer",
-					"description": "Оптимизация использования памяти",
-					"parameters": {
-						"process_id": "integer"
-					},
-					"code": "async def memory_optimizer(process_id: int) -> dict:\n    # Оптимизация памяти\n    pass"
-				}
-			]
-		}
+  tools.json: |
+    {
+      "tools": [
+        {
+          "name": "search_documentation",
+          "description": "Поиск в технической документации",
+          "parameters": {
+            "query": "string",
+            "max_results": "integer"
+          },
+          "code": "async def search_documentation(query: str, max_results: int = 5) -> list:\n    # Реализация поиска\n    pass"
+        },
+        {
+        "name": "code_analyzer",
+          "description": "Анализ и оптимизация кода",
+          "parameters": {
+            "code": "string",
+          "language": "string"
+          },
+          "code": "async def code_analyzer(code: str, language: str) -> dict:\n    # Анализ кода\n    pass"
+        },
+        {
+          "name": "memory_optimizer",
+          "description": "Оптимизация использования памяти",
+          "parameters": {
+          "process_id": "integer"
+        },
+          "code": "async def memory_optimizer(process_id: int) -> dict:\n    # Оптимизация памяти\n    pass"
+        }
+      ]
+    }
