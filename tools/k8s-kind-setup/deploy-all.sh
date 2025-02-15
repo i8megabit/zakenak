@@ -63,7 +63,27 @@ check_error "Не удалось установить Ingress Controller"
 echo -e "${CYAN}Установка cert-manager...${NC}"
 helm repo add jetstack https://charts.jetstack.io
 helm repo update
-install_chart $RELEASE_CERT_MANAGER $CHART_PATH_CERT_MANAGER $NAMESPACE_CERT_MANAGER
+
+# Создание необходимых namespace
+kubectl create namespace $NAMESPACE_PROD --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace $NAMESPACE_CERT_MANAGER --dry-run=client -o yaml | kubectl apply -f -
+
+# Установка cert-manager с CRDs
+helm upgrade --install $RELEASE_CERT_MANAGER jetstack/cert-manager \
+	--namespace $NAMESPACE_CERT_MANAGER \
+	--set installCRDs=true \
+	--wait
+check_error "Не удалось установить cert-manager"
+
+# Ожидание готовности CRDs cert-manager
+echo -e "${CYAN}Ожидание готовности CRDs cert-manager...${NC}"
+kubectl wait --for=condition=Established crd/certificates.cert-manager.io --timeout=60s
+kubectl wait --for=condition=Established crd/clusterissuers.cert-manager.io --timeout=60s
+kubectl wait --for=condition=Established crd/issuers.cert-manager.io --timeout=60s
+
+# Ожидание готовности подов cert-manager
+echo -e "${CYAN}Ожидание готовности подов cert-manager...${NC}"
+kubectl wait --for=condition=Ready pod -l app.kubernetes.io/instance=cert-manager -n $NAMESPACE_CERT_MANAGER --timeout=120s
 
 # 4. Установка local-ca
 echo -e "${CYAN}Установка Local CA...${NC}"
@@ -93,8 +113,8 @@ echo -e "${CYAN}Проверка статуса всех компонентов.
 kubectl get pods -n $NAMESPACE_PROD
 kubectl get pods -n $NAMESPACE_INGRESS
 kubectl get pods -n $NAMESPACE_CERT_MANAGER
-kubectl get ingress -n $NAMESPACE_PROD
 kubectl get certificates -n $NAMESPACE_PROD
+kubectl get clusterissuers
 
 echo -e "${GREEN}Развертывание успешно завершено!${NC}"
 echo -e "${YELLOW}Для проверки доступности сервисов:${NC}"
