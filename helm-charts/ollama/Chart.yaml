@@ -1,6 +1,17 @@
+# ____  _ _                         
+#|  _ \| | | __ _ _ __ ___   __ _  
+#| |_) | | |/ _` | '_ ` _ \ / _` | 
+#|  _ <| | | (_| | | | | | | (_| | 
+#|_| \_\_|_|\__,_|_| |_| |_|\__,_| 
+#                        by @eberil 
+#
+# Copyright (c) 2024 @eberil
+# HUJAK-HUJAK PRODUCTION PRESENTS...
+# "Your favorite LLM server, now with more CUDA"
+
 apiVersion: v2
 name: ollama
-description: A Helm chart for Ollama - LLM Model Server
+description: "A Helm chart for Ollama - LLM Model Server with GPU support"
 type: application
 version: 0.1.0
 appVersion: "latest"
@@ -8,6 +19,7 @@ keywords:
   - llm
   - ai
   - ollama
+  - gpu
 maintainers:
-  - name: "DevSecMLOps"
+  - name: "@eberil"
     email: "i8megabit@gmail.com"

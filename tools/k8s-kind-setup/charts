@@ -1,4 +1,18 @@
 #!/usr/bin/bash
+#   _____ _                _       
+#  / ____| |              | |      
+# | |    | |__   __ _ _ __| |_ ___ 
+# | |    | '_ \ / _` | '__| __/ __|
+# | |____| | | | (_| | |  | |_\__ \
+#  \_____|_| |_|\__,_|_|   \__|___/
+#                         by @eberil
+#
+# Copyright (c) 2024 @eberil
+# Helm Charts Management Tool
+# Version: 1.2.0
+#
+# HUJAK-HUJAK PRODUCTION PRESENTS...
+# "Because managing charts shouldn't be a pain"
 
 # Определение пути к директории скрипта и корню репозитория
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

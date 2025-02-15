@@ -1,4 +1,17 @@
 #!/usr/bin/bash
+#  _  _____ _   _ ____  
+# | |/ /_ _| \ | |  _ \ 
+# | ' / | ||  \| | | | |
+# | . \ | || |\  | |_| |
+# |_|\_\___|_| \_|____/ 
+#              by @eberil
+#
+# Copyright (c) 2024 @eberil
+# Kind Cluster Setup Tool
+# Version: 1.1.0
+#
+# HUJAK-HUJAK PRODUCTION PRESENTS...
+# "Because local k8s shouldn't be a nightmare"
 
 # Определение пути к директории скрипта и корню репозитория
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

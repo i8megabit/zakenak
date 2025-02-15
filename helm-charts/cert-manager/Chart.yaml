@@ -1,9 +1,23 @@
+#   ____ _____ ____  _____ 
+#  / ___| ____|  _ \|_   _|
+# | |   |  _| | |_) | | |  
+# | |___| |___|  _ <  | |  
+#  \____|_____|_| \_\ |_|  
+#                 by @eberil
+#
+# Copyright (c) 2024 @eberil
+# HUJAK-HUJAK PRODUCTION PRESENTS...
+# "Because TLS should be easy"
+
 apiVersion: v2
 name: cert-manager-setup
 description: "Helm chart for cert-manager with Let's Encrypt configuration"
 version: 0.1.0
 appVersion: "1.12.0"
+maintainers:
+  - name: "@eberil"
+    email: "i8megabit@gmail.com"
 dependencies:
-- name: cert-manager
-  version: v1.12.0
-  repository: https://charts.jetstack.io
+  - name: cert-manager
+    version: v1.12.0
+    repository: https://charts.jetstack.io
