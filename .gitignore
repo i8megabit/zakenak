@@ -13,7 +13,7 @@ helm-charts/**/values.local.yaml
 
 # Old locations (can be removed after migration)
 tools/k8s-kind-setup/manifests/
-tools/k8s-kind-setup/kind-config.yaml
+
 tools/k8s-kind-setup/setup.sh
 tools/k8s-kind-setup/setup-gpu.sh
 
