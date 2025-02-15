@@ -17,7 +17,17 @@
 |:-:|:-:|:-:|
 |[Werf](https://github.com/werf)|на|[WSL2](https://learn.microsoft.com/ru-ru/windows/wsl/install)|
 #
-s
+#### `ƵakӖnak™®®™` — карманный инструмент для ежедневной `Helm`-оркестрации однонодового `Kind` кластера `Kubernetes`.
+>- 💩 [Wsl-Ubuntu-22.03](https://learn.microsoft.com/ru-ru/windows/wsl/tutorials/wsl-containers).
+>- ☠️ Easy Kind Cluster Setup Tools
+>- 🤖 LLM-models 
+>- 👀 Helm Charts: 
+>	- cert-manager
+>	- local-ca
+>	- sidecar-injector
+>	- open-webui
+>	- ollama
+
 ## Особенности
 - 🚀 **Единый бинарный файл** без внешних зависимостейа
 - 🔄 **Встроенная поддержка GitOps** и конвергенции
