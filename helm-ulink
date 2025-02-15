@@ -1,0 +1,14 @@
+#!/usr/bin/bash
+ # charts
+rm $(pwd)/ollama
+rm $(pwd)/deploy-all
+rm $(pwd)/cert-manager
+rm $(pwd)/local-ca
+rm $(pwd)/ollama
+rm $(pwd)/open-webui
+rm $(pwd)/sidecarinjector
+
+ # tips
+rm $(pwd)/git-update
+rm $(pwd)/cuda-test
+
