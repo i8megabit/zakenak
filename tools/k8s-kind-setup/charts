@@ -19,8 +19,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 CHARTS_DIR="${REPO_ROOT}/helm-charts"
 
-# Загрузка общих переменных
+# Загрузка общих переменных и баннеров
 source "${SCRIPT_DIR}/env"
+source "${SCRIPT_DIR}/ascii_banners"
+
+# Отображение баннера при старте
+charts_banner
+echo ""
 
 # Функция получения списка чартов
 get_charts() {
@@ -96,9 +101,13 @@ install_chart() {
 	eval $helm_cmd
 	
 	if [ $? -eq 0 ]; then
-		echo -e "${GREEN}${action^} чарта ${chart} успешно завершен${NC}"
+		echo -e "\n"
+		success_banner
+		echo -e "\n${GREEN}${action^} чарта ${chart} успешно завершен${NC}"
 	else
-		echo -e "${RED}Ошибка при выполнении ${action} чарта ${chart}${NC}"
+		echo -e "\n"
+		error_banner
+		echo -e "\n${RED}Ошибка при выполнении ${action} чарта ${chart}${NC}"
 		exit 1
 	fi
 }

@@ -1,24 +1,17 @@
 #!/usr/bin/bash
-#  _  _____ _   _ ____  
-# | |/ /_ _| \ | |  _ \ 
-# | ' / | ||  \| | | | |
-# | . \ | || |\  | |_| |
-# |_|\_\___|_| \_|____/ 
-#              by @eberil
-#
-# Copyright (c) 2024 @eberil
-# Kind Cluster Setup Tool
-# Version: 1.1.0
-#
-# HUJAK-HUJAK PRODUCTION PRESENTS...
-# "Because local k8s shouldn't be a nightmare"
 
 # Определение пути к директории скрипта и корню репозитория
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-# Загрузка общих переменных
+# Загрузка общих переменных и баннеров
 source "${SCRIPT_DIR}/env"
+source "${SCRIPT_DIR}/ascii_banners"
+
+# Отображение баннера при старте
+k8s_banner
+echo ""
 
 echo -e "${YELLOW}Начинаем установку кластера Kind...${NC}"
 
@@ -51,4 +44,6 @@ setup_kind_cluster() {
 # Запуск установки
 setup_kind_cluster
 
-echo -e "${GREEN}Установка кластера Kind успешно завершена!${NC}"
+echo -e "\n"
+success_banner
+echo -e "\n${GREEN}Установка кластера Kind успешно завершена!${NC}"
