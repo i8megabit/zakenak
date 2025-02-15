@@ -70,6 +70,11 @@ check_error "Ошибка при установке Ollama"
 "${SCRIPT_DIR}/charts" install open-webui
 check_error "Ошибка при установке Open WebUI"
 
+# Проверка работоспособности сервисов
+echo -e "\n${CYAN}Проверка работоспособности сервисов...${NC}"
+"${REPO_ROOT}/tools/connectivity-check/check-services.sh"
+check_error "Ошибка при проверке сервисов"
+
 # Вывод статуса развертывания
 show_deployment_status
 

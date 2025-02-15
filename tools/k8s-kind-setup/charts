@@ -156,8 +156,20 @@ case $action in
 			for c in "${charts[@]}"; do
 				install_chart $action $c "$namespace" "$version" "$values_file"
 			done
+			# Добавляем проверку после установки всех чартов
+			if [ "$action" = "install" ] || [ "$action" = "upgrade" ]; then
+				echo -e "\n${CYAN}Проверка работоспособности сервисов...${NC}"
+				"${REPO_ROOT}/tools/connectivity-check/check-services.sh"
+			fi
 		else
 			install_chart $action $chart "$namespace" "$version" "$values_file"
+			# Проверяем сервисы после установки критических чартов
+			if [ "$action" = "install" ] || [ "$action" = "upgrade" ]; then
+				if [ "$chart" = "ollama" ] || [ "$chart" = "open-webui" ]; then
+					echo -e "\n${CYAN}Проверка работоспособности сервиса $chart...${NC}"
+					"${REPO_ROOT}/tools/connectivity-check/check-services.sh"
+				fi
+			fi
 		fi
 		;;
 	list)

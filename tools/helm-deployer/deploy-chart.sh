@@ -1,26 +1,43 @@
-#!/bin/bash
+#!/usr/bin/bash
+#   ____ ___    ____ ____  
+#  / ___|_ _|  / ___|  _ \ 
+# | |    | |  | |   | | | |
+# | |___ | |  | |___| |_| |
+#  \____|___|  \____|____/ 
+#                by @eberil
+#
+# Copyright (c) 2024 @eberil
+# CI/CD Helm Deployment Tool
+# Version: 2.0.0
 
 # Установка строгого режима
 set -euo pipefail
 
-# Цвета для вывода
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m'
+# Определение пути к директории скрипта и корню репозитория
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+# Загрузка общих переменных и баннеров
+source "${REPO_ROOT}/tools/k8s-kind-setup/env"
+source "${REPO_ROOT}/tools/k8s-kind-setup/ascii_banners"
 
 # Значения по умолчанию
 ENVIRONMENT=""
 CHART_PATH=""
 DEBUG=false
 HELM_EXTRA_ARGS=""
-ACTION="install" # По умолчанию - установка
+ACTION="install"
+VALIDATE=true
+TIMEOUT="5m"
+ATOMIC=true
+WAIT=true
 
 # Функция вывода справки
 usage() {
 	cat << EOF
 Использование: $(basename $0) [опции]
+
+CI/CD инструмент для автоматизированного деплоя Helm чартов
 
 Опции:
 	-e, --environment    Окружение для деплоя (также используется как namespace)
@@ -28,12 +45,21 @@ usage() {
 	-d, --debug         Включить режим отладки
 	-x, --extra-args    Дополнительные аргументы для helm upgrade
 	-u, --uninstall     Удалить релиз
+	-t, --timeout       Таймаут ожидания (по умолчанию: 5m)
+	--no-atomic         Отключить атомарное развертывание
+	--no-wait           Отключить ожидание готовности
+	--no-validate       Отключить валидацию
 	-h, --help          Показать эту справку
 
 Примеры:
-	$(basename $0) -e prod -c ./helm-charts/my-chart
-	$(basename $0) -e dev --debug
-	$(basename $0) -e prod -c ./helm-charts/my-chart -u
+	# Установка в CI/CD:
+	$(basename $0) -e prod -c ./helm-charts/my-chart --timeout 10m
+
+	# Быстрая установка без ожидания:
+	$(basename $0) -e dev -c ./helm-charts/my-chart --no-wait
+
+	# Удаление с таймаутом:
+	$(basename $0) -e prod -c ./helm-charts/my-chart -u -t 2m
 EOF
 	exit 1
 }
@@ -60,10 +86,36 @@ check_cluster() {
 # Функция валидации чарта
 validate_chart() {
 	local chart_path=$1
+	
+	echo -e "${CYAN}Валидация чарта $chart_path...${NC}"
+	
+	# Проверка структуры чарта
 	if [ ! -f "$chart_path/Chart.yaml" ]; then
 		echo -e "${RED}Ошибка: Chart.yaml не найден в $chart_path${NC}"
 		exit 1
 	fi
+	
+	# Проверка синтаксиса values.yaml
+	if [ -f "$chart_path/values.yaml" ]; then
+		if ! yq eval '.' "$chart_path/values.yaml" > /dev/null; then
+			echo -e "${RED}Ошибка: некорректный синтаксис в values.yaml${NC}"
+			exit 1
+		fi
+	fi
+	
+	# Проверка шаблонов
+	if ! helm template "$chart_path" > /dev/null; then
+		echo -e "${RED}Ошибка: некорректные шаблоны в чарте${NC}"
+		exit 1
+	fi
+	
+	# Проверка lint
+	if ! helm lint "$chart_path" > /dev/null; then
+		echo -e "${RED}Ошибка: проверка lint не пройдена${NC}"
+		exit 1
+	fi
+	
+	echo -e "${GREEN}Валидация успешно пройдена${NC}"
 }
 
 # Функция создания namespace если он не существует
@@ -175,8 +227,10 @@ init_chart_dependencies() {
 deploy_chart() {
 	local chart_path=$1
 	
-	# Валидация чарта
-	validate_chart "$chart_path"
+	# Валидация чарта если включена
+	if [ "$VALIDATE" = true ]; then
+		validate_chart "$chart_path"
+	fi
 	
 	# Создание namespace если не существует
 	ensure_namespace "$ENVIRONMENT"
@@ -184,13 +238,13 @@ deploy_chart() {
 	# Инициализация зависимостей перед деплоем
 	init_chart_dependencies "$chart_path"
 	
-	# Определение values файла для окружения (исправлен двойной слеш)
+	# Определение values файла для окружения
 	VALUES_FILE="${chart_path}/values-${ENVIRONMENT}.yaml"
 	if [ ! -f "$VALUES_FILE" ]; then
 		VALUES_FILE="${chart_path}/values.yaml"
 	fi
 	
-	# Получение имени релиза из values файла или использование имени чарта
+	# Получение имени релиза
 	RELEASE_NAME=$(yq eval '.release.name' "$VALUES_FILE" 2>/dev/null || basename "$chart_path")
 	
 	echo -e "${CYAN}Деплой чарта:${NC}"
@@ -199,15 +253,26 @@ deploy_chart() {
 	echo -e "Values файл: ${GREEN}$VALUES_FILE${NC}"
 	echo -e "Имя релиза: ${GREEN}$RELEASE_NAME${NC}"
 	
-	# Выполнение деплоя
-	helm upgrade --install "$RELEASE_NAME" "$chart_path" \
-		--namespace "$ENVIRONMENT" \
-		--values "$VALUES_FILE" \
-		--create-namespace \
-		$HELM_EXTRA_ARGS
+	# Формирование команды helm
+	local helm_cmd="helm upgrade --install $RELEASE_NAME $chart_path \
+		--namespace $ENVIRONMENT \
+		--values $VALUES_FILE \
+		--timeout $TIMEOUT"
+
+	# Добавление опциональных флагов
+	[ "$ATOMIC" = true ] && helm_cmd+=" --atomic"
+	[ "$WAIT" = true ] && helm_cmd+=" --wait"
+	[ -n "$HELM_EXTRA_ARGS" ] && helm_cmd+=" $HELM_EXTRA_ARGS"
 	
-	if [ $? -eq 0 ]; then
+	# Выполнение деплоя
+	if eval $helm_cmd; then
 		echo -e "${GREEN}Деплой успешно завершен!${NC}"
+		
+		# Проверка статуса после деплоя
+		if [ "$WAIT" = true ]; then
+			echo -e "${CYAN}Проверка статуса подов...${NC}"
+			kubectl get pods -n "$ENVIRONMENT" -l "app.kubernetes.io/instance=$RELEASE_NAME"
+		fi
 	else
 		echo -e "${RED}Ошибка при выполнении деплоя${NC}"
 		exit 1

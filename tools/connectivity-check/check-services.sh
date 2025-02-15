@@ -1,37 +1,134 @@
-#!/bin/bash
+#!/usr/bin/bash
 
-echo "Checking services connectivity..."
+# Определение пути к директории скрипта и корню репозитория
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-# Проверка DNS резолвинга
-echo "Checking DNS resolution..."
-echo "ollama.prod.local resolves to:"
-getent hosts ollama.prod.local || echo "Failed to resolve ollama.prod.local"
-echo "webui.prod.local resolves to:"
-getent hosts webui.prod.local || echo "Failed to resolve webui.prod.local"
+# Загрузка общих переменных и баннеров
+source "${REPO_ROOT}/tools/k8s-kind-setup/env"
+source "${REPO_ROOT}/tools/k8s-kind-setup/ascii_banners"
 
-# Проверка портов
-echo -e "\nChecking ports..."
-nc -zv localhost 80 2>&1
-nc -zv localhost 443 2>&1
-nc -zv ollama.prod.local 443 2>&1
-nc -zv webui.prod.local 443 2>&1
+# Отображение баннера
+devops_banner
+echo -e "\n${CYAN}Начинаем проверку сервисов...${NC}\n"
 
-# Проверка HTTPS доступности
-echo -e "\nChecking HTTPS accessibility..."
-curl -k -I https://webui.prod.local
-curl -k -I https://ollama.prod.local
+# Функция для форматированного вывода результатов
+print_check_result() {
+	local check_name=$1
+	local status=$2
+	local details=$3
+	
+	printf "${CYAN}%-30s${NC}" "$check_name"
+	if [ "$status" = "OK" ]; then
+		printf "${GREEN}%-10s${NC}" "$status"
+	else
+		printf "${RED}%-10s${NC}" "$status"
+	fi
+	echo -e "$details"
+}
 
-# Проверка статуса подов
-echo -e "\nChecking Kubernetes pods status..."
-kubectl get pods -A | grep -E 'ollama|webui|cert-manager|ingress'
+# Функция проверки DNS
+check_dns() {
+	echo -e "\n${YELLOW}[1/6] Проверка DNS резолвинга...${NC}"
+	local domains=("$OLLAMA_HOST" "$WEBUI_HOST")
+	
+	for domain in "${domains[@]}"; do
+		local ip=$(getent hosts "$domain" | awk '{ print $1 }')
+		if [ -n "$ip" ]; then
+			print_check_result "$domain" "OK" "→ $ip"
+		else
+			print_check_result "$domain" "FAIL" "DNS резолвинг не работает"
+		fi
+	done
+}
 
-# Проверка сертификатов
-echo -e "\nChecking Certificate resources..."
-kubectl get certificates -n prod
-kubectl get secrets -n prod | grep -E 'ollama-tls|open-webui-tls'
+# Функция проверки портов
+check_ports() {
+	echo -e "\n${YELLOW}[2/6] Проверка доступности портов...${NC}"
+	local ports=(80 443)
+	local hosts=("localhost" "$OLLAMA_HOST" "$WEBUI_HOST")
+	
+	for host in "${hosts[@]}"; do
+		for port in "${ports[@]}"; do
+			if nc -zv "$host" "$port" 2>/dev/null; then
+				print_check_result "$host:$port" "OK" "Порт доступен"
+			else
+				print_check_result "$host:$port" "FAIL" "Порт недоступен"
+			fi
+		done
+	done
+}
 
-# Проверка Ingress и TLS
-echo -e "\nChecking Ingress configuration..."
-kubectl get ingress -A
-kubectl get certificates -A
-kubectl get secrets -n prod | grep tls
+# Функция проверки HTTPS
+check_https() {
+	echo -e "\n${YELLOW}[3/6] Проверка HTTPS endpoints...${NC}"
+	local urls=("https://$WEBUI_HOST" "https://$OLLAMA_HOST")
+	
+	for url in "${urls[@]}"; do
+		local status=$(curl -k -s -o /dev/null -w "%{http_code}" "$url")
+		if [ "$status" = "200" ] || [ "$status" = "301" ] || [ "$status" = "302" ]; then
+			print_check_result "$url" "OK" "HTTP $status"
+		else
+			print_check_result "$url" "FAIL" "HTTP $status"
+		fi
+	done
+}
+
+# Функция проверки подов
+check_pods() {
+	echo -e "\n${YELLOW}[4/6] Проверка статуса подов...${NC}"
+	local namespaces=("$NAMESPACE_PROD" "$NAMESPACE_CERT_MANAGER" "$NAMESPACE_INGRESS")
+	
+	for ns in "${namespaces[@]}"; do
+		echo -e "\n${CYAN}Namespace: $ns${NC}"
+		kubectl get pods -n "$ns" -o wide
+	done
+}
+
+# Функция проверки сертификатов
+check_certificates() {
+	echo -e "\n${YELLOW}[5/6] Проверка сертификатов...${NC}"
+	
+	echo -e "\n${CYAN}Certificates:${NC}"
+	kubectl get certificates -n "$NAMESPACE_PROD"
+	
+	echo -e "\n${CYAN}TLS Secrets:${NC}"
+	kubectl get secrets -n "$NAMESPACE_PROD" | grep tls
+}
+
+# Функция проверки Ingress
+check_ingress() {
+	echo -e "\n${YELLOW}[6/6] Проверка конфигурации Ingress...${NC}"
+	
+	echo -e "\n${CYAN}Ingress Resources:${NC}"
+	kubectl get ingress -A
+	
+	echo -e "\n${CYAN}Ingress Controller Pods:${NC}"
+	kubectl get pods -n "$NAMESPACE_INGRESS" -l app.kubernetes.io/component=controller
+}
+
+# Основная функция
+main() {
+	# Проверка наличия необходимых утилит
+	local required_tools=("kubectl" "curl" "nc" "getent")
+	for tool in "${required_tools[@]}"; do
+		if ! command -v "$tool" &>/dev/null; then
+			echo -e "${RED}Ошибка: $tool не установлен${NC}"
+			exit 1
+		fi
+	done
+	
+	# Запуск всех проверок
+	check_dns
+	check_ports
+	check_https
+	check_pods
+	check_certificates
+	check_ingress
+	
+	# Вывод итогового статуса
+	echo -e "\n${GREEN}Проверка завершена!${NC}"
+}
+
+# Запуск скрипта
+main
