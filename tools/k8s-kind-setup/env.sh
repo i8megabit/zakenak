@@ -1,8 +1,11 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 # Определение пути к директории скрипта и корню репозитория
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+# Добавление пути репозитория в PATH
+export PATH="${REPO_ROOT}/tools/k8s-kind-setup:${REPO_ROOT}/tools/helm-setup:${REPO_ROOT}/tools/helm-deployer:${PATH}"
 
 # Цвета для вывода
 export YELLOW='\033[1;33m'
@@ -10,6 +13,12 @@ export CYAN='\033[0;36m'
 export GREEN='\033[0;32m'
 export RED='\033[0;31m'
 export NC='\033[0m'
+
+# Версии компонентов
+export CERT_MANAGER_VERSION="v1.12.0"
+export NGINX_INGRESS_VERSION="4.7.1"
+export OLLAMA_VERSION="0.1.17"
+export OPEN_WEBUI_VERSION="0.1.0"
 
 # Названия неймспейсов
 export NAMESPACE_PROD="prod"
@@ -21,14 +30,12 @@ export RELEASE_OLLAMA="ollama"
 export RELEASE_WEBUI="open-webui"
 export RELEASE_INGRESS="ingress-nginx"
 export RELEASE_CERT_MANAGER="cert-manager"
-export RELEASE_SIDECAR_INJECTOR="sidecar-injector"
 export RELEASE_LOCAL_CA="local-ca"
 
-# Пути к чартам (относительно корня репозитория)
+# Пути к чартам (абсолютные)
 export CHART_PATH_OLLAMA="${REPO_ROOT}/helm-charts/ollama"
 export CHART_PATH_WEBUI="${REPO_ROOT}/helm-charts/open-webui"
 export CHART_PATH_CERT_MANAGER="${REPO_ROOT}/helm-charts/cert-manager"
-export CHART_PATH_SIDECAR_INJECTOR="${REPO_ROOT}/helm-charts/sidecar-injector"
 export CHART_PATH_LOCAL_CA="${REPO_ROOT}/helm-charts/local-ca"
 
 # DNS настройки
@@ -68,5 +75,14 @@ wait_for_pods() {
 	echo -e "${CYAN}Ожидание готовности подов в namespace $namespace с меткой $label...${NC}"
 	kubectl wait --for=condition=Ready pods -l $label -n $namespace --timeout=300s
 	check_error "Поды не готовы в namespace $namespace"
+}
+
+# Функция проверки готовности CRDs
+wait_for_crds() {
+	echo -e "${CYAN}Ожидание готовности CRDs...${NC}"
+	for crd in "$@"; do
+		kubectl wait --for=condition=Established crd/$crd --timeout=60s
+		check_error "CRD $crd не готов"
+	done
 }
 

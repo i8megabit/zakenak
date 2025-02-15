@@ -1,11 +1,14 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 # Определение пути к директории скрипта и корню репозитория
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
+# Добавление пути репозитория в PATH
+export PATH="${REPO_ROOT}/tools/k8s-kind-setup:${REPO_ROOT}/tools/helm-setup:${REPO_ROOT}/tools/helm-deployer:${PATH}"
+
 # Загрузка общих переменных
-source "${SCRIPT_DIR}/env.sh"
+source "${SCRIPT_DIR}/env"
 
 echo -e "${YELLOW}Начинаем развертывание компонентов...${NC}"
 
@@ -34,11 +37,13 @@ install_chart() {
 	local release_name=$1
 	local chart_path=$2
 	local namespace=$3
+	local version=$4
 	
-	echo -e "${CYAN}Установка чарта $release_name...${NC}"
+	echo -e "${CYAN}Установка чарта $release_name версии $version...${NC}"
 	helm upgrade --install "$release_name" "$chart_path" \
 		--namespace "$namespace" \
 		--create-namespace \
+		--version "$version" \
 		--values "$chart_path/values.yaml" \
 		--wait
 	check_error "Не удалось установить чарт $release_name"
@@ -51,13 +56,10 @@ recreate_cluster
 echo -e "${CYAN}Установка Ingress Controller...${NC}"
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
-helm upgrade --install $RELEASE_INGRESS ingress-nginx/ingress-nginx \
-	--namespace $NAMESPACE_INGRESS \
-	--create-namespace \
+install_chart $RELEASE_INGRESS ingress-nginx/ingress-nginx $NAMESPACE_INGRESS $NGINX_INGRESS_VERSION \
 	--set controller.service.type=NodePort \
-	--set controller.hostPort.enabled=true \
-	--wait
-check_error "Не удалось установить Ingress Controller"
+	--set controller.hostPort.enabled=true
+
 
 # 3. Установка cert-manager
 echo -e "${CYAN}Установка cert-manager...${NC}"
@@ -69,21 +71,15 @@ kubectl create namespace $NAMESPACE_PROD --dry-run=client -o yaml | kubectl appl
 kubectl create namespace $NAMESPACE_CERT_MANAGER --dry-run=client -o yaml | kubectl apply -f -
 
 # Установка cert-manager с CRDs
-helm upgrade --install $RELEASE_CERT_MANAGER jetstack/cert-manager \
-	--namespace $NAMESPACE_CERT_MANAGER \
-	--set installCRDs=true \
-	--wait
-check_error "Не удалось установить cert-manager"
+install_chart $RELEASE_CERT_MANAGER jetstack/cert-manager $NAMESPACE_CERT_MANAGER $CERT_MANAGER_VERSION \
+	--set installCRDs=true
 
 # Ожидание готовности CRDs cert-manager
-echo -e "${CYAN}Ожидание готовности CRDs cert-manager...${NC}"
-kubectl wait --for=condition=Established crd/certificates.cert-manager.io --timeout=60s
-kubectl wait --for=condition=Established crd/clusterissuers.cert-manager.io --timeout=60s
-kubectl wait --for=condition=Established crd/issuers.cert-manager.io --timeout=60s
+wait_for_crds "certificates.cert-manager.io" "clusterissuers.cert-manager.io" "issuers.cert-manager.io"
 
 # Ожидание готовности подов cert-manager
-echo -e "${CYAN}Ожидание готовности подов cert-manager...${NC}"
-kubectl wait --for=condition=Ready pod -l app.kubernetes.io/instance=cert-manager -n $NAMESPACE_CERT_MANAGER --timeout=120s
+wait_for_pods $NAMESPACE_CERT_MANAGER "app.kubernetes.io/instance=cert-manager"
+
 
 # 4. Установка local-ca
 echo -e "${CYAN}Установка Local CA...${NC}"
@@ -93,24 +89,21 @@ helm upgrade --install $RELEASE_LOCAL_CA "${REPO_ROOT}/helm-charts/local-ca" \
 	--wait
 check_error "Не удалось установить Local CA"
 
-# 5. Установка sidecar-injector
-echo -e "${CYAN}Установка Sidecar Injector...${NC}"
-install_chart $RELEASE_SIDECAR_INJECTOR $CHART_PATH_SIDECAR_INJECTOR $NAMESPACE_PROD
+# 5. Настройка CoreDNS
 
-# 6. Настройка CoreDNS
 echo -e "${CYAN}Настройка CoreDNS...${NC}"
 kubectl apply -f "${SCRIPT_DIR}/manifests/coredns-custom-config.yaml"
 kubectl apply -f "${SCRIPT_DIR}/manifests/coredns-patch.yaml"
 kubectl rollout restart deployment coredns -n kube-system
 check_error "Не удалось настроить CoreDNS"
 
-# 7. Установка Ollama с поддержкой GPU
+# 6. Установка Ollama с поддержкой GPU
 echo -e "${CYAN}Установка Ollama...${NC}"
-install_chart $RELEASE_OLLAMA $CHART_PATH_OLLAMA $NAMESPACE_PROD
+install_chart $RELEASE_OLLAMA $CHART_PATH_OLLAMA $NAMESPACE_PROD $OLLAMA_VERSION
 
-# 8. Установка Open WebUI
+# 7. Установка Open WebUI
 echo -e "${CYAN}Установка Open WebUI...${NC}"
-install_chart $RELEASE_WEBUI $CHART_PATH_WEBUI $NAMESPACE_PROD
+install_chart $RELEASE_WEBUI $CHART_PATH_WEBUI $NAMESPACE_PROD $OPEN_WEBUI_VERSION
 
 # Проверка статуса развертывания
 echo -e "${CYAN}Проверка статуса всех компонентов...${NC}"

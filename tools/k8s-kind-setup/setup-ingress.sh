@@ -1,7 +1,14 @@
-#!/bin/bash
+#!/usr/bin/bash
+
+# Определение пути к директории скрипта и корню репозитория
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+# Добавление пути репозитория в PATH
+export PATH="${REPO_ROOT}/tools/k8s-kind-setup:${REPO_ROOT}/tools/helm-setup:${REPO_ROOT}/tools/helm-deployer:${PATH}"
 
 # Загрузка общих переменных
-source ./env.sh
+source "${SCRIPT_DIR}/env"
 
 echo "Installing Nginx Ingress Controller..."
 

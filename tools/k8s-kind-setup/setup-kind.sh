@@ -1,4 +1,11 @@
-#!/bin/bash
+#!/usr/bin/bash
+
+# Определение пути к директории скрипта и корню репозитория
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+# Добавление пути репозитория в PATH
+export PATH="${REPO_ROOT}/tools/k8s-kind-setup:${REPO_ROOT}/tools/helm-setup:${REPO_ROOT}/tools/helm-deployer:${PATH}"
 
 # Цвета для вывода
 YELLOW='\033[1;33m'
