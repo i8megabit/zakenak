@@ -60,9 +60,9 @@ deploy_component "setup-kind" "кластера Kind"
 deploy_component "setup-ingress" "Ingress Controller"
 deploy_component "setup-cert-manager" "Cert Manager"
 deploy_component "setup-dns" "DNS"
-deploy_component "dashboard-token" "Kubernetes Dashboard"
 
 # Установка приложений через charts
+
 echo -e "\n${CYAN}Установка приложений...${NC}"
 "${SCRIPT_DIR}/charts" install ollama
 check_error "Ошибка при установке Ollama"
