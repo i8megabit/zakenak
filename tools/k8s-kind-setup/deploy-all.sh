@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 # Добавление пути репозитория в PATH
 export PATH="${REPO_ROOT}/tools/k8s-kind-setup:${REPO_ROOT}/tools/helm-setup:${REPO_ROOT}/tools/helm-deployer:${PATH}"
 
-# Загрузка общих переменных
+# Загрузка общих переменных и функций
 source "${SCRIPT_DIR}/env"
 
 echo -e "${YELLOW}Начинаем развертывание компонентов...${NC}"
@@ -32,23 +32,6 @@ recreate_cluster() {
 	check_error "Узлы кластера не готовы"
 }
 
-# Функция установки чарта
-install_chart() {
-	local release_name=$1
-	local chart_path=$2
-	local namespace=$3
-	local version=$4
-	
-	echo -e "${CYAN}Установка чарта $release_name версии $version...${NC}"
-	helm upgrade --install "$release_name" "$chart_path" \
-		--namespace "$namespace" \
-		--create-namespace \
-		--version "$version" \
-		--values "$chart_path/values.yaml" \
-		--wait
-	check_error "Не удалось установить чарт $release_name"
-}
-
 # 1. Пересоздание кластера Kind
 recreate_cluster
 
@@ -56,54 +39,64 @@ recreate_cluster
 echo -e "${CYAN}Установка Ingress Controller...${NC}"
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
-install_chart $RELEASE_INGRESS ingress-nginx/ingress-nginx $NAMESPACE_INGRESS $NGINX_INGRESS_VERSION \
-	--set controller.service.type=NodePort \
-	--set controller.hostPort.enabled=true
 
+helm upgrade --install $RELEASE_INGRESS ingress-nginx/ingress-nginx \
+	--namespace $NAMESPACE_INGRESS \
+	--create-namespace \
+	--version $NGINX_INGRESS_VERSION \
+	--set controller.service.type=NodePort \
+	--set controller.hostPort.enabled=true \
+	--wait
+check_error "Не удалось установить Ingress Controller"
 
 # 3. Установка cert-manager
 echo -e "${CYAN}Установка cert-manager...${NC}"
 helm repo add jetstack https://charts.jetstack.io
 helm repo update
 
-# Создание необходимых namespace
+# Создание namespace
 kubectl create namespace $NAMESPACE_PROD --dry-run=client -o yaml | kubectl apply -f -
 kubectl create namespace $NAMESPACE_CERT_MANAGER --dry-run=client -o yaml | kubectl apply -f -
 
-# Установка cert-manager с CRDs
-install_chart $RELEASE_CERT_MANAGER jetstack/cert-manager $NAMESPACE_CERT_MANAGER $CERT_MANAGER_VERSION \
-	--set installCRDs=true
+# Установка cert-manager
+helm upgrade --install $RELEASE_CERT_MANAGER jetstack/cert-manager \
+	--namespace $NAMESPACE_CERT_MANAGER \
+	--version $CERT_MANAGER_VERSION \
+	--set installCRDs=true \
+	--wait
+check_error "Не удалось установить cert-manager"
 
-# Ожидание готовности CRDs cert-manager
+# Ожидание готовности CRDs и подов
 wait_for_crds "certificates.cert-manager.io" "clusterissuers.cert-manager.io" "issuers.cert-manager.io"
-
-# Ожидание готовности подов cert-manager
 wait_for_pods $NAMESPACE_CERT_MANAGER "app.kubernetes.io/instance=cert-manager"
 
-
-# 4. Установка local-ca
+# 4. Установка Local CA
 echo -e "${CYAN}Установка Local CA...${NC}"
-helm upgrade --install $RELEASE_LOCAL_CA "${REPO_ROOT}/helm-charts/local-ca" \
+helm upgrade --install $RELEASE_LOCAL_CA "${CHART_PATH_LOCAL_CA}" \
 	--namespace $NAMESPACE_PROD \
-	--values "${REPO_ROOT}/helm-charts/local-ca/values.yaml" \
 	--wait
 check_error "Не удалось установить Local CA"
 
 # 5. Настройка CoreDNS
-
 echo -e "${CYAN}Настройка CoreDNS...${NC}"
 kubectl apply -f "${SCRIPT_DIR}/manifests/coredns-custom-config.yaml"
 kubectl apply -f "${SCRIPT_DIR}/manifests/coredns-patch.yaml"
 kubectl rollout restart deployment coredns -n kube-system
 check_error "Не удалось настроить CoreDNS"
 
-# 6. Установка Ollama с поддержкой GPU
+# 6. Установка Ollama
 echo -e "${CYAN}Установка Ollama...${NC}"
-install_chart $RELEASE_OLLAMA $CHART_PATH_OLLAMA $NAMESPACE_PROD $OLLAMA_VERSION
+helm upgrade --install $RELEASE_OLLAMA "${CHART_PATH_OLLAMA}" \
+	--namespace $NAMESPACE_PROD \
+	--wait
+check_error "Не удалось установить Ollama"
 
 # 7. Установка Open WebUI
 echo -e "${CYAN}Установка Open WebUI...${NC}"
-install_chart $RELEASE_WEBUI $CHART_PATH_WEBUI $NAMESPACE_PROD $OPEN_WEBUI_VERSION
+helm upgrade --install $RELEASE_WEBUI "${CHART_PATH_WEBUI}" \
+	--namespace $NAMESPACE_PROD \
+	--wait
+check_error "Не удалось установить Open WebUI"
 
 # Проверка статуса развертывания
 echo -e "${CYAN}Проверка статуса всех компонентов...${NC}"
@@ -117,3 +110,4 @@ echo -e "${GREEN}Развертывание успешно завершено!${
 echo -e "${YELLOW}Для проверки доступности сервисов:${NC}"
 echo -e "1. Ollama API: https://$OLLAMA_HOST"
 echo -e "2. Open WebUI: https://$WEBUI_HOST"
+
