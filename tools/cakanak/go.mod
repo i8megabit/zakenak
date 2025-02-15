@@ -1,4 +1,4 @@
-module github.com/i8meg/zakanak
+module github.com/i8meg/zakenak
 
 go 1.21
 

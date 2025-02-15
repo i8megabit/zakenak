@@ -47,7 +47,7 @@ type BuildConfig struct {
 
 func main() {
 	rootCmd := &cobra.Command{
-		Use:     "zakanak",
+		Use:     "zakenak",
 		Short:   "Ƶakanak - элегантный инструмент для GitOps и деплоя",
 		Version: version,
 	}

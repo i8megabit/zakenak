@@ -15,18 +15,18 @@
 ## Установка
 ```bash
 # Сборка из исходников
-git clone https://github.com/i8meg/zakanak
-cd zakanak
-go build -o zakanak
+git clone https://github.com/i8meg/zakenak
+cd zakenak
+go build -o zakenak
 
 # Установка бинарного файла
-sudo mv zakanak /usr/local/bin/
+sudo mv zakenak /usr/local/bin/
 ```
 
 ## Использование
 
 ### Базовая конфигурация
-Создайте файл `zakanak.yaml` в корне проекта:
+Создайте файл `zakenak.yaml` в корне проекта:
 
 ```yaml
 project: myapp
@@ -54,22 +54,22 @@ build:
 
 #### Конвергенция состояния
 ```bash
-zakanak converge
+zakenak converge
 ```
 
 #### Сборка образов
 ```bash
-zakanak build
+zakenak build
 ```
 
 #### Деплой в кластер
 ```bash
-zakanak deploy
+zakenak deploy
 ```
 
 #### Очистка ресурсов
 ```bash
-zakanak clean
+zakenak clean
 ```
 
 ## Архитектура

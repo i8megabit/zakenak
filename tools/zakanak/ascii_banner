@@ -1,6 +1,6 @@
 #!/bin/bash
 
-zakanak_banner() {
+zakenak_banner() {
 	echo -e "
 	 ______     _                      _    
 	|___  /    | |                    | |   

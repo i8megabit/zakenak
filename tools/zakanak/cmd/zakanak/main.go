@@ -7,9 +7,9 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"github.com/i8meg/zakanak/pkg/config"
-	"github.com/i8meg/zakanak/pkg/converge"
-	"github.com/i8meg/zakanak/pkg/build"
+	"github.com/i8meg/zakenak/pkg/config"
+	"github.com/i8meg/zakenak/pkg/converge"
+	"github.com/i8meg/zakenak/pkg/build"
 )
 
 var (
@@ -20,13 +20,13 @@ var (
 
 func main() {
 	rootCmd := &cobra.Command{
-		Use:   "zakanak",
+		Use:   "zakenak",
 		Short: "Ƶakanak - элегантный инструмент для GitOps и деплоя",
 	}
 
 	rootCmd.PersistentFlags().StringVar(&kubeconfig, "kubeconfig", "", "путь к kubeconfig")
 	rootCmd.PersistentFlags().StringVar(&namespace, "namespace", "", "целевой namespace")
-	rootCmd.PersistentFlags().StringVar(&configPath, "config", "zakanak.yaml", "путь к конфигурации")
+	rootCmd.PersistentFlags().StringVar(&configPath, "config", "zakenak.yaml", "путь к конфигурации")
 
 	rootCmd.AddCommand(
 		newConvergeCmd(),
