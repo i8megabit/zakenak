@@ -1,6 +1,20 @@
-# CHANGELOG
+# Changelog
 
-# CHANGELOG
+## [1.3.0]
+
+### Changed
+- Перемещены конфигурационные файлы для лучшей организации проекта:
+  - Директория `manifests/` перенесена из `tools/k8s-kind-setup/` в `helm-charts/`
+  - `kind-config.yaml` перемещен из `tools/k8s-kind-setup/` в корень `helm-charts/`
+  - Обновлены все ссылки на манифесты в скриптах развертывания
+
+### Removed
+- Удален устаревший скрипт `setup-gpu.sh` (функциональность перенесена в Helm values)
+- Удален устаревший скрипт `setup.sh` (заменен на `deploy-all.sh`)
+
+### Added
+- Добавлен новый скрипт `get-dashboard-token` в `tools/k8s-kind-setup/` с ASCII баннером
+
 
 ## [1.2.4] - 2024-02-13
 

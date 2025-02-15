@@ -60,10 +60,11 @@ usage() {
 	echo -e "${CYAN}Использование:${NC} $0 ${YELLOW}[опции]${NC} ${GREEN}<действие>${NC} ${GREEN}<чарт>${NC}"
 	echo ""
 	echo -e "${CYAN}Действия:${NC}"
-	echo -e "${GREEN}  install   ${YELLOW}-${NC} Установить чарт"
-	echo -e "${GREEN}  upgrade   ${YELLOW}-${NC} Обновить чарт"
-	echo -e "${GREEN}  uninstall ${YELLOW}-${NC} Удалить чарт"
-	echo -e "${GREEN}  list      ${YELLOW}-${NC} Показать список установленных чартов"
+	echo -e "${GREEN}  install        ${YELLOW}-${NC} Установить чарт"
+	echo -e "${GREEN}  upgrade        ${YELLOW}-${NC} Обновить чарт"
+	echo -e "${GREEN}  uninstall      ${YELLOW}-${NC} Удалить чарт"
+	echo -e "${GREEN}  list           ${YELLOW}-${NC} Показать список установленных чартов"
+	echo -e "${GREEN}  dashboard-token${YELLOW}-${NC} Получить токен для Kubernetes Dashboard"
 	echo ""
 	generate_charts_menu "$(get_charts)"
 	echo ""
@@ -162,6 +163,9 @@ case $action in
 	list)
 		echo -e "${CYAN}Установленные чарты в namespace ${namespace:-$NAMESPACE_PROD}:${NC}"
 		helm list -n ${namespace:-$NAMESPACE_PROD}
+		;;
+	dashboard-token)
+		"${SCRIPT_DIR}/get-dashboard-token"
 		;;
 	*)
 		echo -e "${RED}Ошибка: Неизвестное действие ${action}${NC}"

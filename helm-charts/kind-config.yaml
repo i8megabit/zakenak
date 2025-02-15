@@ -16,6 +16,9 @@ nodes:
     hostPort: 443
     protocol: TCP
   extraMounts:
+  # Путь к общим манифестам
+  - hostPath: ./helm-charts/manifests
+    containerPath: /etc/kubernetes/manifests
   # WSL2 specific NVIDIA paths
   - hostPath: /usr/lib/wsl/lib
     containerPath: /usr/lib/wsl/lib
