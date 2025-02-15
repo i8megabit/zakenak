@@ -17,9 +17,9 @@ echo -e "${YELLOW}Начинаем установку кластера Kind...${
 
 # Предварительная загрузка необходимых образов
 echo -e "${CYAN}Предварительная загрузка образов...${NC}"
-docker pull kindest/node:latest
+docker pull kindest/node:v1.27.3
 docker pull nginx:latest
-docker pull jetstack/cert-manager-controller:v1.12.0
+docker pull quay.io/jetstack/cert-manager-controller:v1.12.0
 
 # Функция создания кластера
 setup_kind_cluster() {
@@ -32,7 +32,7 @@ setup_kind_cluster() {
 	fi
 	
 	echo -e "${CYAN}Создание нового кластера Kind...${NC}"
-	kind create cluster --config "${SCRIPT_DIR}/kind-config.yaml"
+	kind create cluster --config "${SCRIPT_DIR}/kind-config.yaml" --image kindest/node:v1.27.3
 	check_error "Не удалось создать кластер Kind"
 	
 	# Ожидание готовности узлов
