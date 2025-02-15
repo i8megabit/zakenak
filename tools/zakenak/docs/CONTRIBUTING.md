@@ -1,19 +1,19 @@
 ## Руководство по участию в проекте
-# Ƶakӗnak
+# ƵakӖnak™®
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/i8meg/zakenak)](https://goreportcard.com/report/github.com/i8meg/zakenak)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/i8meg/zakenak)](https://github.com/i8meg/zakenak/releases)
 
 ## Статус проекта
-Ƶakӗnak является совместным проектом @eberil и сообщества DevOps инженеров. Проект находится под защитой торговой марки и имеет особые требования к распространению и использованию.
+ƵakӖnak™® является совместным проектом @ӗberil и сообщества DevOps инженеров. Проект находится под защитой торговой марки и имеет особые требования к распространению и использованию.
 
 ## Правовая информация
 
 ### Торговая марка
-- Ƶakӗnak является зарегистрированной торговой маркой
-- Все права на бренд и интеллектуальную собственность принадлежат @eberil
-- Использование названия "Ƶakӗnak" в производных проектах требует письменного разрешения владельца
+- ƵakӖnak™® является зарегистрированной торговой маркой
+- Все права на бренд и интеллектуальную собственность принадлежат @ӗberil
+- Использование названия "ƵakӖnak™®" в производных проектах требует письменного разрешения владельца
 
 ### Лицензирование
 - Проект распространяется как открытый исходный код
@@ -58,7 +58,7 @@
 
 ```
 /*
- * Copyright (c) 2024 @eberil
+ * Copyright (c) 2024 Mikhail Eberil
  * 
  * This file is part of Ƶakenak, a GitOps deployment tool.
  * 
@@ -70,7 +70,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * MIT License for more details.
  * 
- * The name "Ƶakenak" and associated branding are trademarks of @eberil
+ * The name "Ƶakenak" and associated branding are trademarks of @ӗberil
  * and may not be used without express written permission.
  */
 ```
@@ -84,7 +84,7 @@
 6. Получить одобрение от maintainer'а
 
 ## Контакты
-- Основной разработчик: @eberil
+- Основной разработчик: @ӗberil
 - Email: i8megabit@gmail.com
 
 ## Дополнительные ресурсы

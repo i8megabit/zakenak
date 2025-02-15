@@ -3,9 +3,9 @@
 # | |   |  _| | |_) | | |  
 # | |___| |___|  _ <  | |  
 #  \____|_____|_| \_\ |_|  
-#                 by @eberil
+#                 by @ӗberil
 #
-# Copyright (c) 2024 @eberil
+# Copyright (c) 2024 Mikhail Eberil
 # HUJAK-HUJAK PRODUCTION PRESENTS...
 # "Because TLS should be easy"
 
@@ -15,7 +15,7 @@ description: "Helm chart for cert-manager with Let's Encrypt configuration"
 version: 0.1.0
 appVersion: "1.12.0"
 maintainers:
-  - name: "@eberil"
+  - name: "@ӗberil"
     email: "i8megabit@gmail.com"
 dependencies:
   - name: cert-manager

@@ -1,5 +1,5 @@
-// Copyright (c) 2024 Ƶakӗnak™®
-// Author: @ebӗril
+// Copyright (c) 2024 ƵakӖnak™®
+// Author: @ӗberil
 // License: MIT with Trademark Protection
 
 package main
@@ -44,8 +44,8 @@ func init() {
 
 var rootCmd = &cobra.Command{
 	Use:   "zakenak",
-	Short: "Ƶakӗnak™® - инструмент для управления Kubernetes кластером",
-	Long: `Ƶakӗnak™® - карманный инструмент для ежедневной Helm-оркестрации 
+	Short: "ƵakӖnak™® - инструмент для управления Kubernetes кластером",
+	Long: `ƵakӖnak™® - карманный инструмент для ежедневной Helm-оркестрации 
 однонодового Kind кластера Kubernetes с поддержкой GPU.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
@@ -89,7 +89,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Показать версию",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Ƶakӗnak™® версия %s\n", Version)
+		fmt.Printf("ƵakӖnak™® версия %s\n", Version)
 	},
 }
 
