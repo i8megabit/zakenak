@@ -7,24 +7,31 @@
 Helm чарт для автоматической инжекции TLS сайдкаров в поды Kubernetes. Обеспечивает безопасную коммуникацию между сервисами через автоматическое внедрение TLS-прокси.
 
 ## Особенности
-- Автоматическая инжекция TLS сайдкаров
-- Поддержка входящего и исходящего трафика
-- Интеграция с cert-manager
-- Настраиваемые конфигурации Nginx
-- Автоматическое обновление сертификатов
+- Автоматическая инжекция TLS сайдкаров для входящего и исходящего трафика
+- Интеграция с cert-manager для автоматического управления сертификатами
+- Гибкая настройка конфигурации Nginx для каждого сайдкара
+- Поддержка различных стратегий маршрутизации трафика
+- Минимальное влияние на производительность (25m CPU, 32Mi RAM на сайдкар)
 
 ## Требования
 - Kubernetes 1.19+
 - Helm 3.0+
-- cert-manager
-- RBAC enabled
+- cert-manager v1.0.0+
+- Включенный RBAC в кластере
 
-## Установка
+## Быстрый старт
+1. Установка чарта:
 ```bash
 helm install sidecar-injector ./helm-charts/sidecar-injector \
 	--namespace prod \
 	--create-namespace \
 	--values values.yaml
+```
+
+2. Проверка установки:
+```bash
+kubectl get pods -n prod -l app=sidecar-injector
+kubectl get svc -n prod -l app=sidecar-injector
 ```
 
 ## Конфигурация
@@ -33,52 +40,116 @@ helm install sidecar-injector ./helm-charts/sidecar-injector \
 |----------|-----------|--------------|
 | `sidecar.ingressSidecar.enabled` | Включение входящего сайдкара | `true` |
 | `sidecar.egressSidecar.enabled` | Включение исходящего сайдкара | `true` |
-
-### Настройки TLS
-| Параметр | Описание | По умолчанию |
-|----------|-----------|--------------|
 | `certManager.enabled` | Использование cert-manager | `true` |
 | `certManager.issuerRef.name` | Имя ClusterIssuer | `local-ca-issuer` |
 
-## Архитектура
-Чарт создает следующие компоненты:
-1. Deployment с основным контейнером и сайдкарами
-2. Service для доступа к сайдкарам
-3. ConfigMap с конфигурацией Nginx
-4. Certificate ресурс для TLS сертификатов
-5. ServiceAccount и RBAC роли
+### Пример values.yaml
+```yaml
+sidecar:
+  ingressSidecar:
+	enabled: true
+	port: 8443
+	config: |
+	  server {
+		listen 8443 ssl;
+		ssl_certificate /etc/tls/tls.crt;
+		ssl_certificate_key /etc/tls/tls.key;
+		location / {
+		  proxy_pass http://localhost:8080;
+		}
+	  }
 
-## Безопасность
-- Автоматическая генерация и ротация сертификатов
-- Изоляция сетевого трафика
-- Принцип наименьших привилегий для RBAC
+  egressSidecar:
+	enabled: true
+	port: 8444
+	config: |
+	  server {
+		listen 8444;
+		location / {
+		  proxy_pass https://backend.service:443;
+		  proxy_ssl_certificate /etc/tls/tls.crt;
+		  proxy_ssl_certificate_key /etc/tls/tls.key;
+		}
+	  }
+```
+
+## Использование
+### Добавление сайдкаров к подам
+1. Добавьте аннотацию к поду:
+```yaml
+annotations:
+  sidecar-injector.kubernetes.io/inject: "true"
+```
+
+2. Настройте конфигурацию сайдкара через ConfigMap:
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-app-sidecar-config
+data:
+  nginx.conf: |
+	server {
+	  listen 8443 ssl;
+	  ssl_certificate /etc/tls/tls.crt;
+	  ssl_certificate_key /etc/tls/tls.key;
+	  location / {
+		proxy_pass http://localhost:8080;
+	  }
+	}
+```
 
 ## Мониторинг
 ### Проверка статуса сайдкаров
 ```bash
-kubectl get pods -n prod -l app=sidecar-injector
-```
+# Просмотр логов входящего сайдкара
+kubectl logs -n prod -l app=sidecar-injector -c ingress-sidecar
 
-### Проверка сертификатов
-```bash
+# Просмотр логов исходящего сайдкара
+kubectl logs -n prod -l app=sidecar-injector -c egress-sidecar
+
+# Проверка сертификатов
 kubectl get certificates -n prod
 kubectl get secrets -n prod -l app=sidecar-injector
 ```
 
 ## Устранение неполадок
-### Проверка логов
-```bash
-# Логи входящего сайдкара
-kubectl logs -n prod -l app=sidecar-injector -c ingress-sidecar
+### Частые проблемы
+1. Сайдкары не инжектируются:
+   - Проверьте аннотации пода
+   - Убедитесь, что webhook работает: `kubectl get validatingwebhookconfigurations`
+   - Проверьте логи webhook: `kubectl logs -n prod -l app=sidecar-injector`
 
-# Логи исходящего сайдкара
-kubectl logs -n prod -l app=sidecar-injector -c egress-sidecar
+2. Проблемы с сертификатами:
+   - Проверьте статус сертификата: `kubectl describe certificate -n prod`
+   - Убедитесь, что cert-manager работает: `kubectl get pods -n cert-manager`
+   - Проверьте секреты: `kubectl get secrets -n prod | grep tls`
+
+### Команды отладки
+```bash
+# Проверка конфигурации Nginx
+kubectl exec -it -n prod \
+  $(kubectl get pods -n prod -l app=sidecar-injector -o name) \
+  -c ingress-sidecar -- nginx -t
+
+# Проверка TLS соединения
+kubectl exec -it -n prod \
+  $(kubectl get pods -n prod -l app=sidecar-injector -o name) \
+  -- openssl s_client -connect localhost:8443
 ```
 
-### Проверка конфигурации
-```bash
-kubectl get configmap -n prod -l app=sidecar-injector
-```
+## Безопасность
+- Все сертификаты автоматически обновляются за 15 дней до истечения
+- Поддержка mTLS для взаимной аутентификации сервисов
+- Изоляция сетевого трафика через NetworkPolicies
+- Принцип наименьших привилегий в RBAC конфигурации
+
+## Производительность
+- Минимальное потребление ресурсов:
+  - CPU: 25m (запрос) / 50m (лимит)
+  - Memory: 32Mi (запрос) / 64Mi (лимит)
+- Оптимизированная конфигурация Nginx
+- Эффективное управление соединениями
 
 ## Обновление
 ```bash
@@ -91,3 +162,9 @@ helm upgrade sidecar-injector ./helm-charts/sidecar-injector \
 ```bash
 helm uninstall sidecar-injector -n prod
 ```
+
+## Поддержка
+При возникновении проблем:
+1. Проверьте [секцию устранения неполадок](#устранение-неполадок)
+2. Создайте issue в репозитории
+3. Приложите логи и описание проблемы
