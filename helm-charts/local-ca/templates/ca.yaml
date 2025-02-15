@@ -14,7 +14,7 @@ metadata:
 spec:
 	isCA: true
 	commonName: {{ .Values.ca.commonName }}
-	secretName: root-ca-key-pair
+	secretName: {{ .Values.ca.secretName }}
 	duration: {{ .Values.ca.validityDuration }}
 	renewBefore: {{ .Values.ca.renewBefore }}
 	subject:
@@ -35,4 +35,4 @@ metadata:
 	namespace: {{ .Values.release.namespace }}
 spec:
 	ca:
-		secretName: root-ca-key-pair
+		secretName: {{ .Values.ca.secretName }}

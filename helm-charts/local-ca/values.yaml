@@ -9,6 +9,7 @@ ca:
 	organization: "DevSecMLOps"
 	validityDuration: "8760h"  # 1 год
 	renewBefore: "720h"        # 30 дней
+	secretName: "root-ca-key-pair"
 
 # Сертификаты для создания
 certificates:

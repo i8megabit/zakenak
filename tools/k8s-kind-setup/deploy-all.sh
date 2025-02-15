@@ -87,7 +87,11 @@ kubectl wait --for=condition=Ready pod -l app.kubernetes.io/instance=cert-manage
 
 # 4. Установка local-ca
 echo -e "${CYAN}Установка Local CA...${NC}"
-install_chart $RELEASE_LOCAL_CA $CHART_PATH_LOCAL_CA $NAMESPACE_PROD
+helm upgrade --install $RELEASE_LOCAL_CA "${REPO_ROOT}/helm-charts/local-ca" \
+	--namespace $NAMESPACE_PROD \
+	--values "${REPO_ROOT}/helm-charts/local-ca/values.yaml" \
+	--wait
+check_error "Не удалось установить Local CA"
 
 # 5. Установка sidecar-injector
 echo -e "${CYAN}Установка Sidecar Injector...${NC}"
