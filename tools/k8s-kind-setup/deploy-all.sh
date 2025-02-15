@@ -29,6 +29,21 @@ recreate_cluster() {
 	check_error "Узлы кластера не готовы"
 }
 
+# Функция установки чарта
+install_chart() {
+	local release_name=$1
+	local chart_path=$2
+	local namespace=$3
+	
+	echo -e "${CYAN}Установка чарта $release_name...${NC}"
+	helm upgrade --install "$release_name" "$chart_path" \
+		--namespace "$namespace" \
+		--create-namespace \
+		--values "$chart_path/values.yaml" \
+		--wait
+	check_error "Не удалось установить чарт $release_name"
+}
+
 # 1. Пересоздание кластера Kind
 recreate_cluster
 
@@ -48,43 +63,38 @@ check_error "Не удалось установить Ingress Controller"
 echo -e "${CYAN}Установка cert-manager...${NC}"
 helm repo add jetstack https://charts.jetstack.io
 helm repo update
-kubectl create namespace $NAMESPACE_PROD --dry-run=client -o yaml | kubectl apply -f -
-helm upgrade --install $RELEASE_CERT_MANAGER jetstack/cert-manager \
-	--namespace $NAMESPACE_CERT_MANAGER \
-	--set installCRDs=true \
-	--wait
-check_error "Не удалось установить cert-manager"
+install_chart $RELEASE_CERT_MANAGER $CHART_PATH_CERT_MANAGER $NAMESPACE_CERT_MANAGER
 
-# 4. Настройка CoreDNS
+# 4. Установка local-ca
+echo -e "${CYAN}Установка Local CA...${NC}"
+install_chart $RELEASE_LOCAL_CA $CHART_PATH_LOCAL_CA $NAMESPACE_PROD
+
+# 5. Установка sidecar-injector
+echo -e "${CYAN}Установка Sidecar Injector...${NC}"
+install_chart $RELEASE_SIDECAR_INJECTOR $CHART_PATH_SIDECAR_INJECTOR $NAMESPACE_PROD
+
+# 6. Настройка CoreDNS
 echo -e "${CYAN}Настройка CoreDNS...${NC}"
-kubectl apply -f "${REPO_ROOT}/tools/k8s-kind-setup/manifests/coredns-custom-config.yaml"
-kubectl apply -f "${REPO_ROOT}/tools/k8s-kind-setup/manifests/coredns-patch.yaml"
-
+kubectl apply -f "${SCRIPT_DIR}/manifests/coredns-custom-config.yaml"
+kubectl apply -f "${SCRIPT_DIR}/manifests/coredns-patch.yaml"
 kubectl rollout restart deployment coredns -n kube-system
 check_error "Не удалось настроить CoreDNS"
 
-# 5. Установка Ollama с поддержкой GPU
+# 7. Установка Ollama с поддержкой GPU
 echo -e "${CYAN}Установка Ollama...${NC}"
-helm upgrade --install $RELEASE_OLLAMA "${REPO_ROOT}/helm-charts/ollama" \
-	--namespace $NAMESPACE_PROD \
-	--create-namespace \
-	--values "${REPO_ROOT}/helm-charts/ollama/values.yaml" \
-	--wait
-check_error "Не удалось установить Ollama"
+install_chart $RELEASE_OLLAMA $CHART_PATH_OLLAMA $NAMESPACE_PROD
 
-# 6. Установка Open WebUI
+# 8. Установка Open WebUI
 echo -e "${CYAN}Установка Open WebUI...${NC}"
-helm upgrade --install $RELEASE_WEBUI "${REPO_ROOT}/helm-charts/open-webui" \
-	--namespace $NAMESPACE_PROD \
-	--values "${REPO_ROOT}/helm-charts/open-webui/values.yaml" \
-	--wait
-check_error "Не удалось установить Open WebUI"
+install_chart $RELEASE_WEBUI $CHART_PATH_WEBUI $NAMESPACE_PROD
 
 # Проверка статуса развертывания
 echo -e "${CYAN}Проверка статуса всех компонентов...${NC}"
 kubectl get pods -n $NAMESPACE_PROD
 kubectl get pods -n $NAMESPACE_INGRESS
+kubectl get pods -n $NAMESPACE_CERT_MANAGER
 kubectl get ingress -n $NAMESPACE_PROD
+kubectl get certificates -n $NAMESPACE_PROD
 
 echo -e "${GREEN}Развертывание успешно завершено!${NC}"
 echo -e "${YELLOW}Для проверки доступности сервисов:${NC}"

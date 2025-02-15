@@ -14,17 +14,22 @@ export NC='\033[0m'
 # Названия неймспейсов
 export NAMESPACE_PROD="prod"
 export NAMESPACE_INGRESS="ingress-nginx"
-export NAMESPACE_CERT_MANAGER="cert-manager"
+export NAMESPACE_CERT_MANAGER="prod"
 
 # Названия релизов
 export RELEASE_OLLAMA="ollama"
 export RELEASE_WEBUI="open-webui"
 export RELEASE_INGRESS="ingress-nginx"
 export RELEASE_CERT_MANAGER="cert-manager"
+export RELEASE_SIDECAR_INJECTOR="sidecar-injector"
+export RELEASE_LOCAL_CA="local-ca"
 
 # Пути к чартам (относительно корня репозитория)
 export CHART_PATH_OLLAMA="${REPO_ROOT}/helm-charts/ollama"
 export CHART_PATH_WEBUI="${REPO_ROOT}/helm-charts/open-webui"
+export CHART_PATH_CERT_MANAGER="${REPO_ROOT}/helm-charts/cert-manager"
+export CHART_PATH_SIDECAR_INJECTOR="${REPO_ROOT}/helm-charts/sidecar-injector"
+export CHART_PATH_LOCAL_CA="${REPO_ROOT}/helm-charts/local-ca"
 
 # DNS настройки
 export DOMAIN_SUFFIX="prod.local"
@@ -64,3 +69,4 @@ wait_for_pods() {
 	kubectl wait --for=condition=Ready pods -l $label -n $namespace --timeout=300s
 	check_error "Поды не готовы в namespace $namespace"
 }
+
