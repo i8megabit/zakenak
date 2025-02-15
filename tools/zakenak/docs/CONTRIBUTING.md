@@ -1,5 +1,5 @@
 ## Руководство по участию в проекте
-# Ƶӗknak
+# Ƶakӗnak
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/i8meg/zakenak)](https://goreportcard.com/report/github.com/i8meg/zakenak)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -60,17 +60,17 @@
 /*
  * Copyright (c) 2024 @eberil
  * 
- * This file is part of Ƶakanak, a GitOps deployment tool.
+ * This file is part of Ƶakenak, a GitOps deployment tool.
  * 
- * Ƶakanak is free software: you can redistribute it and/or modify
+ * Ƶakenak is free software: you can redistribute it and/or modify
  * it under the terms of the MIT License with Trademark Protection.
  * 
- * Ƶakanak is distributed in the hope that it will be useful,
+ * Ƶakenak is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * MIT License for more details.
  * 
- * The name "Ƶakanak" and associated branding are trademarks of @eberil
+ * The name "Ƶakenak" and associated branding are trademarks of @eberil
  * and may not be used without express written permission.
  */
 ```
