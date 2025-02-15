@@ -1,0 +1,41 @@
+#!/usr/bin/bash
+
+# Определение пути к директории скрипта и корню репозитория
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+# Загрузка общих переменных
+source "${SCRIPT_DIR}/env"
+
+echo -e "${YELLOW}Начинаем установку кластера Kind...${NC}"
+
+# Предварительная загрузка необходимых образов
+echo -e "${CYAN}Предварительная загрузка образов...${NC}"
+docker pull kindest/node:latest
+docker pull nginx:latest
+docker pull jetstack/cert-manager-controller:v1.12.0
+
+# Функция создания кластера
+setup_kind_cluster() {
+	echo -e "${CYAN}Проверка существующего кластера...${NC}"
+	if kind get clusters 2>/dev/null | grep -q "^kind$"; then
+		echo -e "${YELLOW}Обнаружен существующий кластер 'kind'. Удаляем...${NC}"
+		kind delete cluster
+		check_error "Не удалось удалить существующий кластер"
+		sleep 5
+	fi
+	
+	echo -e "${CYAN}Создание нового кластера Kind...${NC}"
+	kind create cluster --config "${SCRIPT_DIR}/kind-config.yaml"
+	check_error "Не удалось создать кластер Kind"
+	
+	# Ожидание готовности узлов
+	echo -e "${CYAN}Ожидание готовности узлов кластера...${NC}"
+	kubectl wait --for=condition=Ready nodes --all --timeout=300s
+	check_error "Узлы кластера не готовы"
+}
+
+# Запуск установки
+setup_kind_cluster
+
+echo -e "${GREEN}Установка кластера Kind успешно завершена!${NC}"

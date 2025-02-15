@@ -1,0 +1,70 @@
+#!/usr/bin/bash
+
+# Определение пути к директории скрипта и корню репозитория
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+# Загрузка общих переменных
+source "${SCRIPT_DIR}/env"
+
+# Функция для проверки наличия необходимых утилит
+check_prerequisites() {
+	local required_tools=("kubectl" "helm" "docker")
+	for tool in "${required_tools[@]}"; do
+		if ! command -v "$tool" &> /dev/null; then
+			echo -e "${RED}Ошибка: $tool не установлен${NC}"
+			exit 1
+		fi
+	done
+}
+
+# Функция для запуска компонента с единым форматом вывода
+deploy_component() {
+	local component=$1
+	local description=$2
+	
+	echo -e "\n${CYAN}[$component] Установка $description...${NC}"
+	"${SCRIPT_DIR}/$component"
+	check_error "Ошибка при установке $description"
+	echo -e "${GREEN}[$component] Установка $description завершена${NC}"
+}
+
+# Функция для вывода статуса компонентов
+show_deployment_status() {
+	echo -e "\n${CYAN}Статус компонентов в пространстве $NAMESPACE_PROD:${NC}"
+	kubectl get pods -n $NAMESPACE_PROD -o wide
+	
+	echo -e "\n${CYAN}Статус Ingress Controller:${NC}"
+	kubectl get pods -n $NAMESPACE_INGRESS -o wide
+	
+	echo -e "\n${CYAN}Статус Ingress ресурсов:${NC}"
+	kubectl get ingress -n $NAMESPACE_PROD -o wide
+}
+
+# Проверка prerequisites
+echo -e "${YELLOW}Проверка необходимых компонентов...${NC}"
+check_prerequisites
+
+echo -e "${YELLOW}Начинаем полное развертывание...${NC}"
+
+# Последовательный запуск всех компонентов
+deploy_component "setup-kind" "кластера Kind"
+deploy_component "setup-ingress" "Ingress Controller"
+deploy_component "setup-cert-manager" "Cert Manager"
+deploy_component "setup-dns" "DNS"
+
+# Установка приложений через charts
+echo -e "\n${CYAN}Установка приложений...${NC}"
+"${SCRIPT_DIR}/charts" install ollama
+check_error "Ошибка при установке Ollama"
+
+"${SCRIPT_DIR}/charts" install open-webui
+check_error "Ошибка при установке Open WebUI"
+
+# Вывод статуса развертывания
+show_deployment_status
+
+echo -e "\n${GREEN}Развертывание успешно завершено!${NC}"
+echo -e "${YELLOW}Для проверки доступности сервисов:${NC}"
+echo -e "1. Ollama API: https://$OLLAMA_HOST"
+echo -e "2. Open WebUI: https://$WEBUI_HOST"
