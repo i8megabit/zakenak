@@ -1,7 +1,11 @@
 #!/bin/bash
 
+# Определение пути к директории скрипта и корню репозитория
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
 # Загрузка общих переменных
-source ./env.sh
+source "${SCRIPT_DIR}/env.sh"
 
 echo -e "${YELLOW}Начинаем развертывание компонентов...${NC}"
 
@@ -16,7 +20,7 @@ recreate_cluster() {
 	fi
 	
 	echo -e "${CYAN}Создание нового кластера Kind...${NC}"
-	kind create cluster --config kind-config.yaml
+	kind create cluster --config "${SCRIPT_DIR}/kind-config.yaml"
 	check_error "Не удалось создать кластер Kind"
 	
 	# Ожидание готовности узлов
@@ -53,26 +57,26 @@ check_error "Не удалось установить cert-manager"
 
 # 4. Настройка CoreDNS
 echo -e "${CYAN}Настройка CoreDNS...${NC}"
-mkdir -p ./manifests
-kubectl apply -f ./manifests/coredns-custom-config.yaml
-kubectl apply -f ./manifests/coredns-patch.yaml
+kubectl apply -f "${REPO_ROOT}/tools/k8s-kind-setup/manifests/coredns-custom-config.yaml"
+kubectl apply -f "${REPO_ROOT}/tools/k8s-kind-setup/manifests/coredns-patch.yaml"
+
 kubectl rollout restart deployment coredns -n kube-system
 check_error "Не удалось настроить CoreDNS"
 
 # 5. Установка Ollama с поддержкой GPU
 echo -e "${CYAN}Установка Ollama...${NC}"
-helm upgrade --install $RELEASE_OLLAMA $CHART_PATH_OLLAMA \
+helm upgrade --install $RELEASE_OLLAMA "${REPO_ROOT}/helm-charts/ollama" \
 	--namespace $NAMESPACE_PROD \
 	--create-namespace \
-	--values $CHART_PATH_OLLAMA/values.yaml \
+	--values "${REPO_ROOT}/helm-charts/ollama/values.yaml" \
 	--wait
 check_error "Не удалось установить Ollama"
 
 # 6. Установка Open WebUI
 echo -e "${CYAN}Установка Open WebUI...${NC}"
-helm upgrade --install $RELEASE_WEBUI $CHART_PATH_WEBUI \
+helm upgrade --install $RELEASE_WEBUI "${REPO_ROOT}/helm-charts/open-webui" \
 	--namespace $NAMESPACE_PROD \
-	--values $CHART_PATH_WEBUI/values.yaml \
+	--values "${REPO_ROOT}/helm-charts/open-webui/values.yaml" \
 	--wait
 check_error "Не удалось установить Open WebUI"
 

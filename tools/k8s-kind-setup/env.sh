@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Определение пути к директории скрипта и корню репозитория
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
 # Цвета для вывода
 export YELLOW='\033[1;33m'
 export CYAN='\033[0;36m'
@@ -18,9 +22,9 @@ export RELEASE_WEBUI="open-webui"
 export RELEASE_INGRESS="ingress-nginx"
 export RELEASE_CERT_MANAGER="cert-manager"
 
-# Пути к чартам
-export CHART_PATH_OLLAMA="./helm-charts/ollama"
-export CHART_PATH_WEBUI="./helm-charts/open-webui"
+# Пути к чартам (относительно корня репозитория)
+export CHART_PATH_OLLAMA="${REPO_ROOT}/helm-charts/ollama"
+export CHART_PATH_WEBUI="${REPO_ROOT}/helm-charts/open-webui"
 
 # DNS настройки
 export DOMAIN_SUFFIX="prod.local"
