@@ -13,104 +13,148 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"github.com/i8meg/zakenak/pkg/config"
-	"github.com/i8meg/zakenak/pkg/converge"
-	"github.com/i8meg/zakenak/pkg/build"
+	"github.com/i8meg/zakenak/pkg/state"
+	"github.com/i8meg/zakenak/pkg/helm"
 )
 
 var (
 	Version    = "1.0.0"
+	kubeconfig string
 	namespace  string
 	debug      bool
 	configFile string
 	gpuEnabled bool
-	chartPath  string
-	values     []string
 )
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "prod", "Целевой namespace")
-	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Включить отладочный режим")
-	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "zakenak.yaml", "Путь к конфигурационному файлу")
-	rootCmd.PersistentFlags().BoolVarP(&gpuEnabled, "gpu", "g", false, "Включить поддержку GPU")
+	rootCmd.PersistentFlags().StringVar(&kubeconfig, "kubeconfig", "", "путь к kubeconfig")
+	rootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "prod", "целевой namespace")
+	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "включить отладочный режим")
+	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "zakenak.yaml", "путь к конфигурации")
+	rootCmd.PersistentFlags().BoolVarP(&gpuEnabled, "gpu", "g", true, "включить поддержку GPU")
 
-	deployCmd.Flags().StringVarP(&chartPath, "chart", "p", "", "Путь к Helm чарту")
-	deployCmd.Flags().StringArrayVarP(&values, "values", "f", []string{}, "Файлы values.yaml")
-
-	rootCmd.AddCommand(deployCmd)
-	rootCmd.AddCommand(buildCmd)
-	rootCmd.AddCommand(convergeCmd)
-	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(
+		newInitCmd(),
+		newUpCmd(),
+		newDownCmd(),
+		newStatusCmd(),
+	)
 }
 
 var rootCmd = &cobra.Command{
 	Use:   "zakenak",
-	Short: "ƵakӖnak™® - инструмент для управления Kubernetes кластером",
+	Short: "ƵakӖnak™® - элегантный инструмент для GitOps и деплоя",
 	Long: `ƵakӖnak™® - карманный инструмент для ежедневной Helm-оркестрации 
 однонодового Kind кластера Kubernetes с поддержкой GPU.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
-	},
 }
 
-var deployCmd = &cobra.Command{
-	Use:   "deploy [chart]",
-	Short: "Развернуть чарт или все чарты",
-	Run: func(cmd *cobra.Command, args []string) {
-		if err := runDeploy(args...); err != nil {
-			fmt.Fprintf(os.Stderr, "Ошибка: %v\n", err)
-			os.Exit(1)
-		}
-	},
+func newInitCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "init",
+		Short: "Инициализировать кластер и базовые компоненты",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runInit()
+		},
+	}
 }
 
-var buildCmd = &cobra.Command{
-	Use:   "build",
-	Short: "Собрать все необходимые образы",
-	Run: func(cmd *cobra.Command, args []string) {
-		if err := runBuild(); err != nil {
-			fmt.Fprintf(os.Stderr, "Ошибка: %v\n", err)
-			os.Exit(1)
-		}
-	},
+func newUpCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "up",
+		Short: "Поднять кластер и все сервисы",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runUp()
+		},
+	}
 }
 
-var convergeCmd = &cobra.Command{
-	Use:   "converge",
-	Short: "Запустить конвергенцию состояния",
-	Run: func(cmd *cobra.Command, args []string) {
-		if err := runConverge(); err != nil {
-			fmt.Fprintf(os.Stderr, "Ошибка: %v\n", err)
-			os.Exit(1)
-		}
-	},
+func newDownCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "down",
+		Short: "Остановить кластер с сохранением данных",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runDown()
+		},
+	}
 }
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Показать версию",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("ƵakӖnak™® версия %s\n", Version)
-	},
+func newStatusCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "status",
+		Short: "Показать статус компонентов",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runStatus()
+		},
+	}
 }
 
 func main() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		fmt.Fprintf(os.Stderr, "Ошибка: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func runDeploy(args ...string) error {
-	// TODO: Имплементация деплоя
+func runInit() error {
+	ctx := context.Background()
+	
+	// Инициализация кластера
+	if err := initCluster(ctx); err != nil {
+		return fmt.Errorf("ошибка инициализации кластера: %w", err)
+	}
+	
+	// Установка базовых компонентов
+	if err := setupBaseComponents(ctx); err != nil {
+		return fmt.Errorf("ошибка установки компонентов: %w", err)
+	}
+	
 	return nil
 }
 
-func runBuild() error {
-	// TODO: Имплементация сборки
+func runUp() error {
+	ctx := context.Background()
+	
+	// Восстановление состояния
+	state, err := loadState()
+	if err != nil {
+		return fmt.Errorf("ошибка загрузки состояния: %w", err)
+	}
+	
+	// Запуск сервисов
+	if err := startServices(ctx, state); err != nil {
+		return fmt.Errorf("ошибка запуска сервисов: %w", err)
+	}
+	
 	return nil
 }
 
-func runConverge() error {
-	// TODO: Имплементация конвергенции
+func runDown() error {
+	ctx := context.Background()
+	
+	// Сохранение состояния
+	if err := saveState(); err != nil {
+		return fmt.Errorf("ошибка сохранения состояния: %w", err)
+	}
+	
+	// Остановка кластера
+	if err := stopCluster(ctx); err != nil {
+		return fmt.Errorf("ошибка остановки кластера: %w", err)
+	}
+	
+	return nil
+}
+
+func runStatus() error {
+	ctx := context.Background()
+	
+	// Получение статуса компонентов
+	status, err := getStatus(ctx)
+	if err != nil {
+		return fmt.Errorf("ошибка получения статуса: %w", err)
+	}
+	
+	// Вывод статуса
+	printStatus(status)
+	
 	return nil
 }
