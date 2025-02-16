@@ -108,8 +108,8 @@ func (m *Manager) buildImages(ctx context.Context) error {
     return cmd.Run()
 }
 
-// deploy выполняет развертывание в кластер
-func (m *Manager) deploy(ctx context.Context) error {
+// Deploy выполняет развертывание в кластер
+func (m *Manager) Deploy(ctx context.Context) error {
     // Обновление состояния
     if err := m.state.Update(func(s *state.State) error {
         s.Status.Phase = state.PhaseDeploying
