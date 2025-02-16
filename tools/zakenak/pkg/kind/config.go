@@ -19,9 +19,9 @@ package kind
 
 import (
     "os"
-    "path/filepath"
     "text/template"
 )
+
 
 // Config представляет конфигурацию Kind кластера
 type Config struct {

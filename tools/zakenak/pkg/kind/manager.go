@@ -22,9 +22,9 @@ import (
     "fmt"
     "os"
     "os/exec"
-    "path/filepath"
     "time"
 )
+
 
 // Manager управляет Kind кластером
 type Manager struct {
