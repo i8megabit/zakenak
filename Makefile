@@ -1,51 +1,79 @@
-# Build variables
-REGISTRY ?= ghcr.io
-IMAGE_NAME ?= i8megabit/gitops
-VERSION ?= $(shell git describe --tags --always --dirty)
-COMMIT ?= $(shell git rev-parse --short HEAD)
-BUILD_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
+# Copyright (c) 2024 Mikhail Eberil
+#
+# This file is part of Zakenak project and is released under the terms of the
+# MIT License. See LICENSE file in the project root for full license information.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#
+# The name "Zakenak" and associated branding are trademarks of @eberil
+# and may not be used without express written permission.
 
-# Go build settings
-GO := go
-GOOS ?= linux
-GOARCH ?= amd64
-CGO_ENABLED ?= 0
-GO_BUILD_FLAGS := -v
+BINARY_NAME=zakenak
+VERSION=1.3.1
+BUILD_DIR=build
+INSTALL_DIR=/usr/local/bin
 
-# Directories
-CMD_DIR := ./cmd/gitops
-BUILD_DIR := ./build
+GO_FILES=$(shell find . -name '*.go' -not -path "./vendor/*")
+LDFLAGS=-ldflags "-X main.Version=$(VERSION)"
 
-.PHONY: all
-all: clean build test
+.PHONY: all build clean install uninstall test lint
 
-.PHONY: clean
+all: clean build
+
+build:
+	@echo "Building $(BINARY_NAME)..."
+	@mkdir -p $(BUILD_DIR)
+	@go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/zakenak
+	@echo "Build complete!"
+
 clean:
-	rm -rf $(BUILD_DIR)
-	mkdir -p $(BUILD_DIR)
+	@echo "Cleaning..."
+	@rm -rf $(BUILD_DIR)
+	@go clean
+	@echo "Clean complete!"
 
-.PHONY: build
-build: clean
-	$(GO) mod tidy
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) $(GO) build \
-		$(GO_BUILD_FLAGS) \
-		-ldflags "-X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main.BuildDate=$(BUILD_DATE)" \
-		-o $(BUILD_DIR)/gitops $(CMD_DIR)
+install: build
+	@echo "Installing $(BINARY_NAME)..."
+	@sudo cp $(BUILD_DIR)/$(BINARY_NAME) $(INSTALL_DIR)/$(BINARY_NAME)
+	@sudo chmod +x $(INSTALL_DIR)/$(BINARY_NAME)
+	@echo "Installation complete!"
 
-.PHONY: test
+uninstall:
+	@echo "Uninstalling $(BINARY_NAME)..."
+	@sudo rm -f $(INSTALL_DIR)/$(BINARY_NAME)
+	@echo "Uninstallation complete!"
+
 test:
-	$(GO) test -v ./...
+	@echo "Running tests..."
+	@go test -v ./...
+	@echo "Tests complete!"
 
-.PHONY: docker-build
-docker-build:
-	docker build -t $(REGISTRY)/$(IMAGE_NAME):$(VERSION) .
-	docker tag $(REGISTRY)/$(IMAGE_NAME):$(VERSION) $(REGISTRY)/$(IMAGE_NAME):latest
+lint:
+	@echo "Running linter..."
+	@golangci-lint run
+	@echo "Lint complete!"
 
-.PHONY: docker-push
-docker-push:
-	docker push $(REGISTRY)/$(IMAGE_NAME):$(VERSION)
-	docker push $(REGISTRY)/$(IMAGE_NAME):latest
+# GPU-specific targets
+gpu-check:
+	@echo "Checking GPU requirements..."
+	@nvidia-smi > /dev/null 2>&1 || (echo "Error: NVIDIA GPU not found or driver not installed" && exit 1)
+	@command -v nvcc > /dev/null 2>&1 || (echo "Error: CUDA toolkit not found" && exit 1)
+	@echo "GPU check passed!"
 
-.PHONY: deploy
-deploy:
-	kubectl apply -f helm-charts/
+gpu-build: gpu-check build
+
+# Development helpers
+dev-setup:
+	@echo "Setting up development environment..."
+	@go mod download
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@echo "Dev setup complete!"
+
+# Release helpers
+release:
+	@echo "Creating release $(VERSION)..."
+	@git tag -a v$(VERSION) -m "Release v$(VERSION)"
+	@git push origin v$(VERSION)
+	@echo "Release complete!"
