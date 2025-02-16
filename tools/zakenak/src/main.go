@@ -1,5 +1,5 @@
-// Copyright (c) 2024 ƵakӖnak™®
-// Author: @ӗberil
+// Copyright (c) 2024 Zakenak
+// Author: @eberil
 // License: MIT with Trademark Protection
 
 package main
@@ -43,8 +43,8 @@ func init() {
 
 var rootCmd = &cobra.Command{
 	Use:   "zakenak",
-	Short: "ƵakӖnak™® - элегантный инструмент для GitOps и деплоя",
-	Long: `ƵakӖnak™® - карманный инструмент для ежедневной Helm-оркестрации 
+	Short: "Zakenak - элегантный инструмент для GitOps и деплоя",
+	Long: `Zakenak - карманный инструмент для ежедневной Helm-оркестрации 
 однонодового Kind кластера Kubernetes с поддержкой GPU.`,
 }
 

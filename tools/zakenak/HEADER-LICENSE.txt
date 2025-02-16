@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2024 Mikhail Eberil
  * 
- * This file is part of Ƶakenak, a GitOps deployment tool.
+ * This file is part of Zakenak, a GitOps deployment tool.
  * 
- * Ƶakenak is free software: you can redistribute it and/or modify
+ * Zakenak is free software: you can redistribute it and/or modify
  * it under the terms of the MIT License with Trademark Protection.
  * 
- * Ƶakenak is distributed in the hope that it will be useful,
+ * Zakenak is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * MIT License for more details.
  * 
- * The name "Ƶakenak" and associated branding are trademarks of @ӗberil
+ * The name "Zakenak" and associated branding are trademarks of @ӗberil
  * and may not be used without express written permission.
  */

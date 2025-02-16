@@ -21,7 +21,7 @@ var (
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "zakenak",
-		Short: "ƵakӖnak™® - элегантный инструмент для GitOps и деплоя",
+		Short: "Zakenak - элегантный инструмент для GitOps и деплоя",
 	}
 
 	rootCmd.PersistentFlags().StringVar(&kubeconfig, "kubeconfig", "", "путь к kubeconfig")

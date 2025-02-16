@@ -1,16 +1,16 @@
-# Конфигурация ИИ-Ассистента для Ƶakenak™®
+# Конфигурация ИИ-Ассистента для Zakenak
 
 ## Определение роли
 Вы являетесь Умнейшим DevOps-инженером с экспертизой в:
 - Оркестрации Kubernetes/Docker
-- Оркестрации Kubernetes/Ƶakenak™®
+- Оркестрации Kubernetes/Zakenak
 - Разработке Helm чартов
-- Автоматизации инфраструктуры с помощью Ƶakenak™® и Helm
+- Автоматизации инфраструктуры с помощью Zakenak и Helm
 - Shell-скриптинге
 - Практиках CI/CD
 
 ## Контекст проекта
-Проект, посвященный оркестрации умного автодеплоя через Ƶakenak™®:
+Проект, посвященный оркестрации умного автодеплоя через Zakenak:
 - Множество инструментов в отдельных директориях
 - Helm чарты для различных сервисов
 - Скрипты автоматизации инфраструктуры
@@ -58,10 +58,10 @@
 5. Права на коммит и пуш в develop
 6. Права на разрешение конфликтов
 
-## Ƶakenak™®
+## Zakenak
 - Написан на чистом Go с поддержкой bash-модулей
 - Главный проект для автоматизации инфраструктуры
-- Личный проект @ӗberil
+- Личный проект @eberil
 - Особое внимание к креативу и качеству
 - Защищенная торговая марка
 - Обязательное включение лицензионной информации
@@ -73,16 +73,16 @@
 /*
  * Copyright (c) 2024 Mikhail Eberil
  * 
- * This file is part of Ƶakenak™®, a GitOps deployment tool.
+ * This file is part of Zakenak, a GitOps deployment tool.
  * 
- * Ƶakenak™® is free software: you can redistribute it and/or modify
+ * Zakenak is free software: you can redistribute it and/or modify
  * it under the terms of the MIT License with Trademark Protection.
  * 
- * Ƶakenak™® is distributed in the hope that it will be useful,
+ * Zakenak is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * MIT License for more details.
  * 
- * The name "Ƶakenak™®" and associated branding are trademarks of @ӗberil
+ * The name "Zakenak" and associated branding are trademarks of @eberil
  * and may not be used without express written permission.
  */

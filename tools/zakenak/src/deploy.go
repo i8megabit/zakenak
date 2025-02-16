@@ -11,7 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * MIT License for more details.
  * 
- * The name "Ƶakenak™®" and associated branding are trademarks of @ӗberil
+ * The name "Ƶakenak™®" and associated branding are trademarks of @eberil
  * and may not be used without express written permission.
  */
 

@@ -1,0 +1,59 @@
+name: Build Ƶakenak™®
+
+on:
+	push:
+		branches: [ main, develop ]
+	pull_request:
+		branches: [ main, develop ]
+
+jobs:
+	build:
+		runs-on: ubuntu-latest
+		steps:
+		- uses: actions/checkout@v3
+
+		- name: Set up Go
+			uses: actions/setup-go@v4
+			with:
+				go-version: '1.21'
+
+		- name: Install CUDA
+			run: |
+				wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin
+				sudo mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600
+				wget https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda-repo-ubuntu2204-12-8-local_12.8.0-535.104.05-1_amd64.deb
+				sudo dpkg -i cuda-repo-ubuntu2204-12-8-local_12.8.0-535.104.05-1_amd64.deb
+				sudo cp /var/cuda-repo-ubuntu2204-12-8-local/cuda-*-keyring.gpg /usr/share/keyrings/
+				sudo apt-get update
+				sudo apt-get -y install cuda
+
+		- name: Build Binary
+			run: |
+				make build
+				
+		- name: Build Docker image
+			run: |
+				make docker-build
+
+		- name: Run tests
+			run: |
+				make test
+
+		- name: Upload artifact
+			uses: actions/upload-artifact@v3
+			with:
+				name: zakenak
+				path: build/zakenak
+
+		- name: Login to GitHub Container Registry
+			if: github.event_name != 'pull_request'
+			uses: docker/login-action@v2
+			with:
+				registry: ghcr.io
+				username: ${{ github.actor }}
+				password: ${{ secrets.GITHUB_TOKEN }}
+
+		- name: Push Docker image
+			if: github.event_name != 'pull_request'
+			run: |
+				make docker-push

@@ -4,7 +4,7 @@
 # | |    | |  | |   | | | |
 # | |___ | |  | |___| |_| |
 #  \____|___|  \____|____/ 
-#                by @ӗberil
+#                by @eberil
 #
 # Copyright (c) 2024 Mikhail Eberil
 # CI/CD Helm Deployment Tool
