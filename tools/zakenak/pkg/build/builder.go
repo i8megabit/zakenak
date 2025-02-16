@@ -5,7 +5,7 @@ import (
     "fmt"
     "github.com/docker/docker/api/types"
     "github.com/docker/docker/client"
-    "github.com/i8meg/zakenak/pkg/config"
+    "github.com/i8megabit/zakenak/pkg/config"
 )
 
 // Builder управляет процессом сборки образов

@@ -10,9 +10,9 @@
 ```
 
 # [Zakenak](https://dic.academic.ru/dic.nsf/dic_synonims/390396/%D1%87%D0%B0%D0%BA%D0%B0%D0%BD%D0%B0%D0%BAчаканак "др.-чув. чӑканӑк — бухта, залив")
-[![Go Report Card](https://goreportcard.com/badge/github.com/i8meg/zakenak)](https://goreportcard.com/report/github.com/i8meg/zakenak)
+[![Go Report Card](https://goreportcard.com/badge/github.com/i8megabit/zakenak)](https://goreportcard.com/report/github.com/i8megabit/zakenak)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/i8meg/zakenak)][def]
+[![Release](https://img.shields.io/github/v/release/i8megabit/zakenak)][def]
 
 ## О проекте
 Zakenak — это инновационный инструмент для GitOps и деплоя, специально разработанный для эффективной Helm-оркестрации однонодового Kind кластера Kubernetes с поддержкой GPU.
@@ -38,7 +38,7 @@ Zakenak — это инновационный инструмент для GitOps
 ### Установка
 ```bash
 # Клонирование репозитория
-git clone https://github.com/i8meg/zakenak
+git clone https://github.com/i8megabit/zakenak
 cd zakenak
 
 # Сборка
@@ -110,4 +110,4 @@ Zakenak распространяется под модифицированной
 - Сообществу Kubernetes
 - Всем контрибьюторам
 
-[def]: https://github.com/i8meg/zakenak/releases
+[def]: https://github.com/i8megabit/zakenak/releases

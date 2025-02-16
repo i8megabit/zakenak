@@ -162,5 +162,5 @@ helm install --dry-run --debug
 
 ## Поддержка
 - Email: security@i8megabit.com
-- GitHub Issues: [Создать issue](https://github.com/i8meg/zakenak/issues)
+- GitHub Issues: [Создать issue](https://github.com/i8megabit/zakenak/issues)
 - Документация: [Руководство пользователя](docs/)

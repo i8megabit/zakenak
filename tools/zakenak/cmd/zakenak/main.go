@@ -7,9 +7,9 @@ import (
     "github.com/spf13/cobra"
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/tools/clientcmd"
-    "github.com/i8meg/zakenak/pkg/config"
-    "github.com/i8meg/zakenak/pkg/converge"
-    "github.com/i8meg/zakenak/pkg/build"
+    "github.com/i8megabit/zakenak/pkg/config"
+    "github.com/i8megabit/zakenak/pkg/converge"
+    "github.com/i8megabit/zakenak/pkg/build"
 )
 
 var (

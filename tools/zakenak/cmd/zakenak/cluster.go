@@ -19,7 +19,7 @@ package main
 
 import (
     "github.com/spf13/cobra"
-    "github.com/i8meg/zakenak/pkg/kind"
+    "github.com/i8megabit/zakenak/pkg/kind"
 )
 
 func newClusterCmd() *cobra.Command {

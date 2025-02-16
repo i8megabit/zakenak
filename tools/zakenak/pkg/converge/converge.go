@@ -3,7 +3,7 @@ package converge
 import (
     "context"
     "fmt"
-    "github.com/i8meg/zakenak/pkg/config"
+    "github.com/i8megabit/zakenak/pkg/config"
     "k8s.io/client-go/kubernetes"
 )
 

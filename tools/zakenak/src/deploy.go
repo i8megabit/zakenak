@@ -21,8 +21,8 @@ import (
     "context"
     "fmt"
     "path/filepath"
-    "github.com/i8meg/zakenak/pkg/config"
-    "github.com/i8meg/zakenak/pkg/helm"
+    "github.com/i8megabit/zakenak/pkg/config"
+    "github.com/i8megabit/zakenak/pkg/helm"
     "k8s.io/client-go/kubernetes"
 )
 

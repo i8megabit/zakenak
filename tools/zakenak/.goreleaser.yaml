@@ -36,8 +36,8 @@ archives:
 
 dockers:
   - image_templates:
-      - "ghcr.io/i8meg/zakenak:{{ .Version }}"
-      - "ghcr.io/i8meg/zakenak:latest"
+      - "ghcr.io/i8megabit/zakenak:{{ .Version }}"
+      - "ghcr.io/i8megabit/zakenak:latest"
     dockerfile: Dockerfile
     build_flag_templates:
       - "--label=org.opencontainers.image.created={{.Date}}"
@@ -65,7 +65,7 @@ changelog:
 
 release:
   github:
-    owner: i8meg
+    owner: i8megabit
     name: zakenak
   prerelease: auto
   draft: false

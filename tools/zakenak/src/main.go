@@ -12,9 +12,9 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"github.com/i8meg/zakenak/pkg/config"
-	"github.com/i8meg/zakenak/pkg/state"
-	"github.com/i8meg/zakenak/pkg/helm"
+	"github.com/i8megabit/zakenak/pkg/config"
+	"github.com/i8megabit/zakenak/pkg/state"
+	"github.com/i8megabit/zakenak/pkg/helm"
 )
 
 var (
@@ -60,9 +60,9 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"github.com/i8meg/zakenak/pkg/config"
-	"github.com/i8meg/zakenak/pkg/state"
-	"github.com/i8meg/zakenak/pkg/helm"
+	"github.com/i8megabit/zakenak/pkg/config"
+	"github.com/i8megabit/zakenak/pkg/state"
+	"github.com/i8megabit/zakenak/pkg/helm"
 )
 
 var (
