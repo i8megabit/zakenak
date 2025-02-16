@@ -27,6 +27,26 @@ func NewManager(client *kubernetes.Clientset, cfg *config.Config, stateManager *
     }
 }
 
+// Converge приводит текущее состояние к желаемому
+func (m *Manager) Converge(ctx context.Context) error {
+    // Проверка состояния Git
+    if err := m.checkGitState(ctx); err != nil {
+        return fmt.Errorf("git check failed: %w", err)
+    }
+
+    // Сборка образов если необходимо
+    if err := m.buildImages(ctx); err != nil {
+        return fmt.Errorf("build failed: %w", err)
+    }
+
+    // Развертывание в кластер
+    if err := m.deploy(ctx); err != nil {
+        return fmt.Errorf("deploy failed: %w", err)
+    }
+
+    return nil
+}
+
 // Deploy выполняет развертывание в кластер
 func (m *Manager) Deploy(ctx context.Context) error {
     // Проверка состояния Git
