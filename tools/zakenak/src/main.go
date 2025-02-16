@@ -13,8 +13,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"github.com/i8megabit/zakenak/pkg/config"
+	"github.com/i8megabit/zakenak/pkg/converge"
+	"github.com/i8megabit/zakenak/pkg/build"
 	"github.com/i8megabit/zakenak/pkg/state"
-	"github.com/i8megabit/zakenak/pkg/helm"
 )
 
 var (
@@ -98,102 +99,31 @@ func newStatusCmd() *cobra.Command {
 }
 
 func runInit() error {
-
 	ctx := context.Background()
 	
-	// Инициализация кластера
-	if err := initCluster(ctx); err != nil {
-		return fmt.Errorf("ошибка инициализации кластера: %w", err)
-	}
-	
-	// Установка базовых компонентов
-	if err := setupBaseComponents(ctx); err != nil {
-		return fmt.Errorf("ошибка установки компонентов: %w", err)
-	}
-	
-	return nil
-}
-
-func runUp() error {
-	ctx := context.Background()
-	
-	// Восстановление состояния
-	state, err := loadState()
-	if err != nil {
-		return fmt.Errorf("ошибка загрузки состояния: %w", err)
-	}
-	
-	// Запуск сервисов
-	if err := startServices(ctx, state); err != nil {
-		return fmt.Errorf("ошибка запуска сервисов: %w", err)
-	}
-	
-	return nil
-}
-
-func runDown() error {
-	ctx := context.Background()
-	
-	// Сохранение состояния
-	if err := saveState(); err != nil {
-		return fmt.Errorf("ошибка сохранения состояния: %w", err)
-	}
-	
-	// Остановка кластера
-	if err := stopCluster(ctx); err != nil {
-		return fmt.Errorf("ошибка остановки кластера: %w", err)
-	}
-	
-	return nil
-}
-
-func runStatus() error {
-	ctx := context.Background()
-	
-	// Получение статуса компонентов
-	status, err := getStatus(ctx)
-	if err != nil {
-		return fmt.Errorf("ошибка получения статуса: %w", err)
-	}
-	
-	// Вывод статуса
-	printStatus(status)
-	
-	return nil
-}
-
-func newDeployCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "deploy",
-		Short: "Развернуть компоненты в кластер",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDeploy()
-		},
-	}
-}
-
-func runDeploy() error {
-	ctx := context.Background()
-	
-	// Create Kubernetes client
+	// Создаем клиент Kubernetes
 	clientset, err := createKubernetesClient(kubeconfig)
 	if err != nil {
 		return fmt.Errorf("error creating kubernetes client: %w", err)
 	}
 
-	// Load configuration
-	cfg, err := config.LoadConfig(configFile)
+	// Загружаем конфигурацию
+	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
 		return fmt.Errorf("error loading config: %w", err)
 	}
 
-	// Run deployment
-	if err := deployHandler(clientset, cfg); err != nil {
-		return fmt.Errorf("deployment failed: %w", err)
+	// Создаем менеджер конвергенции
+	manager := converge.NewManager(clientset, cfg)
+	
+	// Запускаем процесс инициализации
+	if err := manager.Initialize(ctx); err != nil {
+		return fmt.Errorf("initialization failed: %w", err)
 	}
 
 	return nil
 }
+
 
 func createKubernetesClient(kubeconfigPath string) (*kubernetes.Clientset, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)

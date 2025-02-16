@@ -5,6 +5,11 @@
 
 package helm
 
+import (
+	"fmt"
+	"os/exec"
+)
+
 // Client represents the base structure for working with Helm
 type Client struct {
 	// Client configuration
@@ -13,4 +18,13 @@ type Client struct {
 // NewClient creates a new instance of Helm client
 func NewClient() *Client {
 	return &Client{}
+}
+
+// ValidateChart validates a Helm chart at the given path
+func (c *Client) ValidateChart(chartPath string) error {
+	cmd := exec.Command("helm", "lint", chartPath)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("chart validation failed: %s: %w", string(output), err)
+	}
+	return nil
 }

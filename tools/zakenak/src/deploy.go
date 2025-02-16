@@ -7,6 +7,9 @@ import (
     "github.com/i8megabit/zakenak/pkg/config"
     "github.com/i8megabit/zakenak/pkg/helm"
     "k8s.io/client-go/kubernetes"
+    corev1 "k8s.io/api/core/v1"
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // deployHandler handles deployment operations
@@ -28,7 +31,17 @@ func deployHandler(client *kubernetes.Clientset, cfg *config.Config) error {
 
 // ensureNamespace creates namespace if it doesn't exist
 func ensureNamespace(client *kubernetes.Clientset, namespace string) error {
-    // Implementation for namespace creation
+    ns := &corev1.Namespace{
+        ObjectMeta: metav1.ObjectMeta{
+            Name: namespace,
+        },
+    }
+    
+    _, err := client.CoreV1().Namespaces().Create(context.Background(), ns, metav1.CreateOptions{})
+    if err != nil && !apierrors.IsAlreadyExists(err) {
+        return fmt.Errorf("failed to create namespace: %w", err)
+    }
+    
     return nil
 }
 
