@@ -66,10 +66,10 @@ deploy_banner
 echo -e "\n${YELLOW}Начинаем развертывание компонентов...${NC}"
 
 # Последовательный запуск всех компонентов
-deploy_component "setup-kind" "кластера Kind"
-deploy_component "setup-ingress" "Ingress Controller"
-deploy_component "setup-cert-manager" "Cert Manager"
-deploy_component "setup-dns" "DNS"
+deploy_component "setup-kind.sh" "кластера Kind"
+deploy_component "setup-ingress.sh" "Ingress Controller"
+deploy_component "setup-cert-manager.sh" "Cert Manager"
+deploy_component "setup-dns.sh" "DNS"
 
 # Установка приложений через charts
 

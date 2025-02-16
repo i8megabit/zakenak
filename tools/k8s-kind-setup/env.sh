@@ -35,6 +35,23 @@ export WEBUI_HOST="webui.prod.local"
 export RELEASE_CERT_MANAGER="cert-manager"
 export RELEASE_INGRESS="ingress-nginx"
 
+# Переменные для GPU
+export NVIDIA_DRIVER_VERSION="535.104.05"
+export CUDA_VERSION="12.8"
+export GPU_MEMORY_LIMIT="8Gi"
+export GPU_LAYERS="43"
+
+# Переменные для сертификатов
+export CERT_VALIDITY_DURATION="8760h"  # 1 год
+export CERT_RENEW_BEFORE="720h"       # 30 дней
+export CA_ORGANIZATION="DevSecMLOps"
+export CA_COMMON_NAME="Local CA"
+
+# Переменные для мониторинга
+export MONITORING_ENABLED="true"
+export LOG_RETENTION_DAYS="30"
+export METRICS_SCRAPE_INTERVAL="15s"
+
 # Функция проверки ошибок
 check_error() {
     if [ $? -ne 0 ]; then

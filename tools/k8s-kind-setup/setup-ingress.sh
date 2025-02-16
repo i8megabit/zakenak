@@ -22,4 +22,20 @@ source "${SCRIPT_DIR}/ascii_banners.sh"
 ingress_banner
 echo ""
 
-# ... rest of the code
+echo -e "${CYAN}Установка Ingress Controller...${NC}"
+
+# Установка Ingress Controller
+helm upgrade --install $RELEASE_INGRESS ingress-nginx/ingress-nginx \
+	--namespace $NAMESPACE_INGRESS \
+	--create-namespace \
+	--set controller.service.type=NodePort \
+	--set controller.hostPort.enabled=true \
+	--set controller.service.nodePorts.http=80 \
+	--set controller.service.nodePorts.https=443 \
+	--wait
+check_error "Не удалось установить Ingress Controller"
+
+# Ожидание готовности подов
+wait_for_pods $NAMESPACE_INGRESS "app.kubernetes.io/component=controller"
+
+echo -e "${GREEN}Установка Ingress Controller успешно завершена!${NC}"

@@ -41,7 +41,7 @@ setup_kind_cluster() {
     fi
     
     echo -e "${CYAN}Создание нового кластера Kind...${NC}"
-    kind create cluster --config "${REPO_ROOT}/kubeconfig.yaml" --image kindest/node:v1.27.3
+    kind create cluster --config "${SCRIPT_DIR}/kubeconfig.yaml" --image kindest/node:v1.27.3
     check_error "Не удалось создать кластер Kind"
     
     # Ожидание готовности узлов
