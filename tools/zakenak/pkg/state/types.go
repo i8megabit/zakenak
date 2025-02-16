@@ -32,6 +32,7 @@ const (
     PhaseStopping    Phase = "Stopping"     // Система останавливается
     PhaseStopped     Phase = "Stopped"      // Система остановлена
     PhaseError       Phase = "Error"        // Произошла ошибка
+    PhaseDeploying   Phase = "Deploying"    // Система разворачивается
 )
 
 // Component представляет состояние отдельного компонента системы,
