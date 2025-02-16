@@ -94,7 +94,7 @@ RestartNeeded : True
 3. Выполнение скрипта предложит сохранить этот скрипт куда-нибудь. Просто перезапишите Reset-WSL.ps1. После этого, выполнение скрипта будет проходить беспрепятственно IDE
 
 ```plain text
-Copyright (c) 2024 Mikhail Eberil
+Copyright (c)  2025 Mikhail Eberil
 
 This file is part of Zakenak project and is released under the terms of the MIT License. See LICENSE file in the project root for full license information.
 

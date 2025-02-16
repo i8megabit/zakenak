@@ -9,7 +9,7 @@
 
 Should Harbour?	No.
 ```
-## [1.1.0] - 2024-02-16
+## [1.1.0] -  2025-02-16
 
 ### Added
 - Добавлена поддержка GPU через NVIDIA Container Runtime
@@ -34,7 +34,7 @@ Should Harbour?	No.
 - Улучшена безопасность доступа к GPU ресурсам
 - Добавлены проверки целостности конфигураций
 
-## [1.0.0] - 2024-02-15
+## [1.0.0] -  2025-02-15
 
 ### Added
 - Создан базовый функционал Ƶakenak™®
@@ -59,7 +59,7 @@ Should Harbour?	No.
 - Безопасное хранение креденшелов
 - Проверка целостности конфигураций
 
-## [0.2.0] - 2024-02-14
+## [0.2.0] -  2025-02-14
 
 ### Added
 - Прототип системы конвергенции
@@ -71,7 +71,7 @@ Should Harbour?	No.
 - Улучшение системы логирования
 - Оптимизация работы с Docker
 
-## [0.1.0] - 2024-02-13
+## [0.1.0] -  2025-02-13
 
 ### Added
 - Инициализация проекта
@@ -80,7 +80,7 @@ Should Harbour?	No.
 - Начальная документация
 
 ```plain text
-Copyright (c) 2024 Mikhail Eberil
+Copyright (c)  2025 Mikhail Eberil
 
 This file is part of Zakenak project and is released under the terms of the MIT License. See LICENSE file in the project root for full license information.
 

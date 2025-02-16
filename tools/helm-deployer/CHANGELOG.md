@@ -9,7 +9,7 @@
   
     Should Harbour?	No.
 
-## [1.0.0] - 2024-01-09
+## [1.0.0] -  2025-01-09
 ### Added
 - Создан универсальный скрипт deploy-chart.sh для деплоя Helm чартов
 - Реализована поддержка различных окружений
@@ -21,7 +21,7 @@
 - Создана подробная документация
 
 ```plain text
-Copyright (c) 2024 Mikhail Eberil
+Copyright (c)  2025 Mikhail Eberil
 
 This file is part of Zakenak project and is released under the terms of the MIT License. See LICENSE file in the project root for full license information.
 

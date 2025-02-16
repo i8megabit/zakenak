@@ -9,7 +9,7 @@
 
 Should Harbour?	No.
 ```
-## [0.1.0] - 2024-02-13
+## [0.1.0] -  2025-02-13
 
 ### Added
 - Создана базовая структура чарта
@@ -33,7 +33,7 @@ Should Harbour?	No.
 - Исправлены проблемы с путями монтирования
 
 ```plain text
-Copyright (c) 2024 Mikhail Eberil
+Copyright (c)  2025 Mikhail Eberil
 
 This file is part of Zakenak project and is released under the terms of the MIT License. See LICENSE file in the project root for full license information.
 
