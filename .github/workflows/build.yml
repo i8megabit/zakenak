@@ -42,6 +42,14 @@ jobs:
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
+    
+    
+    - name: Install dependencies
+      run: |
+        cd tools/zakenak
+        go mod edit -dropreplace=github.com/docker/docker
+        go get github.com/docker/docker@v24.0.7
+        go mod tidy
 
     - name: Build and test
       env:
