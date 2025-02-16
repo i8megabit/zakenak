@@ -1,11 +1,21 @@
 #!/usr/bin/bash
+#  ____  _   _ ____  
+# |  _ \| \ | / ___| 
+# | | | |  \| \___ \ 
+# | |_| | |\  |___) |
+# |____/|_| \_|____/ 
+#            by @eberil
+#
+# Copyright (c) 2024 Mikhail Eberil
+# This code is free! Share it, spread peace and technology!
+# "Because DNS should just work!"
 
 # Определение пути к директории скрипта и корню репозитория
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Загрузка общих переменных
-source "${SCRIPT_DIR}/env"
+source "${SCRIPT_DIR}/env.sh"
 
 echo -e "${CYAN}Настройка CoreDNS...${NC}"
 

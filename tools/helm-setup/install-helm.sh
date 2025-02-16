@@ -1,4 +1,15 @@
-#!/bin/bash
+#!/usr/bin/bash
+#  _    _ _____ _      __  __ 
+# | |  | |  ___| |    |  \/  |
+# | |__| | |__ | |    | \  / |
+# |  __  |  __|| |    | |\/| |
+# | |  | | |___| |____| |  | |
+# |_|  |_|_____|______|_|  |_|
+#                   by @eberil
+#
+# Copyright (c) 2024 Mikhail Eberil
+# This code is free! Share it, spread peace and technology!
+# "Because Helm makes life easier!"
 
 # Цвета для вывода
 YELLOW='\033[1;33m'
