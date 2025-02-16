@@ -3,7 +3,7 @@ module github.com/i8megabit/zakenak
 go 1.21
 
 require (
-    github.com/docker/docker v24.0.7
+    github.com/docker/docker v20.10.24+incompatible
     github.com/docker/go-units v0.5.0
     github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
     github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
@@ -13,4 +13,4 @@ require (
 )
 
 // Use replace directive to handle incompatible package
-replace github.com/docker/docker => github.com/docker/docker v24.0.7
+replace github.com/docker/docker => github.com/docker/docker v20.10.24+incompatible
