@@ -3,11 +3,11 @@ package converge
 import (
     "context"
     "fmt"
-    "time"
     "github.com/i8megabit/zakenak/pkg/config"
     "github.com/i8megabit/zakenak/pkg/state"
     "k8s.io/client-go/kubernetes"
 )
+
 
 // Manager управляет процессом конвергенции состояния
 type Manager struct {
