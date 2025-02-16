@@ -1,0 +1,35 @@
+{
+	"version": "1.0.0",
+	"project": {
+		"name": "Ƶakenak™®",
+		"description": "GitOps платформа для оркестрации GPU-ускоренных сервисов"
+	},
+	"indexing": {
+		"exclude": [
+			"**/node_modules/**",
+			"**/vendor/**",
+			"**/.git/**",
+			"**/dist/**",
+			"**/build/**",
+			"**/*.test",
+			"**/*.out",
+			"**/PROMPT.md"
+		],
+		"include": [
+			"**/*.go",
+			"**/*.yaml",
+			"**/*.yml",
+			"**/*.sh",
+			"**/*.md",
+			"**/*.json"
+		]
+	},
+	"analysis": {
+		"maxFileSize": "1MB",
+		"enableGPUMetrics": true,
+		"enableKubernetesAnalysis": true
+	},
+	"storage": {
+		"path": ".aide-server/data/User/globalStorage/codestory-ghost.codestoryai"
+	}
+}
