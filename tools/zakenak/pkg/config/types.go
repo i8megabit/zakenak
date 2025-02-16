@@ -1,48 +1,38 @@
+// Copyright (c) 2024 Mikhail Eberil
+//
+// This file is part of Zakenak project and is released under the terms of the
+// MIT License. See LICENSE file in the project root for full license information.
+
 package config
 
-// Config представляет основную конфигурацию проекта
+import (
+    "github.com/docker/docker/api/types/events"
+)
+
+// Config представляет основную конфигурацию приложения
 type Config struct {
-    Project     string         `yaml:"project"`
-    Environment string         `yaml:"environment"`
-    Registry    RegistryConfig `yaml:"registry,omitempty"`
-    Deploy      DeployConfig   `yaml:"deploy"`
-    Build       BuildConfig    `yaml:"build,omitempty"`
-    Git         GitConfig      `yaml:"git,omitempty"`
+    Docker  DockerConfig  `json:"docker"`
+    Helm    HelmConfig    `json:"helm"`
+    Runtime RuntimeConfig `json:"runtime"`
 }
 
-// RegistryConfig содержит настройки container registry
-type RegistryConfig struct {
-    URL      string `yaml:"url"`
-    Username string `yaml:"username,omitempty"`
-    Password string `yaml:"password,omitempty"`
+// DockerConfig содержит настройки для Docker
+type DockerConfig struct {
+    Host      string            `json:"host"`
+    TLS       bool             `json:"tls"`
+    CertPath  string           `json:"certPath"`
+    EventType events.Type      `json:"eventType"`
 }
 
-// DeployConfig содержит настройки развертывания
-type DeployConfig struct {
-    Namespace string   `yaml:"namespace"`
-    Charts    []string `yaml:"charts"`
-    Values    []string `yaml:"values,omitempty"`
+// HelmConfig содержит настройки для Helm
+type HelmConfig struct {
+    KubeConfig string `json:"kubeConfig"`
+    Namespace  string `json:"namespace"`
 }
 
-// BuildConfig содержит настройки сборки
-type BuildConfig struct {
-    Context    string            `yaml:"context"`
-    Dockerfile string            `yaml:"dockerfile"`
-    Args       map[string]string `yaml:"args,omitempty"`
-    GPU        GPUConfig         `yaml:"gpu,omitempty"`
+// RuntimeConfig содержит настройки времени выполнения
+type RuntimeConfig struct {
+    Debug     bool   `json:"debug"`
+    LogLevel  string `json:"logLevel"`
+    GPUEnable bool   `json:"gpuEnable"`
 }
-
-// GitConfig содержит настройки Git
-type GitConfig struct {
-    Branch   string   `yaml:"branch"`
-    Paths    []string `yaml:"paths"`
-    Strategy string   `yaml:"strategy,omitempty"`
-}
-
-// GPUConfig содержит настройки NVIDIA GPU
-type GPUConfig struct {
-    Enabled  bool   `yaml:"enabled"`
-    Runtime  string `yaml:"runtime,omitempty"`
-    Memory   string `yaml:"memory,omitempty"`
-    Devices  string `yaml:"devices,omitempty"`
-}Docker Desktop - WSL distro te
