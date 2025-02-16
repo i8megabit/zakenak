@@ -213,3 +213,35 @@ cat << "EOF"
 # "Keep calm and kubectl delete -f panic.yaml"
 EOF
 }
+
+# DNS Banner
+dns_banner() {
+cat << "EOF"
+#  ____  _   _ ____  
+# |  _ \| \ | / ___| 
+# | | | |  \| \___ \ 
+# | |_| | |\  |___) |
+# |____/|_| \_|____/ 
+#            by @eberil
+#
+# Copyright (c) 2024 Mikhail Eberil
+# This code is free! Share it, spread peace and technology!
+# "Because DNS should just work!"
+EOF
+}
+
+# Check Banner
+check_banner() {
+cat << "EOF"
+#   ____ _               _    
+#  / ___| |__   ___  ___| | __
+# | |   | '_ \ / _ \/ __| |/ /
+# | |___| | | |  __/ (__|   < 
+#  \____|_| |_|\___|\___|_|\_\
+#                    by @eberil
+#
+# Copyright (c) 2024 Mikhail Eberil
+# This code is free! Share it, spread peace and technology!
+# "Because monitoring should be thorough!"
+EOF
+}

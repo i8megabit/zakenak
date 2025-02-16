@@ -1,15 +1,25 @@
 #!/usr/bin/bash
+#   ____ _               _    
+#  / ___| |__   ___  ___| | __
+# | |   | '_ \ / _ \/ __| |/ /
+# | |___| | | |  __/ (__|   < 
+#  \____|_| |_|\___|\___|_|\_\
+#                    by @eberil
+#
+# Copyright (c) 2024 Mikhail Eberil
+# This code is free! Share it, spread peace and technology!
+# "Because monitoring should be thorough!"
 
 # Определение пути к директории скрипта и корню репозитория
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Загрузка общих переменных и баннеров
-source "${REPO_ROOT}/tools/k8s-kind-setup/env"
-source "${REPO_ROOT}/tools/k8s-kind-setup/ascii_banners"
+source "${REPO_ROOT}/tools/k8s-kind-setup/env.sh"
+source "${REPO_ROOT}/tools/k8s-kind-setup/ascii_banners.sh"
 
-# Отображение баннера
-devops_banner
+# Отображение баннера при старте
+check_banner
 echo -e "\n${CYAN}Начинаем проверку сервисов...${NC}\n"
 
 # Функция для форматированного вывода результатов

@@ -24,6 +24,11 @@ echo ""
 
 echo -e "${CYAN}Установка Ingress Controller...${NC}"
 
+# Добавление репозитория ingress-nginx
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+check_error "Не удалось добавить репозиторий ingress-nginx"
+
 # Установка Ingress Controller
 helm upgrade --install $RELEASE_INGRESS ingress-nginx/ingress-nginx \
 	--namespace $NAMESPACE_INGRESS \
@@ -38,4 +43,6 @@ check_error "Не удалось установить Ingress Controller"
 # Ожидание готовности подов
 wait_for_pods $NAMESPACE_INGRESS "app.kubernetes.io/component=controller"
 
-echo -e "${GREEN}Установка Ingress Controller успешно завершена!${NC}"
+echo -e "\n"
+success_banner
+echo -e "\n${GREEN}Установка Ingress Controller успешно завершена!${NC}"
