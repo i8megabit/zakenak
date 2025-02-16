@@ -27,7 +27,7 @@ Thumbs.db
 # Kubernetes
 .kube/
 kubeconfig
-#kubeconfig.yaml
+kubeconfig.yaml
 
 # Helm
 charts/*/charts
