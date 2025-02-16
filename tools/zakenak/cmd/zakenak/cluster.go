@@ -39,6 +39,7 @@ func newClusterCmd() *cobra.Command {
 func newClusterCreateCmd() *cobra.Command {
     var configPath string
     var gpuEnabled bool
+    var clusterName string
 
     cmd := &cobra.Command{
         Use:   "create",
@@ -51,24 +52,30 @@ func newClusterCreateCmd() *cobra.Command {
                 return err
             }
 
-            manager := kind.NewManager(configPath)
+            manager := kind.NewManager(clusterName, configPath)
             return manager.CreateCluster(cmd.Context())
         },
     }
 
     cmd.Flags().StringVar(&configPath, "config", "kind-config.yaml", "путь к конфигурации Kind")
     cmd.Flags().BoolVar(&gpuEnabled, "gpu", true, "включить поддержку GPU")
+    cmd.Flags().StringVar(&clusterName, "name", "zakenak", "имя кластера")
 
     return cmd
 }
 
 func newClusterDeleteCmd() *cobra.Command {
-    return &cobra.Command{
+    var clusterName string
+    
+    cmd := &cobra.Command{
         Use:   "delete",
         Short: "Удалить Kind кластер",
         RunE: func(cmd *cobra.Command, args []string) error {
-            manager := kind.NewManager("")
-            return manager.deleteExistingCluster(cmd.Context())
+            manager := kind.NewManager(clusterName, "kind-config.yaml")
+            return manager.DeleteExistingCluster(cmd.Context())
         },
     }
+
+    cmd.Flags().StringVar(&clusterName, "name", "zakenak", "имя кластера")
+    return cmd
 }

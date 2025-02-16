@@ -1,19 +1,19 @@
+// Copyright (c) 2024 Mikhail Eberil
+//
+// This file is part of Zakenak project and is released under the terms of the
+// MIT License. See LICENSE file in the project root for full license information.
+
 package main
 
 import (
-    "context"
-    "fmt"
     "os"
+    
     "github.com/spf13/cobra"
-    "k8s.io/client-go/kubernetes"
-    "k8s.io/client-go/tools/clientcmd"
-    "github.com/i8megabit/zakenak/pkg/config"
-    "github.com/i8megabit/zakenak/pkg/converge"
-    "github.com/i8megabit/zakenak/pkg/build"
 )
 
 var (
     kubeconfig string
+
     namespace  string
     configPath string
 )
@@ -36,9 +36,9 @@ func main() {
     )
 
     if err := rootCmd.Execute(); err != nil {
-        fmt.Fprintf(os.Stderr, "Ошибка: %v\n", err)
         os.Exit(1)
     }
+
 }
 
 func newConvergeCmd() *cobra.Command {
