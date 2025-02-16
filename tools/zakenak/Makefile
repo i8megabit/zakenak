@@ -1,89 +1,51 @@
 # Copyright (c) 2024 Mikhail Eberil
-# Makefile for Ƶakenak™®
+#
+# This file is part of Zakenak project and is released under the terms of the
+# MIT License. See LICENSE file in the project root for full license information.
 
-# Версия проекта
-VERSION := 1.3.1
-COMMIT := $(shell git rev-parse --short HEAD)
-DATE := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
-
-# Переменные сборки
-BINARY_NAME := zakenak
+SHELL := /bin/bash
 GO := go
-DOCKER := docker
-DOCKER_IMAGE := zakenak
-DOCKER_TAG := $(VERSION)
-REGISTRY_URL := registry.local
-
-# Флаги сборки
-LDFLAGS := -ldflags "-X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main.BuildDate=$(DATE)"
 GOFLAGS := -v
+BINARY_NAME := zakenak
+VERSION := $(shell git describe --tags --always --dirty)
+BUILD_TIME := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
 
-# Пути
-SRC_DIR := .
-BUILD_DIR := ./build
-DOCS_DIR := ./docs
+# Docker configuration
+REGISTRY ?= ghcr.io
+IMAGE_NAME ?= i8megabit/gitops
+TAG ?= $(VERSION)
 
-.PHONY: all build clean test docker-build docker-push install uninstall docs lint help
+.PHONY: all build clean test docker
 
 all: clean build test
 
 build:
-    @echo "Building Ƶakenak™®..."
-    $(GO) build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(SRC_DIR)
-
-clean:
-    @echo "Cleaning..."
-    rm -rf $(BUILD_DIR)
-    $(GO) clean
-    rm -f $(BINARY_NAME)
+    $(GO) build $(GOFLAGS) \
+        -ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)" \
+        -o bin/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
 
 test:
-    @echo "Running tests..."
     $(GO) test -v ./...
 
-docker-build:
-    @echo "Building Docker image..."
-    $(DOCKER) build -t $(DOCKER_IMAGE):$(DOCKER_TAG) \
-        --build-arg VERSION=$(VERSION) \
-        --build-arg COMMIT=$(COMMIT) \
-        --build-arg BUILD_DATE=$(DATE) .
+clean:
+    rm -rf bin/
+    rm -f $(BINARY_NAME)
 
-docker-push:
-    @echo "Pushing Docker image..."
-    $(DOCKER) tag $(DOCKER_IMAGE):$(DOCKER_TAG) $(REGISTRY_URL)/$(DOCKER_IMAGE):$(DOCKER_TAG)
-    $(DOCKER) push $(REGISTRY_URL)/$(DOCKER_IMAGE):$(DOCKER_TAG)
+docker:
+    docker buildx build \
+        --platform linux/amd64 \
+        --tag $(REGISTRY)/$(IMAGE_NAME):$(TAG) \
+        --push \
+        .
 
-install: build
-    @echo "Installing Ƶakenak™®..."
-    mv $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/
-    chmod +x /usr/local/bin/$(BINARY_NAME)
-
-uninstall:
-    @echo "Uninstalling Ƶakenak™®..."
-    rm -f /usr/local/bin/$(BINARY_NAME)
-
-docs:
-    @echo "Generating documentation..."
-    cd $(DOCS_DIR) && mkdocs build
+# Development helpers
+dev-deps:
+    $(GO) install golang.org/x/lint/golint@latest
+    $(GO) install golang.org/x/tools/cmd/goimports@latest
 
 lint:
-    @echo "Running linters..."
-    golangci-lint run
-    
-dev: build
-    @echo "Starting development environment..."
-    ./$(BUILD_DIR)/$(BINARY_NAME)
+    golint ./...
+    go vet ./...
+    goimports -w .
 
-help:
-    @echo "Ƶakenak™® Makefile help:"
-    @echo "make              - Build and test"
-    @echo "make build        - Build binary"
-    @echo "make clean        - Clean build artifacts"
-    @echo "make test         - Run tests"
-    @echo "make docker-build - Build Docker image"
-    @echo "make docker-push  - Push Docker image"
-    @echo "make install      - Install binary"
-    @echo "make uninstall    - Uninstall binary"
-    @echo "make docs         - Generate documentation"
-    @echo "make lint         - Run linters"
-    @echo "make dev          - Start development environment"
+.DEFAULT_GOAL := build
