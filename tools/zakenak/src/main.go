@@ -38,6 +38,7 @@ func init() {
 		newUpCmd(),
 		newDownCmd(),
 		newStatusCmd(),
+		newDeployCmd(),
 	)
 }
 
@@ -205,4 +206,51 @@ func runStatus() error {
 	printStatus(status)
 	
 	return nil
+}
+
+func newDeployCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "deploy",
+		Short: "Развернуть компоненты в кластер",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runDeploy()
+		},
+	}
+}
+
+func runDeploy() error {
+	ctx := context.Background()
+	
+	// Create Kubernetes client
+	clientset, err := createKubernetesClient(kubeconfig)
+	if err != nil {
+		return fmt.Errorf("error creating kubernetes client: %w", err)
+	}
+
+	// Load configuration
+	cfg, err := config.LoadConfig(configFile)
+	if err != nil {
+		return fmt.Errorf("error loading config: %w", err)
+	}
+
+	// Run deployment
+	if err := deployHandler(clientset, cfg); err != nil {
+		return fmt.Errorf("deployment failed: %w", err)
+	}
+
+	return nil
+}
+
+func createKubernetesClient(kubeconfigPath string) (*kubernetes.Clientset, error) {
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("error building kubeconfig: %w", err)
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("error creating kubernetes client: %w", err)
+	}
+
+	return clientset, nil
 }

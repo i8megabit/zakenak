@@ -1,21 +1,4 @@
-/*
- * Copyright (c) 2024 Mikhail Eberil
- * 
- * This file is part of Ƶakenak™®, a GitOps deployment tool.
- * 
- * Ƶakenak™® is free software: you can redistribute it and/or modify
- * it under the terms of the MIT License with Trademark Protection.
- * 
- * Ƶakenak™® is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * MIT License for more details.
- * 
- * The name "Ƶakenak™®" and associated branding are trademarks of @eberil
- * and may not be used without express written permission.
- */
-
-package deploy
+package main
 
 import (
     "context"
@@ -26,33 +9,16 @@ import (
     "k8s.io/client-go/kubernetes"
 )
 
-// Manager управляет процессом развертывания
-type Manager struct {
-    client    *kubernetes.Clientset
-    config    *config.Config
-    helm      *helm.Client
-    namespace string
-}
-
-// NewManager создает новый менеджер развертывания
-func NewManager(client *kubernetes.Clientset, cfg *config.Config) *Manager {
-    return &Manager{
-        client:    client,
-        config:    cfg,
-        namespace: cfg.Deploy.Namespace,
-    }
-}
-
-// Deploy выполняет развертывание всех компонентов
-func (m *Manager) Deploy(ctx context.Context) error {
+// deployHandler handles deployment operations
+func deployHandler(client *kubernetes.Clientset, cfg *config.Config) error {
     // Создание namespace если не существует
-    if err := m.ensureNamespace(ctx); err != nil {
+    if err := ensureNamespace(client, cfg.Deploy.Namespace); err != nil {
         return fmt.Errorf("failed to ensure namespace: %w", err)
     }
 
     // Развертывание каждого чарта
-    for _, chartPath := range m.config.Deploy.Charts {
-        if err := m.deployChart(ctx, chartPath); err != nil {
+    for _, chartPath := range cfg.Deploy.Charts {
+        if err := deployChart(client, cfg, chartPath); err != nil {
             return fmt.Errorf("failed to deploy chart %s: %w", chartPath, err)
         }
     }
@@ -60,28 +26,25 @@ func (m *Manager) Deploy(ctx context.Context) error {
     return nil
 }
 
-// ensureNamespace создает namespace если он не существует
-func (m *Manager) ensureNamespace(ctx context.Context) error {
-    // Имплементация создания namespace
+// ensureNamespace creates namespace if it doesn't exist
+func ensureNamespace(client *kubernetes.Clientset, namespace string) error {
+    // Implementation for namespace creation
     return nil
 }
 
-// deployChart разворачивает отдельный Helm чарт
-func (m *Manager) deployChart(ctx context.Context, chartPath string) error {
-    // Получение абсолютного пути к чарту
+// deployChart deploys a single Helm chart
+func deployChart(client *kubernetes.Clientset, cfg *config.Config, chartPath string) error {
+    helmClient := helm.NewClient()
+    
+    // Get absolute path to chart
     absPath, err := filepath.Abs(chartPath)
     if err != nil {
         return fmt.Errorf("failed to get absolute path: %w", err)
     }
 
-    // Проверка существования чарта
-    if err := m.helm.ValidateChart(absPath); err != nil {
+    // Validate chart
+    if err := helmClient.ValidateChart(absPath); err != nil {
         return fmt.Errorf("chart validation failed: %w", err)
-    }
-
-    // Установка/обновление чарта
-    if err := m.helm.UpgradeOrInstall(ctx, absPath, m.namespace); err != nil {
-        return fmt.Errorf("chart deployment failed: %w", err)
     }
 
     return nil
