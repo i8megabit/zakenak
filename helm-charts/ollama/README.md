@@ -23,9 +23,9 @@ Helm чарт для развертывания Ollama - сервера LLM мо
 ## Установка
 ```bash
 helm install ollama ./helm-charts/ollama \
-	--namespace prod \
-	--create-namespace \
-	--values values.yaml
+    --namespace prod \
+    --create-namespace \
+    --values values.yaml
 ```
 
 ## Конфигурация

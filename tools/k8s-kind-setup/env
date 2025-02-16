@@ -37,29 +37,29 @@ export RELEASE_INGRESS="ingress-nginx"
 
 # Функция проверки ошибок
 check_error() {
-	if [ $? -ne 0 ]; then
-		echo -e "${RED}$1${NC}"
-		exit 1
-	fi
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}$1${NC}"
+        exit 1
+    fi
 }
 
 # Функция ожидания готовности подов
 wait_for_pods() {
-	local namespace=$1
-	local selector=$2
-	local timeout=300
+    local namespace=$1
+    local selector=$2
+    local timeout=300
 
-	echo -e "${CYAN}Ожидание готовности подов в namespace $namespace...${NC}"
-	kubectl wait --for=condition=Ready pods -l $selector -n $namespace --timeout=${timeout}s
-	check_error "Превышено время ожидания готовности подов"
+    echo -e "${CYAN}Ожидание готовности подов в namespace $namespace...${NC}"
+    kubectl wait --for=condition=Ready pods -l $selector -n $namespace --timeout=${timeout}s
+    check_error "Превышено время ожидания готовности подов"
 }
 
 # Функция ожидания готовности CRDs
 wait_for_crds() {
-	local timeout=60
-	for crd in "$@"; do
-		echo -e "${CYAN}Ожидание готовности CRD $crd...${NC}"
-		kubectl wait --for=condition=established crd/$crd --timeout=${timeout}s
-		check_error "Превышено время ожидания готовности CRD $crd"
-	done
+    local timeout=60
+    for crd in "$@"; do
+        echo -e "${CYAN}Ожидание готовности CRD $crd...${NC}"
+        kubectl wait --for=condition=established crd/$crd --timeout=${timeout}s
+        check_error "Превышено время ожидания готовности CRD $crd"
+    done
 }

@@ -10,10 +10,10 @@
 ## Возможности
 - Автоматическая установка Helm
 - Добавление популярных репозиториев:
-	- Jetstack (cert-manager)
-	- Bitnami
-	- Prometheus Community
-	- Ingress Nginx
+    - Jetstack (cert-manager)
+    - Bitnami
+    - Prometheus Community
+    - Ingress Nginx
 - Проверка корректности установки
 - Вывод информации о версии и репозиториях
 

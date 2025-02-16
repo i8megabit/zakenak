@@ -23,9 +23,9 @@ Helm чарт для автоматической инжекции TLS сайд�
 1. Установка чарта:
 ```bash
 helm install sidecar-injector ./helm-charts/sidecar-injector \
-	--namespace prod \
-	--create-namespace \
-	--values values.yaml
+    --namespace prod \
+    --create-namespace \
+    --values values.yaml
 ```
 
 2. Проверка установки:
@@ -47,30 +47,30 @@ kubectl get svc -n prod -l app=sidecar-injector
 ```yaml
 sidecar:
   ingressSidecar:
-	enabled: true
-	port: 8443
-	config: |
-	  server {
-		listen 8443 ssl;
-		ssl_certificate /etc/tls/tls.crt;
-		ssl_certificate_key /etc/tls/tls.key;
-		location / {
-		  proxy_pass http://localhost:8080;
-		}
-	  }
+    enabled: true
+    port: 8443
+    config: |
+      server {
+        listen 8443 ssl;
+        ssl_certificate /etc/tls/tls.crt;
+        ssl_certificate_key /etc/tls/tls.key;
+        location / {
+          proxy_pass http://localhost:8080;
+        }
+      }
 
   egressSidecar:
-	enabled: true
-	port: 8444
-	config: |
-	  server {
-		listen 8444;
-		location / {
-		  proxy_pass https://backend.service:443;
-		  proxy_ssl_certificate /etc/tls/tls.crt;
-		  proxy_ssl_certificate_key /etc/tls/tls.key;
-		}
-	  }
+    enabled: true
+    port: 8444
+    config: |
+      server {
+        listen 8444;
+        location / {
+          proxy_pass https://backend.service:443;
+          proxy_ssl_certificate /etc/tls/tls.crt;
+          proxy_ssl_certificate_key /etc/tls/tls.key;
+        }
+      }
 ```
 
 ## Использование
@@ -89,14 +89,14 @@ metadata:
   name: my-app-sidecar-config
 data:
   nginx.conf: |
-	server {
-	  listen 8443 ssl;
-	  ssl_certificate /etc/tls/tls.crt;
-	  ssl_certificate_key /etc/tls/tls.key;
-	  location / {
-		proxy_pass http://localhost:8080;
-	  }
-	}
+    server {
+      listen 8443 ssl;
+      ssl_certificate /etc/tls/tls.crt;
+      ssl_certificate_key /etc/tls/tls.key;
+      location / {
+        proxy_pass http://localhost:8080;
+      }
+    }
 ```
 
 ## Мониторинг
@@ -154,8 +154,8 @@ kubectl exec -it -n prod \
 ## Обновление
 ```bash
 helm upgrade sidecar-injector ./helm-charts/sidecar-injector \
-	--namespace prod \
-	--values values.yaml
+    --namespace prod \
+    --values values.yaml
 ```
 
 ## Удаление

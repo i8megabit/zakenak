@@ -23,22 +23,22 @@ docker pull quay.io/jetstack/cert-manager-controller:v1.12.0
 
 # Функция создания кластера
 setup_kind_cluster() {
-	echo -e "${CYAN}Проверка существующего кластера...${NC}"
-	if kind get clusters 2>/dev/null | grep -q "^kind$"; then
-		echo -e "${YELLOW}Обнаружен существующий кластер 'kind'. Удаляем...${NC}"
-		kind delete cluster
-		check_error "Не удалось удалить существующий кластер"
-		sleep 5
-	fi
-	
-	echo -e "${CYAN}Создание нового кластера Kind...${NC}"
-	kind create cluster --config "${SCRIPT_DIR}/kind-config.yaml" --image kindest/node:v1.27.3
-	check_error "Не удалось создать кластер Kind"
-	
-	# Ожидание готовности узлов
-	echo -e "${CYAN}Ожидание готовности узлов кластера...${NC}"
-	kubectl wait --for=condition=Ready nodes --all --timeout=300s
-	check_error "Узлы кластера не готовы"
+    echo -e "${CYAN}Проверка существующего кластера...${NC}"
+    if kind get clusters 2>/dev/null | grep -q "^kind$"; then
+        echo -e "${YELLOW}Обнаружен существующий кластер 'kind'. Удаляем...${NC}"
+        kind delete cluster
+        check_error "Не удалось удалить существующий кластер"
+        sleep 5
+    fi
+    
+    echo -e "${CYAN}Создание нового кластера Kind...${NC}"
+    kind create cluster --config "${SCRIPT_DIR}/kind-config.yaml" --image kindest/node:v1.27.3
+    check_error "Не удалось создать кластер Kind"
+    
+    # Ожидание готовности узлов
+    echo -e "${CYAN}Ожидание готовности узлов кластера...${NC}"
+    kubectl wait --for=condition=Ready nodes --all --timeout=300s
+    check_error "Узлы кластера не готовы"
 }
 
 # Запуск установки

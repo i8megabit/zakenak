@@ -24,8 +24,8 @@ check_error "Ошибка при ожидании готовности CoreDNS"
 # Проверка DNS резолвинга
 echo -e "${CYAN}Проверка DNS резолвинга...${NC}"
 for domain in "$OLLAMA_HOST" "$WEBUI_HOST"; do
-	echo "Проверка резолвинга для $domain..."
-	kubectl run -i --rm --restart=Never busybox --image=busybox:1.28 -- nslookup $domain
+    echo "Проверка резолвинга для $domain..."
+    kubectl run -i --rm --restart=Never busybox --image=busybox:1.28 -- nslookup $domain
 done
 
 echo -e "${GREEN}Настройка DNS успешно завершена!${NC}"

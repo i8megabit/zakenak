@@ -12,7 +12,7 @@ RUN go mod download
 
 # Сборка с поддержкой GPU
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-	go build -o zakenak ./cmd/zakenak
+    go build -o zakenak ./cmd/zakenak
 
 # Final stage
 FROM nvidia/cuda:12.8.0-base-ubuntu22.04
@@ -22,8 +22,8 @@ COPY --from=builder /app/zakenak .
 
 # Установка необходимых runtime зависимостей
 RUN apt-get update && apt-get install -y \
-	ca-certificates \
-	&& rm -rf /var/lib/apt/lists/*
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Настройка переменных окружения для NVIDIA
 ENV NVIDIA_VISIBLE_DEVICES=all

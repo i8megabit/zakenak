@@ -1,72 +1,72 @@
 project_name: zakenak
 
 before:
-	hooks:
-		- go mod tidy
+  hooks:
+    - go mod tidy
 
 builds:
-	- env:
-			- CGO_ENABLED=0
-		goos:
-			- linux
-			- windows
-			- darwin
-		goarch:
-			- amd64
-			- arm64
-		ldflags:
-			- -s -w
-			- -X main.Version={{.Version}}
-			- -X main.Commit={{.Commit}}
-			- -X main.BuildDate={{.Date}}
-		main: ./cmd/zakenak
-		binary: zakenak
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.Commit={{.Commit}}
+      - -X main.BuildDate={{.Date}}
+    main: ./cmd/zakenak
+    binary: zakenak
 
 archives:
-	- format: tar.gz
-		name_template: >-
-			{{ .ProjectName }}_
-			{{- title .Os }}_
-			{{- if eq .Arch "amd64" }}x86_64
-			{{- else if eq .Arch "386" }}i386
-			{{- else }}{{ .Arch }}{{ end }}
-		format_overrides:
-			- goos: windows
-				format: zip
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
 
 dockers:
-	- image_templates:
-			- "ghcr.io/i8meg/zakenak:{{ .Version }}"
-			- "ghcr.io/i8meg/zakenak:latest"
-		dockerfile: Dockerfile
-		build_flag_templates:
-			- "--label=org.opencontainers.image.created={{.Date}}"
-			- "--label=org.opencontainers.image.title={{.ProjectName}}"
-			- "--label=org.opencontainers.image.revision={{.FullCommit}}"
-			- "--label=org.opencontainers.image.version={{.Version}}"
-		extra_files:
-			- LICENSE.md
+  - image_templates:
+      - "ghcr.io/i8meg/zakenak:{{ .Version }}"
+      - "ghcr.io/i8meg/zakenak:latest"
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    extra_files:
+      - LICENSE.md
 
 checksum:
-	name_template: 'checksums.txt'
+  name_template: 'checksums.txt'
 
 snapshot:
-	name_template: "{{ incpatch .Version }}-next"
+  name_template: "{{ incpatch .Version }}-next"
 
 changelog:
-	sort: asc
-	filters:
-		exclude:
-			- '^docs:'
-			- '^test:'
-			- '^ci:'
-			- Merge pull request
-			- Merge branch
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - Merge pull request
+      - Merge branch
 
 release:
-	github:
-		owner: i8meg
-		name: zakenak
-	prerelease: auto
-	draft: false
-	name_template: "Ƶakenak™® {{.Version}}"
+  github:
+    owner: i8meg
+    name: zakenak
+  prerelease: auto
+  draft: false
+  name_template: "Ƶakenak™® {{.Version}}"

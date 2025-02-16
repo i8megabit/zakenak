@@ -28,62 +28,62 @@ DOCS_DIR := ./docs
 all: clean build test
 
 build:
-	@echo "Building Ƶakenak™®..."
-	$(GO) build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(SRC_DIR)
+    @echo "Building Ƶakenak™®..."
+    $(GO) build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(SRC_DIR)
 
 clean:
-	@echo "Cleaning..."
-	rm -rf $(BUILD_DIR)
-	$(GO) clean
-	rm -f $(BINARY_NAME)
+    @echo "Cleaning..."
+    rm -rf $(BUILD_DIR)
+    $(GO) clean
+    rm -f $(BINARY_NAME)
 
 test:
-	@echo "Running tests..."
-	$(GO) test -v ./...
+    @echo "Running tests..."
+    $(GO) test -v ./...
 
 docker-build:
-	@echo "Building Docker image..."
-	$(DOCKER) build -t $(DOCKER_IMAGE):$(DOCKER_TAG) \
-		--build-arg VERSION=$(VERSION) \
-		--build-arg COMMIT=$(COMMIT) \
-		--build-arg BUILD_DATE=$(DATE) .
+    @echo "Building Docker image..."
+    $(DOCKER) build -t $(DOCKER_IMAGE):$(DOCKER_TAG) \
+        --build-arg VERSION=$(VERSION) \
+        --build-arg COMMIT=$(COMMIT) \
+        --build-arg BUILD_DATE=$(DATE) .
 
 docker-push:
-	@echo "Pushing Docker image..."
-	$(DOCKER) tag $(DOCKER_IMAGE):$(DOCKER_TAG) $(REGISTRY_URL)/$(DOCKER_IMAGE):$(DOCKER_TAG)
-	$(DOCKER) push $(REGISTRY_URL)/$(DOCKER_IMAGE):$(DOCKER_TAG)
+    @echo "Pushing Docker image..."
+    $(DOCKER) tag $(DOCKER_IMAGE):$(DOCKER_TAG) $(REGISTRY_URL)/$(DOCKER_IMAGE):$(DOCKER_TAG)
+    $(DOCKER) push $(REGISTRY_URL)/$(DOCKER_IMAGE):$(DOCKER_TAG)
 
 install: build
-	@echo "Installing Ƶakenak™®..."
-	mv $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/
-	chmod +x /usr/local/bin/$(BINARY_NAME)
+    @echo "Installing Ƶakenak™®..."
+    mv $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/
+    chmod +x /usr/local/bin/$(BINARY_NAME)
 
 uninstall:
-	@echo "Uninstalling Ƶakenak™®..."
-	rm -f /usr/local/bin/$(BINARY_NAME)
+    @echo "Uninstalling Ƶakenak™®..."
+    rm -f /usr/local/bin/$(BINARY_NAME)
 
 docs:
-	@echo "Generating documentation..."
-	cd $(DOCS_DIR) && mkdocs build
+    @echo "Generating documentation..."
+    cd $(DOCS_DIR) && mkdocs build
 
 lint:
-	@echo "Running linters..."
-	golangci-lint run
-	
+    @echo "Running linters..."
+    golangci-lint run
+    
 dev: build
-	@echo "Starting development environment..."
-	./$(BUILD_DIR)/$(BINARY_NAME)
+    @echo "Starting development environment..."
+    ./$(BUILD_DIR)/$(BINARY_NAME)
 
 help:
-	@echo "Ƶakenak™® Makefile help:"
-	@echo "make              - Build and test"
-	@echo "make build        - Build binary"
-	@echo "make clean        - Clean build artifacts"
-	@echo "make test         - Run tests"
-	@echo "make docker-build - Build Docker image"
-	@echo "make docker-push  - Push Docker image"
-	@echo "make install      - Install binary"
-	@echo "make uninstall    - Uninstall binary"
-	@echo "make docs         - Generate documentation"
-	@echo "make lint         - Run linters"
-	@echo "make dev          - Start development environment"
+    @echo "Ƶakenak™® Makefile help:"
+    @echo "make              - Build and test"
+    @echo "make build        - Build binary"
+    @echo "make clean        - Clean build artifacts"
+    @echo "make test         - Run tests"
+    @echo "make docker-build - Build Docker image"
+    @echo "make docker-push  - Push Docker image"
+    @echo "make install      - Install binary"
+    @echo "make uninstall    - Uninstall binary"
+    @echo "make docs         - Generate documentation"
+    @echo "make lint         - Run linters"
+    @echo "make dev          - Start development environment"

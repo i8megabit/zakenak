@@ -16,9 +16,9 @@ kubectl create namespace $NAMESPACE_CERT_MANAGER --dry-run=client -o yaml | kube
 
 # Установка cert-manager с CRDs
 helm upgrade --install $RELEASE_CERT_MANAGER jetstack/cert-manager \
-	--namespace $NAMESPACE_CERT_MANAGER \
-	--set installCRDs=true \
-	--wait
+    --namespace $NAMESPACE_CERT_MANAGER \
+    --set installCRDs=true \
+    --wait
 check_error "Не удалось установить cert-manager"
 
 # Ожидание готовности CRDs

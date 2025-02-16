@@ -22,9 +22,9 @@ Helm чарт для создания и управления локальным
 ## Быстрый старт
 ```bash
 helm install local-ca ./helm-charts/local-ca \
-	--namespace prod \
-	--create-namespace \
-	--values values.yaml
+    --namespace prod \
+    --create-namespace \
+    --values values.yaml
 ```
 
 ## Конфигурация
@@ -47,13 +47,13 @@ ca:
 
 certificates:
   - name: ollama-tls
-	commonName: "ollama.prod.local"
-	dnsNames:
-	  - "ollama.prod.local"
+    commonName: "ollama.prod.local"
+    dnsNames:
+      - "ollama.prod.local"
   - name: open-webui-tls
-	commonName: "webui.prod.local"
-	dnsNames:
-	  - "webui.prod.local"
+    commonName: "webui.prod.local"
+    dnsNames:
+      - "webui.prod.local"
 ```
 
 ## Использование
@@ -74,17 +74,17 @@ kubectl get secrets -n prod | grep tls
 ```yaml
 certificates:
   - name: new-service-tls
-	commonName: "service.prod.local"
-	dnsNames:
-	  - "service.prod.local"
-	  - "service.prod.svc.cluster.local"
+    commonName: "service.prod.local"
+    dnsNames:
+      - "service.prod.local"
+      - "service.prod.svc.cluster.local"
 ```
 
 2. Обновите релиз:
 ```bash
 helm upgrade local-ca ./helm-charts/local-ca \
-	--namespace prod \
-	--values values.yaml
+    --namespace prod \
+    --values values.yaml
 ```
 
 ## Безопасность
@@ -122,8 +122,8 @@ kubectl describe secret -n prod root-ca-key-pair
 ## Обновление
 ```bash
 helm upgrade local-ca ./helm-charts/local-ca \
-	--namespace prod \
-	--values values.yaml
+    --namespace prod \
+    --values values.yaml
 ```
 
 ## Удаление

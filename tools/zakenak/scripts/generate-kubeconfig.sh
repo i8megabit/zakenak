@@ -19,21 +19,21 @@ apiVersion: v1
 kind: Config
 clusters:
 - cluster:
-	server: ${CLUSTER_SERVER}
-	certificate-authority-data: ${CA_DATA}
+    server: ${CLUSTER_SERVER}
+    certificate-authority-data: ${CA_DATA}
   name: ${CLUSTER_NAME}
 contexts:
 - context:
-	cluster: ${CLUSTER_NAME}
-	user: ${CLUSTER_NAME}
+    cluster: ${CLUSTER_NAME}
+    user: ${CLUSTER_NAME}
   name: ${CLUSTER_NAME}
 current-context: ${CLUSTER_NAME}
 preferences: {}
 users:
 - name: ${CLUSTER_NAME}
   user:
-	client-certificate-data: ${CLIENT_CERT_DATA}
-	client-key-data: ${CLIENT_KEY_DATA}
+    client-certificate-data: ${CLIENT_CERT_DATA}
+    client-key-data: ${CLIENT_KEY_DATA}
 EOF
 
 echo "Kubeconfig успешно создан в kubeconfig.yaml"

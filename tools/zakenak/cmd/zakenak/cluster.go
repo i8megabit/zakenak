@@ -18,57 +18,57 @@
 package main
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/i8meg/zakenak/pkg/kind"
+    "github.com/spf13/cobra"
+    "github.com/i8meg/zakenak/pkg/kind"
 )
 
 func newClusterCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "cluster",
-		Short: "Управление Kind кластером",
-	}
+    cmd := &cobra.Command{
+        Use:   "cluster",
+        Short: "Управление Kind кластером",
+    }
 
-	cmd.AddCommand(
-		newClusterCreateCmd(),
-		newClusterDeleteCmd(),
-	)
+    cmd.AddCommand(
+        newClusterCreateCmd(),
+        newClusterDeleteCmd(),
+    )
 
-	return cmd
+    return cmd
 }
 
 func newClusterCreateCmd() *cobra.Command {
-	var configPath string
-	var gpuEnabled bool
+    var configPath string
+    var gpuEnabled bool
 
-	cmd := &cobra.Command{
-		Use:   "create",
-		Short: "Создать новый Kind кластер",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg := kind.DefaultConfig()
-			cfg.GPUEnabled = gpuEnabled
+    cmd := &cobra.Command{
+        Use:   "create",
+        Short: "Создать новый Kind кластер",
+        RunE: func(cmd *cobra.Command, args []string) error {
+            cfg := kind.DefaultConfig()
+            cfg.GPUEnabled = gpuEnabled
 
-			if err := cfg.GenerateConfig(configPath); err != nil {
-				return err
-			}
+            if err := cfg.GenerateConfig(configPath); err != nil {
+                return err
+            }
 
-			manager := kind.NewManager(configPath)
-			return manager.CreateCluster(cmd.Context())
-		},
-	}
+            manager := kind.NewManager(configPath)
+            return manager.CreateCluster(cmd.Context())
+        },
+    }
 
-	cmd.Flags().StringVar(&configPath, "config", "kind-config.yaml", "путь к конфигурации Kind")
-	cmd.Flags().BoolVar(&gpuEnabled, "gpu", true, "включить поддержку GPU")
+    cmd.Flags().StringVar(&configPath, "config", "kind-config.yaml", "путь к конфигурации Kind")
+    cmd.Flags().BoolVar(&gpuEnabled, "gpu", true, "включить поддержку GPU")
 
-	return cmd
+    return cmd
 }
 
 func newClusterDeleteCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "delete",
-		Short: "Удалить Kind кластер",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			manager := kind.NewManager("")
-			return manager.deleteExistingCluster(cmd.Context())
-		},
-	}
+    return &cobra.Command{
+        Use:   "delete",
+        Short: "Удалить Kind кластер",
+        RunE: func(cmd *cobra.Command, args []string) error {
+            manager := kind.NewManager("")
+            return manager.deleteExistingCluster(cmd.Context())
+        },
+    }
 }

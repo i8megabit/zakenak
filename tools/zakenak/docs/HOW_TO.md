@@ -1,12 +1,12 @@
 ```ascii
-	 ______     _                      _    
-	|___  /    | |                    | |   
-	   / / __ _| |  _ _   ___     ___ | |  _
-	  / / / _` | |/ / _`||  _ \ / _` || |/ /
-	 / /_| (_| |  < by_Ӗberil| | (_| ||   < 
-	/_____\__,_|_|\_\__,||_| |_|\__,_||_|\_\
+     ______     _                      _    
+    |___  /    | |                    | |   
+       / / __ _| |  _ _   ___     ___ | |  _
+      / / / _` | |/ / _`||  _ \ / _` || |/ /
+     / /_| (_| |  < by_Ӗberil| | (_| ||   < 
+    /_____\__,_|_|\_\__,||_| |_|\__,_||_|\_\
   
-					  	Should Harbour?				
+                          Should Harbour?				
 # [Zakenak](https://dic.academic.ru/dic.nsf/dic_synonims/390396/%D1%87%D0%B0%D0%BA%D0%B0%D0%BD%D0%B0%D0%BAчаканак "др.-чув. чӑканӑк — бухта, залив")
 [![Go Report Card](https://goreportcard.com/badge/github.com/i8meg/zakenak)](https://goreportcard.com/report/github.com/i8meg/zakenak)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -81,35 +81,35 @@ project: myapp
 environment: prod
 
 registry:
-	url: registry.local
-	username: ${REGISTRY_USER}  # Из переменных окружения
-	password: ${REGISTRY_PASS}  # Из переменных окружения
+    url: registry.local
+    username: ${REGISTRY_USER}  # Из переменных окружения
+    password: ${REGISTRY_PASS}  # Из переменных окружения
 
 deploy:
-	namespace: prod
-	charts:
-		- ./helm/myapp
-	values:
-		- values.yaml
-		- values-prod.yaml
+    namespace: prod
+    charts:
+        - ./helm/myapp
+    values:
+        - values.yaml
+        - values-prod.yaml
 
 build:
-	context: .
-	dockerfile: Dockerfile
-	args:
-		VERSION: v1.0.0
-	gpu:
-		enabled: true
-		runtime: nvidia
-		memory: "8Gi"
-		devices: "all"
+    context: .
+    dockerfile: Dockerfile
+    args:
+        VERSION: v1.0.0
+    gpu:
+        enabled: true
+        runtime: nvidia
+        memory: "8Gi"
+        devices: "all"
 
 git:
-	branch: main
-	paths:
-		- helm/
-		- kubernetes/
-	strategy: fast-forward
+    branch: main
+    paths:
+        - helm/
+        - kubernetes/
+    strategy: fast-forward
 ```
 
 ## Основные операции
@@ -162,10 +162,10 @@ zakenak clean --namespace prod
 ```yaml
 # GitLab CI
 deploy:
-	script:
-		- zakenak converge --timeout 15m
-	rules:
-		- if: $CI_COMMIT_BRANCH == "main"
+    script:
+        - zakenak converge --timeout 15m
+    rules:
+        - if: $CI_COMMIT_BRANCH == "main"
 ```
 
 ### 2. Мониторинг состояния

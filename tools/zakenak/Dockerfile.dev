@@ -9,18 +9,18 @@ COPY . .
 
 # Установка инструментов разработки
 RUN apk add --no-cache \
-	git \
-	make \
-	gcc \
-	musl-dev
+    git \
+    make \
+    gcc \
+    musl-dev
 
 # Установка зависимостей для разработки
 RUN go install github.com/cosmtrek/air@latest && \
-	go install github.com/go-delve/delve/cmd/dlv@latest
+    go install github.com/go-delve/delve/cmd/dlv@latest
 
 # Сборка с поддержкой отладки
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-	go build -gcflags="all=-N -l" -o zakenak ./cmd/zakenak
+    go build -gcflags="all=-N -l" -o zakenak ./cmd/zakenak
 
 # Development stage
 FROM nvidia/cuda:12.8.0-base-ubuntu22.04
@@ -32,10 +32,10 @@ COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
 
 # Установка инструментов разработки
 RUN apt-get update && apt-get install -y \
-	curl \
-	git \
-	vim \
-	&& rm -rf /var/lib/apt/lists/*
+    curl \
+    git \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
 
 # Настройка переменных окружения для NVIDIA
 ENV NVIDIA_VISIBLE_DEVICES=all
