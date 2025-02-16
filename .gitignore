@@ -14,10 +14,6 @@
 # Dependency directories
 vendor/
 
-# Build artifacts
-bin/
-zakenak
-
 # IDE specific files
 .idea/
 .vscode/

@@ -15,18 +15,21 @@ REGISTRY ?= ghcr.io
 IMAGE_NAME ?= i8megabit/gitops
 TAG ?= $(VERSION)
 
-.PHONY: all build clean test docker deps
+.PHONY: all build clean test docker deps tidy
 
-all: clean build test
+all: clean deps build test
 
 deps:
 	$(GO) mod download
+	$(GO) mod verify
+
+tidy:
 	$(GO) mod tidy
 
 build: deps
 	$(GO) build $(GOFLAGS) \
 		-ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)" \
-		-o bin/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
+		-o ../../bin/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
 
 test: deps
 	$(GO) test -v ./...
