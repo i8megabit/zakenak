@@ -46,7 +46,7 @@ func (m *Manager) Converge(ctx context.Context) error {
     }
 
     // Развертывание в кластер
-    if err := m.deploy(ctx); err != nil {
+    if err := m.Deploy(ctx); err != nil {
         return fmt.Errorf("deploy failed: %w", err)
     }
 
