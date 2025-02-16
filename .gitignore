@@ -52,4 +52,4 @@ tools/k8s-kind-setup/manifests/
 tools/k8s-kind-setup/setup.sh
 tools/k8s-kind-setup/setup-gpu.sh
 
-/PROMPT.md
+#/PROMPT.md
