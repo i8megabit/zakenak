@@ -21,12 +21,10 @@ all: clean deps build test
 
 deps:
 	$(GO) mod download
-	$(GO) mod verify
-
-tidy:
 	$(GO) mod tidy
 
 build: deps
+
 	$(GO) build $(GOFLAGS) \
 		-ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)" \
 		-o ../../bin/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
