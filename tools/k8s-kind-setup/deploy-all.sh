@@ -1,13 +1,23 @@
 #!/usr/bin/bash
+#  ____             _             
+# |  _ \  ___ _ __ | | ___  _   _ 
+# | | | |/ _ \ '_ \| |/ _ \| | | |
+# | |_| |  __/ |_) | | (_) | |_| |
+# |____/ \___| .__/|_|\___/ \__, |
+#            |_|            |___/ 
+#                         by @eberil
+#
+# Copyright (c) 2024 Mikhail Eberil
+# This code is free! Share it, spread peace and technology!
+# "Time to ship some containers!"
 
 # Определение пути к директории скрипта и корню репозитория
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Загрузка общих переменных и баннеров
-source "${SCRIPT_DIR}/env"
-source "${SCRIPT_DIR}/ascii_banners"
+source "${SCRIPT_DIR}/env.sh"
+source "${SCRIPT_DIR}/ascii_banners.sh"
 
 # Отображение баннера при старте
 production_banner
@@ -56,10 +66,10 @@ deploy_banner
 echo -e "\n${YELLOW}Начинаем развертывание компонентов...${NC}"
 
 # Последовательный запуск всех компонентов
-deploy_component "setup-kind" "кластера Kind"
-deploy_component "setup-ingress" "Ingress Controller"
-deploy_component "setup-cert-manager" "Cert Manager"
-deploy_component "setup-dns" "DNS"
+deploy_component "setup-kind.sh" "кластера Kind"
+deploy_component "setup-ingress.sh" "Ingress Controller"
+deploy_component "setup-cert-manager.sh" "Cert Manager"
+deploy_component "setup-dns.sh" "DNS"
 
 # Установка приложений через charts
 

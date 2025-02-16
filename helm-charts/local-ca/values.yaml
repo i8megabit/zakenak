@@ -1,28 +1,28 @@
 # Параметры релиза
 release:
-	name: local-ca
-	namespace: prod
+  name: local-ca
+  namespace: prod
 
 # Настройки CA
 ca:
-	commonName: "Local CA"
-	organization: "DevSecMLOps"
-	validityDuration: "8760h"  # 1 год
-	renewBefore: "720h"        # 30 дней
-	secretName: "root-ca-key-pair"
+  commonName: "Local CA"
+  organization: "DevSecMLOps"
+  validityDuration: "8760h"  # 1 год
+  renewBefore: "720h"        # 30 дней
+  secretName: "root-ca-key-pair"
 
 # Сертификаты для создания
 certificates:
-	- name: ollama-tls
-		commonName: "ollama.prod.local"
-		dnsNames:
-			- "ollama.prod.local"
-	- name: open-webui-tls
-		commonName: "webui.prod.local"
-		dnsNames:
-			- "webui.prod.local"
-	- name: sidecar-injector-tls
-		commonName: "sidecar-injector.prod.svc"
-		dnsNames:
-			- "sidecar-injector.prod.svc"
-			- "sidecar-injector.prod.svc.cluster.local"
+  - name: ollama-tls
+    commonName: "ollama.prod.local"
+    dnsNames:
+      - "ollama.prod.local"
+  - name: open-webui-tls
+    commonName: "webui.prod.local"
+    dnsNames:
+      - "webui.prod.local"
+  - name: sidecar-injector-tls
+    commonName: "sidecar-injector.prod.svc"
+    dnsNames:
+      - "sidecar-injector.prod.svc"
+      - "sidecar-injector.prod.svc.cluster.local"

@@ -1,95 +1,75 @@
+// Package state предоставляет типы и функции для управления состоянием системы
 package state
 
 import (
-	"time"
-	"encoding/json"
+    "time"
 )
 
 // State представляет текущее состояние системы
 type State struct {
-	Version     string                 `json:"version"`
-	LastUpdate  time.Time             `json:"lastUpdate"`
-	Components  map[string]Component  `json:"components"`
-	Resources   Resources             `json:"resources"`
-	Status      Status                `json:"status"`
+    Version     string                 `json:"version"`     // Версия формата состояния
+    LastUpdate  time.Time             `json:"lastUpdate"`  // Время последнего обновления
+    Components  map[string]Component  `json:"components"`  // Карта компонентов системы
+    Volumes     map[string]Volume     `json:"volumes"`     // Карта томов
+    GPU         GPUState              `json:"gpu"`         // Состояние GPU
+    Status      Status                `json:"status"`      // Текущий статус системы
 }
 
-// Component представляет состояние отдельного компонента
-type Component struct {
-	Name        string            `json:"name"`
-	Version     string            `json:"version"`
-	Status      ComponentStatus   `json:"status"`
-	LastSync    time.Time         `json:"lastSync"`
-	Config      json.RawMessage   `json:"config,omitempty"`
-	Dependencies []string         `json:"dependencies,omitempty"`
-}
-
-// Resources представляет состояние ресурсов
-type Resources struct {
-	Images      []Image     `json:"images"`
-	Charts      []Chart     `json:"charts"`
-	Configs     []Config    `json:"configs"`
-}
-
-// Image представляет Docker образ
-type Image struct {
-	Name        string    `json:"name"`
-	Tag         string    `json:"tag"`
-	Digest      string    `json:"digest"`
-	BuildTime   time.Time `json:"buildTime"`
-	UseGPU      bool      `json:"useGPU,omitempty"`
-}
-
-// Chart представляет Helm чарт
-type Chart struct {
-	Name        string    `json:"name"`
-	Version     string    `json:"version"`
-	Values      string    `json:"values,omitempty"`
-	LastApplied time.Time `json:"lastApplied"`
-}
-
-// Config представляет конфигурацию
-type Config struct {
-	Name     string          `json:"name"`
-	Type     string          `json:"type"`
-	Data     json.RawMessage `json:"data"`
-}
-
-// Status представляет общий статус системы
+// Status представляет текущий статус системы
 type Status struct {
-	Phase          StatusPhase `json:"phase"`
-	Message        string      `json:"message,omitempty"`
-	LastTransition time.Time   `json:"lastTransition"`
+    Phase          Phase      `json:"phase"`          // Текущая фаза
+    LastTransition time.Time  `json:"lastTransition"` // Время последнего перехода
+    Message        string     `json:"message"`        // Дополнительное сообщение
 }
 
-// ComponentStatus представляет статус компонента
-type ComponentStatus string
+// Phase представляет возможные фазы состояния системы
+type Phase string
 
+// Определение возможных фаз
 const (
-	StatusPending    ComponentStatus = "Pending"
-	StatusConverging ComponentStatus = "Converging"
-	StatusReady      ComponentStatus = "Ready"
-	StatusFailed     ComponentStatus = "Failed"
+    PhaseInitializing Phase = "Initializing" // Система инициализируется
+    PhaseRunning     Phase = "Running"      // Система работает
+    PhaseStopping    Phase = "Stopping"     // Система останавливается
+    PhaseStopped     Phase = "Stopped"      // Система остановлена
+    PhaseError       Phase = "Error"        // Произошла ошибка
+    PhaseDeploying   Phase = "Deploying"    // Система разворачивается
 )
 
-// StatusPhase представляет фазу состояния
-type StatusPhase string
-
-const (
-	PhaseInitializing StatusPhase = "Initializing"
-	PhaseConverging   StatusPhase = "Converging"
-	PhaseReady        StatusPhase = "Ready"
-	PhaseFailed       StatusPhase = "Failed"
-)
-
-// StateManager управляет состоянием
-type StateManager interface {
-	// Load загружает состояние
-	Load() (*State, error)
-	
-	// Save сохраняет состояние
-	Save(*State) error
-	
-	// Update обновляет состояние
-	Update(func(*State) error) error
+// Component представляет состояние отдельного компонента системы,
+// включая его версию, статус и время последней синхронизации.
+type Component struct {
+    Name        string    `json:"name"`       // Имя компонента
+    Version     string    `json:"version"`    // Версия компонента
+    Status      Status    `json:"status"`     // Текущий статус
+    LastSync    time.Time `json:"lastSync"`   // Время последней синхронизации
 }
+
+// Volume представляет информацию о томе в системе,
+// включая его размер и связанные компоненты.
+type Volume struct {
+    Name        string    `json:"name"`       // Имя тома
+    Path        string    `json:"path"`       // Путь монтирования
+    Size        string    `json:"size"`       // Размер тома
+    LastUsed    time.Time `json:"lastUsed"`   // Время последнего использования
+    Components  []string  `json:"components"` // Список компонентов, использующих том
+}
+
+// GPUState представляет состояние GPU в системе,
+// включая информацию о драйвере и устройствах.
+type GPUState struct {
+    Enabled     bool      `json:"enabled"`    // Флаг включения GPU
+    Driver      string    `json:"driver"`     // Версия драйвера
+    Memory      string    `json:"memory"`     // Доступная память
+    Devices     []Device  `json:"devices"`    // Список GPU устройств
+}
+
+// Device представляет отдельное GPU устройство в системе.
+type Device struct {
+    ID          string    `json:"id"`         // Идентификатор устройства
+    Name        string    `json:"name"`       // Название устройства
+    Memory      string    `json:"memory"`     // Память устройства
+    InUse       bool      `json:"inUse"`      // Флаг использования
+}
+
+
+

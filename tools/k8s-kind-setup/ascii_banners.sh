@@ -11,7 +11,7 @@ cat << "EOF"
 #                        |_|          
 #                     by @eberil
 #
-# Copyright (c) 2024 @eberil
+# Copyright (c) 2024 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
 # "Because DevOps is about sharing and caring"
 EOF
@@ -28,7 +28,7 @@ cat << "EOF"
 #            |_|            |___/ 
 #                         by @eberil
 #
-# Copyright (c) 2024 @eberil
+# Copyright (c) 2024 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
 # "Time to ship some containers!"
 EOF
@@ -44,7 +44,7 @@ cat << "EOF"
 # |_|\_\___/_____|
 #            by @eberil
 #
-# Copyright (c) 2024 @eberil
+# Copyright (c) 2024 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
 # "Because clusters should be fun!"
 EOF
@@ -61,7 +61,7 @@ cat << "EOF"
 #|_|  |_|\____/|_/_/    \_\_|\_\     |_|  |_|\____/|_/_/    \_\_|\_\
 #                                                           by @eberil
 #
-# Copyright (c) 2024 @eberil
+# Copyright (c) 2024 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
 # HUJAK-HUJAK PRODUCTION PRESENTS...
 # "When you need to deploy but don't want to cry"
@@ -78,7 +78,7 @@ cat << "EOF"
 # |_____|_| \_\_| \_\\___/|_| \_\
 #                       by @eberil
 #
-# Copyright (c) 2024 @eberil
+# Copyright (c) 2024 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
 # "Even errors can be stylish!"
 EOF
@@ -94,7 +94,7 @@ cat << "EOF"
 # |____/ \___/ \____\____|_____|____/____/ 
 #                                by @eberil
 #
-# Copyright (c) 2024 @eberil
+# Copyright (c) 2024 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
 # "Mission accomplished with style!"
 EOF
@@ -111,7 +111,7 @@ cat << "EOF"
 #  \_____|_| |_|\__,_|_|   \__|___/
 #                         by @eberil
 #
-# Copyright (c) 2024 @eberil
+# Copyright (c) 2024 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
 # "Making Helm less scary since 2024!"
 EOF
@@ -127,7 +127,7 @@ cat << "EOF"
 # |_____|_| \_\_____|_| \_\___|_____|
 #                         by @eberil
 #
-# Copyright (c) 2024 @eberil
+# Copyright (c) 2024 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
 # "Code like nobody's watching!"
 EOF
@@ -144,7 +144,7 @@ cat << "EOF"
 #  \_____\___/|_|   |_|   |_|   |_|    
 #                         by @eberil
 #
-# Copyright (c) 2024 @eberil
+# Copyright (c) 2024 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
 # "Time for coffee and kubectl get pods"
 EOF
@@ -160,7 +160,7 @@ cat << "EOF"
 # |____/|_____|_| \_\\___/ \____|
 #                     by @eberil
 #
-# Copyright (c) 2024 @eberil
+# Copyright (c) 2024 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
 # "When in doubt, add more print statements!"
 EOF
@@ -176,7 +176,7 @@ cat << "EOF"
 #     \_/_/   \_\_|  |_|_____|
 #                   by @eberil
 #
-# Copyright (c) 2024 @eberil
+# Copyright (c) 2024 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
 # "Indentation is not just a style, it's a way of life!"
 EOF
@@ -192,7 +192,7 @@ cat << "EOF"
 # |____/ \___| \_/  \___/| .__/|___/ |_____|_|_|  \___|
 #                        |_|            by @eberil
 #
-# Copyright (c) 2024 @eberil
+# Copyright (c) 2024 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
 # "Git push and pray: The DevOps way!"
 EOF
@@ -208,8 +208,40 @@ cat << "EOF"
 # |_| /_/   \_\_| \_|___\____|
 #                   by @eberil
 #
-# Copyright (c) 2024 @eberil
+# Copyright (c) 2024 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
 # "Keep calm and kubectl delete -f panic.yaml"
+EOF
+}
+
+# DNS Banner
+dns_banner() {
+cat << "EOF"
+#  ____  _   _ ____  
+# |  _ \| \ | / ___| 
+# | | | |  \| \___ \ 
+# | |_| | |\  |___) |
+# |____/|_| \_|____/ 
+#            by @eberil
+#
+# Copyright (c) 2024 Mikhail Eberil
+# This code is free! Share it, spread peace and technology!
+# "Because DNS should just work!"
+EOF
+}
+
+# Check Banner
+check_banner() {
+cat << "EOF"
+#   ____ _               _    
+#  / ___| |__   ___  ___| | __
+# | |   | '_ \ / _ \/ __| |/ /
+# | |___| | | |  __/ (__|   < 
+#  \____|_| |_|\___|\___|_|\_\
+#                    by @eberil
+#
+# Copyright (c) 2024 Mikhail Eberil
+# This code is free! Share it, spread peace and technology!
+# "Because monitoring should be thorough!"
 EOF
 }

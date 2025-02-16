@@ -1,28 +1,42 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
 # Kubernetes
 .kube/
 kubeconfig
+kubeconfig.yaml
 
 # Helm
 charts/*/charts
 *.tgz
-
-# Project specific
 helm-charts/**/charts/
 helm-charts/**/Chart.lock
 helm-charts/**/values.local.yaml
 
-# Old locations (can be removed after migration)
-tools/k8s-kind-setup/manifests/
-tools/k8s-kind-setup/kind-config.yaml
-tools/k8s-kind-setup/setup.sh
-tools/k8s-kind-setup/setup-gpu.sh
-
-# IDE and OS files
-.idea/
-.vscode/
-*.swp
-.DS_Store
-*all.deb
+# Project specific
 /cuda-test
 /deploy-all
 /ollama
@@ -31,3 +45,18 @@ tools/k8s-kind-setup/setup-gpu.sh
 /sidecarinjector
 /git-update
 /local-ca
+*all.deb
+
+# Old locations (can be removed after migration)
+tools/k8s-kind-setup/manifests/
+tools/k8s-kind-setup/setup.sh
+tools/k8s-kind-setup/setup-gpu.sh
+
+# Configuration files
+PROMPT.md
+
+# CodeStory AI
+.aide-server/
+.codestoryai/
+
+

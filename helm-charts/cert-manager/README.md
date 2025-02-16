@@ -21,9 +21,9 @@ Helm чарт для установки и настройки cert-manager с п
 ## Установка
 ```bash
 helm install cert-manager ./helm-charts/cert-manager \
-	--namespace cert-manager \
-	--create-namespace \
-	--values values.yaml
+    --namespace cert-manager \
+    --create-namespace \
+    --values values.yaml
 ```
 
 ## Конфигурация
@@ -57,17 +57,17 @@ kubectl apply -f - <<EOF
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-	name: example-cert
-	namespace: default
+    name: example-cert
+    namespace: default
 spec:
-	secretName: example-cert-tls
-	issuerRef:
-		name: selfsigned-issuer
-		kind: ClusterIssuer
-	commonName: example.com
-	dnsNames:
-	- example.com
-	- www.example.com
+    secretName: example-cert-tls
+    issuerRef:
+        name: selfsigned-issuer
+        kind: ClusterIssuer
+    commonName: example.com
+    dnsNames:
+    - example.com
+    - www.example.com
 EOF
 ```
 

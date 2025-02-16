@@ -1,0 +1,49 @@
+# Copyright (c) 2024 Mikhail Eberil
+# Development Dockerfile for Ƶakenak™®
+
+# Build stage
+FROM golang:1.21-alpine AS builder
+
+WORKDIR /app
+COPY . .
+
+# Установка инструментов разработки
+RUN apk add --no-cache \
+    git \
+    make \
+    gcc \
+    musl-dev
+
+# Установка зависимостей для разработки
+RUN go install github.com/cosmtrek/air@latest && \
+    go install github.com/go-delve/delve/cmd/dlv@latest
+
+# Сборка с поддержкой отладки
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -gcflags="all=-N -l" -o zakenak ./cmd/zakenak
+
+# Development stage
+FROM nvidia/cuda:12.8.0-base-ubuntu22.04
+
+WORKDIR /app
+COPY --from=builder /app/zakenak .
+COPY --from=builder /go/bin/air /usr/local/bin/air
+COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
+
+# Установка инструментов разработки
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# Настройка переменных окружения для NVIDIA
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+ENV PATH="/usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/usr/lib/wsl/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH}"
+
+# Порт для отладчика
+EXPOSE 2345
+
+ENTRYPOINT ["air"]
