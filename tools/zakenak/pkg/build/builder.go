@@ -1,53 +1,33 @@
+// Copyright (c) 2024 Mikhail Eberil
+//
+// This file is part of Zakenak project and is released under the terms of the
+// MIT License. See LICENSE file in the project root for full license information.
+
 package build
 
 import (
-    "context"
-    "fmt"
-    "github.com/docker/docker/api/types"
-    "github.com/docker/docker/client"
     "github.com/i8megabit/zakenak/pkg/config"
 )
 
-// Builder управляет процессом сборки образов
+// Builder управляет процессом сборки
 type Builder struct {
-    docker *client.Client
     config *config.BuildConfig
 }
 
-// NewBuilder создает новый билдер
-func NewBuilder(cfg *config.BuildConfig) (*Builder, error) {
-    docker, err := client.NewClientWithOpts(client.FromEnv)
-    if err != nil {
-        return nil, fmt.Errorf("failed to create docker client: %w", err)
-    }
-
+// NewBuilder создает новый экземпляр Builder
+func NewBuilder(cfg *config.BuildConfig) *Builder {
     return &Builder{
-        docker: docker,
         config: cfg,
-    }, nil
+    }
 }
 
-// Build выполняет сборку образа
-func (b *Builder) Build(ctx context.Context) error {
-    buildOpts := types.ImageBuildOptions{
-        Dockerfile: b.config.Dockerfile,
-        Tags:      []string{b.config.Args["VERSION"]},
-        BuildArgs: b.config.Args,
-    }
-
-    // Добавляем поддержку GPU если включено
-    if b.config.GPU.Enabled {
-        buildOpts.BuildArgs["NVIDIA_VISIBLE_DEVICES"] = b.config.GPU.Devices
-        buildOpts.BuildArgs["NVIDIA_DRIVER_CAPABILITIES"] = "compute,utility"
-        buildOpts.BuildArgs["NVIDIA_REQUIRE_CUDA"] = "cuda>=12.8"
-    }
-
-    // TODO: Имплементация сборки образа
-    return nil
-}
-
-// Push отправляет образ в registry
-func (b *Builder) Push(ctx context.Context) error {
-    // TODO: Имплементация push
+// Configure настраивает параметры сборки
+func (b *Builder) Configure() error {
+    capabilities := "compute,utility"
+    requirements := "cuda>=12.8"
+    
+    b.config.Capabilities = &capabilities
+    b.config.Requirements = &requirements
+    
     return nil
 }

@@ -14,7 +14,16 @@ type Config struct {
     Docker   DockerConfig   `json:"docker"`
     Helm     HelmConfig     `json:"helm"`
     Runtime  RuntimeConfig  `json:"runtime"`
+    Build    BuildConfig    `json:"build"`
     Deploy   DeployConfig   `json:"deploy"`
+}
+
+// BuildConfig содержит настройки для сборки
+type BuildConfig struct {
+    Capabilities *string          `json:"capabilities"` // CUDA capabilities
+    Requirements *string          `json:"requirements"` // CUDA requirements
+    BaseImage    string           `json:"baseImage"`
+    BuildArgs    map[string]string `json:"buildArgs"`
 }
 
 // DockerConfig содержит настройки для Docker
