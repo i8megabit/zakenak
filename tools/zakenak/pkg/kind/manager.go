@@ -28,16 +28,37 @@ import (
 
 // Manager управляет Kind кластером
 type Manager struct {
+    name       string
     configPath string
     nodeImage  string
 }
 
 // NewManager создает новый менеджер Kind
-func NewManager(configPath string) *Manager {
+func NewManager(name string, configPath string) *Manager {
     return &Manager{
+        name:       name,
         configPath: configPath,
         nodeImage:  "kindest/node:v1.27.3",
     }
+}
+
+// DeleteExistingCluster удаляет существующий кластер
+func (m *Manager) DeleteExistingCluster(ctx context.Context) error {
+    cmd := exec.CommandContext(ctx, "kind", "get", "clusters")
+    output, err := cmd.Output()
+    if err != nil {
+        return fmt.Errorf("failed to get clusters: %w", err)
+    }
+
+    if string(output) != "" {
+        cmd = exec.CommandContext(ctx, "kind", "delete", "cluster", "--name", m.name)
+        if err := cmd.Run(); err != nil {
+            return fmt.Errorf("failed to delete cluster: %w", err)
+        }
+        time.Sleep(5 * time.Second)
+    }
+
+    return nil
 }
 
 // CreateCluster создает новый кластер
