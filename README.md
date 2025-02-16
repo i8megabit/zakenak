@@ -15,7 +15,7 @@
 [![Release](https://img.shields.io/github/v/release/i8megabit/zakenak)][def]
 
 ## О проекте
-Zakenak — это инновационный инструмент для GitOps и деплоя, специально разработанный для эффективной Helm-оркестрации однонодового Kind кластера Kubernetes с поддержкой GPU.
+Zakenak — это инновационный инструмент для GitOps и деплоя, специально разработанный для эффективной Helm-оркестрации кластеров Kubernetes с поддержкой GPU.
 
 ### Ключевые особенности
 - 🚀 **Единый бинарный файл** без внешних зависимостей
@@ -35,7 +35,7 @@ Zakenak — это инновационный инструмент для GitOps
 
 ## Быстрый старт
 
-### Установка
+### Установка из исходного кода
 ```bash
 # Клонирование репозитория
 git clone https://github.com/i8megabit/zakenak
@@ -70,7 +70,79 @@ zakenak build
 # Деплой в кластер
 zakenak deploy
 ```
+## Использование Docker образа
+```bash
+# Получение образа
+docker pull ghcr.io/i8megabit/zakenak:latest
 
+# Базовое использование
+docker run -v $(pwd):/workspace \
+    -v ~/.kube:/root/.kube \
+    ghcr.io/i8megabit/zakenak:latest converge
+
+# Использование с GPU
+docker run --gpus all \
+    -v $(pwd):/workspace \
+    -v ~/.kube:/root/.kube \
+    -e NVIDIA_VISIBLE_DEVICES=all \
+    -e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+    ghcr.io/i8megabit/zakenak:latest converge
+```
+
+## Базовая конфигурация
+```bash
+project: myapp
+environment: prod
+
+registry:
+    url: registry.local
+    username: ${REGISTRY_USER}
+    password: ${REGISTRY_PASS}
+
+deploy:
+    namespace: prod
+    charts:
+        - ./helm-charts/cert-manager
+        - ./helm-charts/local-ca
+        - ./helm-charts/ollama
+        - ./helm-charts/open-webui
+    values:
+        - values.yaml
+        - values-prod.yaml
+
+build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+        VERSION: v1.0.0
+    gpu:
+        enabled: true
+        runtime: nvidia
+        memory: "8Gi"
+        devices: "all"
+```
+
+## Основные команды
+```bash
+# Конвергенция состояния
+zakenak converge
+
+# Сборка образов
+zakenak build
+
+# Деплой в кластер
+zakenak deploy
+```
+
+## Переменные окружения
+
+Переменные окружения
+Переменная	Описание	По умолчанию
+KUBECONFIG	Путь к kubeconfig	~/.kube/config
+ZAKENAK_DEBUG	Включение отладки	false
+NVIDIA_VISIBLE_DEVICES	GPU устройства	all
+REGISTRY_USER	Пользователь registry	-
+REGISTRY_PASS	Пароль registry	-
 ## Архитектура
 ```mermaid
 graph TD
