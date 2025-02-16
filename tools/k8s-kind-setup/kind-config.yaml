@@ -2,44 +2,44 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
-	kubeadmConfigPatches:
-	- |
-		kind: InitConfiguration
-		nodeRegistration:
-			kubeletExtraArgs:
-				node-labels: "ingress-ready=true,nvidia.com/gpu=present"
-	extraPortMappings:
-	- containerPort: 80
-		hostPort: 80
-		protocol: TCP
-	- containerPort: 443
-		hostPort: 443
-		protocol: TCP
-	extraMounts:
-	# Путь к общим манифестам
-	- hostPath: ./helm-charts/manifests
-		containerPath: /etc/kubernetes/manifests
-	# WSL2 specific NVIDIA paths
-	- hostPath: /usr/lib/wsl/lib
-		containerPath: /usr/lib/wsl/lib
-	# CUDA toolkit
-	- hostPath: /usr/local/cuda-12.8
-		containerPath: /usr/local/cuda-12.8
-	- hostPath: /usr/local/cuda
-		containerPath: /usr/local/cuda
-	# NVIDIA драйверы и библиотеки для WSL2
-	- hostPath: /usr/lib/wsl/lib/libcuda.so.1
-		containerPath: /usr/lib/wsl/lib/libcuda.so.1
-	- hostPath: /usr/lib/wsl/lib/libnvidia-ml.so.1
-		containerPath: /usr/lib/wsl/lib/libnvidia-ml.so.1
-	# NVIDIA устройства
-	- hostPath: /dev/nvidia0
-		containerPath: /dev/nvidia0
-	- hostPath: /dev/nvidiactl
-		containerPath: /dev/nvidiactl
-	- hostPath: /dev/nvidia-uvm
-		containerPath: /dev/nvidia-uvm
-	- hostPath: /dev/nvidia-uvm-tools
-		containerPath: /dev/nvidia-uvm-tools
-	- hostPath: /dev/nvidia-modeset
-		containerPath: /dev/nvidia-modeset
+  kubeadmConfigPatches:
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "ingress-ready=true,nvidia.com/gpu=present"
+  extraPortMappings:
+  - containerPort: 80
+    hostPort: 80
+    protocol: TCP
+  - containerPort: 443
+    hostPort: 443
+    protocol: TCP
+  extraMounts:
+  # Путь к общим манифестам
+  - hostPath: ./helm-charts/manifests
+    containerPath: /etc/kubernetes/manifests
+  # WSL2 specific NVIDIA paths
+  - hostPath: /usr/lib/wsl/lib
+    containerPath: /usr/lib/wsl/lib
+  # CUDA toolkit
+  - hostPath: /usr/local/cuda-12.8
+    containerPath: /usr/local/cuda-12.8
+  - hostPath: /usr/local/cuda
+    containerPath: /usr/local/cuda
+  # NVIDIA драйверы и библиотеки для WSL2
+  - hostPath: /usr/lib/wsl/lib/libcuda.so.1
+    containerPath: /usr/lib/wsl/lib/libcuda.so.1
+  - hostPath: /usr/lib/wsl/lib/libnvidia-ml.so.1
+    containerPath: /usr/lib/wsl/lib/libnvidia-ml.so.1
+  # NVIDIA устройства
+  - hostPath: /dev/nvidia0
+    containerPath: /dev/nvidia0
+  - hostPath: /dev/nvidiactl
+    containerPath: /dev/nvidiactl
+  - hostPath: /dev/nvidia-uvm
+    containerPath: /dev/nvidia-uvm
+  - hostPath: /dev/nvidia-uvm-tools
+    containerPath: /dev/nvidia-uvm-tools
+  - hostPath: /dev/nvidia-modeset
+    containerPath: /dev/nvidia-modeset
