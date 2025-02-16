@@ -40,4 +40,3 @@ kubectl run -i --rm --restart=Never busybox --image=busybox:1.28 -- nslookup oll
 - /tools
     - /k8s-kind-setup - Скрипты настройки кластера и DNS
     - /helm-deployer - Инструменты для деплоя
-
