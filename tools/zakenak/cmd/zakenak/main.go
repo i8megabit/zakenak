@@ -18,6 +18,7 @@ import (
     "github.com/i8megabit/zakenak/pkg/converge"
     "github.com/i8megabit/zakenak/pkg/build"
     "github.com/i8megabit/zakenak/pkg/state"
+    "github.com/i8megabit/zakenak/pkg/banner"
 )
 
 var (
@@ -28,6 +29,8 @@ var (
 )
 
 func main() {
+    banner.PrintZakenak()
+    
     rootCmd := &cobra.Command{
         Use:   "zakenak",
         Short: "Zakenak - элегантный инструмент для GitOps и деплоя",
@@ -109,6 +112,7 @@ func createKubernetesClient(kubeconfig string) (*kubernetes.Clientset, error) {
 }
 
 func runConverge() error {
+    banner.PrintDeploy()
     ctx := context.Background()
     
     // Создаем клиент Kubernetes
@@ -132,9 +136,11 @@ func runConverge() error {
     
     // Запускаем процесс конвергенции
     if err := manager.Converge(ctx); err != nil {
+        banner.PrintError()
         return fmt.Errorf("convergence failed: %w", err)
     }
 
+    banner.PrintSuccess()
     return nil
 }
 
