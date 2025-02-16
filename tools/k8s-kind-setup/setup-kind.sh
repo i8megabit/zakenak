@@ -1,13 +1,22 @@
 #!/usr/bin/bash
+#  _  _____ ____  
+# | |/ / _ \___ \ 
+# | ' / (_) |__) |
+# | . \> _ </ __/ 
+# |_|\_\___/_____|
+#            by @eberil
+#
+# Copyright (c) 2024 Mikhail Eberil
+# This code is free! Share it, spread peace and technology!
+# "Because clusters should be fun!"
 
 # Определение пути к директории скрипта и корню репозитория
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Загрузка общих переменных и баннеров
-source "${SCRIPT_DIR}/env"
-source "${SCRIPT_DIR}/ascii_banners"
+source "${SCRIPT_DIR}/env.sh"
+source "${SCRIPT_DIR}/ascii_banners.sh"
 
 # Отображение баннера при старте
 k8s_banner
@@ -32,7 +41,7 @@ setup_kind_cluster() {
     fi
     
     echo -e "${CYAN}Создание нового кластера Kind...${NC}"
-    kind create cluster --config "${SCRIPT_DIR}/kind-config.yaml" --image kindest/node:v1.27.3
+    kind create cluster --config "${REPO_ROOT}/kubeconfig.yaml" --image kindest/node:v1.27.3
     check_error "Не удалось создать кластер Kind"
     
     # Ожидание готовности узлов
