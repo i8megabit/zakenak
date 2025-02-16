@@ -15,16 +15,21 @@ REGISTRY ?= ghcr.io
 IMAGE_NAME ?= i8megabit/gitops
 TAG ?= $(VERSION)
 
-.PHONY: all build clean test docker deps tidy
+.PHONY: all build clean test docker deps tidy vendor
 
 all: clean deps build test
 
+# Add explicit dependency management
 deps:
 	$(GO) mod download
+	$(GO) mod verify
 	$(GO) mod tidy
 
-build: deps
+# Add vendor target for offline builds
+vendor:
+	$(GO) mod vendor
 
+build: deps
 	$(GO) build $(GOFLAGS) \
 		-ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)" \
 		-o ../../bin/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
@@ -35,6 +40,7 @@ test: deps
 clean:
 	rm -rf bin/
 	rm -f $(BINARY_NAME)
+	rm -rf vendor/
 
 docker:
 	docker buildx build \
