@@ -1,104 +1,66 @@
-// Copyright (c) 2024 Zakenak
-// Author: @eberil
-// License: MIT with Trademark Protection
-
 package main
 
 import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"github.com/i8megabit/zakenak/pkg/config"
 	"github.com/i8megabit/zakenak/pkg/converge"
-	"github.com/i8megabit/zakenak/pkg/build"
 	"github.com/i8megabit/zakenak/pkg/state"
 )
 
 var (
-	Version    = "1.0.0"
 	kubeconfig string
 	namespace  string
-	debug      bool
-	configFile string
-	gpuEnabled bool
+	configPath string
 )
 
-func init() {
+func main() {
+	rootCmd := &cobra.Command{
+		Use:   "zakenak",
+		Short: "Zakenak - элегантный инструмент для GitOps и деплоя",
+	}
+
 	rootCmd.PersistentFlags().StringVar(&kubeconfig, "kubeconfig", "", "путь к kubeconfig")
-	rootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "prod", "целевой namespace")
-	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "включить отладочный режим")
-	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "zakenak.yaml", "путь к конфигурации")
-	rootCmd.PersistentFlags().BoolVarP(&gpuEnabled, "gpu", "g", true, "включить поддержку GPU")
+	rootCmd.PersistentFlags().StringVar(&namespace, "namespace", "", "целевой namespace") 
+	rootCmd.PersistentFlags().StringVar(&configPath, "config", "zakenak.yaml", "путь к конфигурации")
 
 	rootCmd.AddCommand(
-		newInitCmd(),
-		newUpCmd(),
-		newDownCmd(),
-		newStatusCmd(),
-		newDeployCmd(),
+		newConvergeCmd(),
+		newBuildCmd(),
 	)
-}
 
-var rootCmd = &cobra.Command{
-	Use:   "zakenak",
-	Short: "Zakenak - элегантный инструмент для GitOps и деплоя",
-	Long: `Zakenak - карманный инструмент для ежедневной Helm-оркестрации 
-однонодового Kind кластера Kubernetes с поддержкой GPU.`,
-}
-
-func main() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "Ошибка: %v\n", err)
 		os.Exit(1)
 	}
 }
 
 
-func newInitCmd() *cobra.Command {
+
+func newConvergeCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "init",
-		Short: "Инициализировать кластер и базовые компоненты",
+		Use:   "converge",
+		Short: "Запустить процесс конвергенции",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runInit()
+			return runConverge()
 		},
 	}
 }
 
-func newUpCmd() *cobra.Command {
+func newBuildCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "up",
-		Short: "Поднять кластер и все сервисы",
+		Use:   "build",
+		Short: "Собрать компоненты",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runUp()
+			return fmt.Errorf("not implemented")
 		},
 	}
 }
 
-func newDownCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "down",
-		Short: "Остановить кластер с сохранением данных",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDown()
-		},
-	}
-}
-
-func newStatusCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "status",
-		Short: "Показать статус компонентов",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus()
-		},
-	}
-}
-
-func runInit() error {
+func runConverge() error {
 	ctx := context.Background()
 	
 	// Создаем клиент Kubernetes
@@ -113,16 +75,20 @@ func runInit() error {
 		return fmt.Errorf("error loading config: %w", err)
 	}
 
+	// Создаем менеджер состояния
+	stateManager := state.NewFileStateManager("zakenak-state.json")
+
 	// Создаем менеджер конвергенции
-	manager := converge.NewManager(clientset, cfg)
+	manager := converge.NewManager(clientset, cfg, stateManager)
 	
-	// Запускаем процесс инициализации
-	if err := manager.Initialize(ctx); err != nil {
-		return fmt.Errorf("initialization failed: %w", err)
+	// Запускаем процесс конвергенции
+	if err := manager.Converge(ctx); err != nil {
+		return fmt.Errorf("convergence failed: %w", err)
 	}
 
 	return nil
 }
+
 
 
 func createKubernetesClient(kubeconfigPath string) (*kubernetes.Clientset, error) {

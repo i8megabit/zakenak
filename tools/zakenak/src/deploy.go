@@ -20,11 +20,10 @@ func deployHandler(client *kubernetes.Clientset, cfg *config.Config) error {
     }
 
     // Развертывание каждого чарта
-    for _, chartPath := range cfg.Deploy.Charts {
-        if err := deployChart(client, cfg, chartPath); err != nil {
-            return fmt.Errorf("failed to deploy chart %s: %w", chartPath, err)
-        }
+    if err := deployChart(client, cfg, cfg.Deploy.ChartPath); err != nil {
+        return fmt.Errorf("failed to deploy chart %s: %w", cfg.Deploy.ChartPath, err)
     }
+
 
     return nil
 }
