@@ -170,7 +170,7 @@ rules:
 ## Контакты
 
 ### Security Team
-- Email: security@i8megabit.com
+- Email: i8megabit@gmail.com
 - Emergency: +X XXX XXX XX XX
 
 ### Reporting

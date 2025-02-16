@@ -154,6 +154,6 @@ kubectl exec -it -n prod deployment/ollama -- nvidia-smi
 Проект распространяется под модифицированной MIT лицензией с защитой торговой марки. Использование названия "Zakenak" требует письменного разрешения владельца.
 
 ## Поддержка
-- Email: security@i8megabit.com
+- Email: i8megabit@gmail.com
 - GitHub Issues: [Создать issue](https://github.com/i8megabit/zakenak/issues)
 - Документация: [Руководство пользователя](docs/)

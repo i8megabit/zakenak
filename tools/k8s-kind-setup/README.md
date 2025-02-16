@@ -185,7 +185,7 @@ kubectl logs -n kube-system -l k8s-app=kube-dns
 ```
 
 ## Поддержка
-- Email: security@i8megabit.com
+- Email: i8megabit@gmail.com
 - GitHub Issues: [Создать issue](https://github.com/i8megabit/zakenak/issues)
 - Документация: [Руководство пользователя](../../docs/)
 
