@@ -112,17 +112,13 @@ func runConverge() error {
     ctx := context.Background()
     
     // Создаем клиент Kubernetes
-    config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-    if err != nil {
-        return fmt.Errorf("error building kubeconfig: %w", err)
-    }
-
-    clientset, err := kubernetes.NewForConfig(config)
+    clientset, err := createKubernetesClient(kubeconfig)
     if err != nil {
         return fmt.Errorf("error creating kubernetes client: %w", err)
     }
 
-    // Загружаем конфигурацию
+
+    // Загружаем конфигурацию из файла
     cfg, err := config.LoadConfig(configPath)
     if err != nil {
         return fmt.Errorf("error loading config: %w", err)
@@ -164,12 +160,7 @@ func runDeploy() error {
     ctx := context.Background()
     
     // Создаем клиент Kubernetes
-    config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-    if err != nil {
-        return fmt.Errorf("error building kubeconfig: %w", err)
-    }
-
-    clientset, err := kubernetes.NewForConfig(config)
+    clientset, err := createKubernetesClient(kubeconfig)
     if err != nil {
         return fmt.Errorf("error creating kubernetes client: %w", err)
     }
@@ -180,8 +171,12 @@ func runDeploy() error {
         return fmt.Errorf("error loading config: %w", err)
     }
 
+    // Создаем менеджер состояния
+    stateManager := state.NewFileStateManager(filepath.Join(os.TempDir(), "zakenak-state.json"))
+
     // Создаем менеджер конвергенции для деплоя
-    manager := converge.NewManager(clientset, cfg)
+    manager := converge.NewManager(clientset, cfg, stateManager)
+
     
     // Запускаем процесс деплоя
     if err := manager.Deploy(ctx); err != nil {
