@@ -49,7 +49,7 @@ Zakenak является интеллектуальной собственнос
 ## Шаблон лицензии
 ```plaintext
 /*
- * Copyright (c) 2024 Mikhail Eberil
+ * Copyright (c)  2025 Mikhail Eberil
  * 
  * This file is part of Ƶakenak™®, a GitOps deployment tool.
  * 

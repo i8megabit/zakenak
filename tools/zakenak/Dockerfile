@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Mikhail Eberil
+# Copyright (c)  2025 Mikhail Eberil
 # Dockerfile for Ƶakenak™®
 
 # Build stage

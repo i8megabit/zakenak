@@ -9,7 +9,7 @@
 
 Should Harbour?	No.
 ```
-## [1.0.2] - 2024-02-13
+## [1.0.2] -  2025-02-13
 
 ### Added
 - Добавлен Service для обеспечения доступа к Open WebUI
@@ -18,7 +18,7 @@ Should Harbour?	No.
 ### Fixed
 - Исправлена проблема с отсутствием endpoints
 
-## [1.0.1] - 2024-02-13
+## [1.0.1] -  2025-02-13
 
 ### Fixed
 - Исправлены отступы в deployment.yaml для устранения предупреждения "unknown field spec"
@@ -26,7 +26,7 @@ Should Harbour?	No.
 - Исправлено форматирование списков в deployment.yaml
 
 ```plain text
-Copyright (c) 2024 Mikhail Eberil
+Copyright (c)  2025 Mikhail Eberil
 
 This file is part of Zakenak project and is released under the terms of the MIT License. See LICENSE file in the project root for full license information.
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2024 Mikhail Eberil
+# Copyright (c)  2025 Mikhail Eberil
 # Setup script for Ƶakenak™® AI Assistant user
 
 # Проверка на root права

@@ -60,7 +60,7 @@ webui.prod.local resolves to: 10.96.130.21
 ```bash
 # Пример успешного ответа
 HTTP/2 200 
-date: Thu, 15 Feb 2024 10:00:00 GMT
+date: Thu, 15 Feb  2025 10:00:00 GMT
 content-type: text/html
 server: nginx/1.25.3
 ```
@@ -154,7 +154,7 @@ watch -n 60 ./check-services.sh
 3. Создайте issue с полным отчетом проверки
 
 ```plain text
-Copyright (c) 2024 Mikhail Eberil
+Copyright (c)  2025 Mikhail Eberil
 
 This file is part of Zakenak project and is released under the terms of the MIT License. See LICENSE file in the project root for full license information.
 

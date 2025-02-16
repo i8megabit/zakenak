@@ -53,7 +53,7 @@ nvidia-smi pmon
 ### Структура логов
 ```json
 {
-	"timestamp": "2024-01-20T12:00:00Z",
+	"timestamp": " 2025-01-20T12:00:00Z",
 	"level": "INFO",
 	"component": "ollama",
 	"message": "Model loaded successfully",
@@ -226,7 +226,7 @@ spec:
 ```
 
 ```plain text
-Copyright (c) 2024 Mikhail Eberil
+Copyright (c)  2025 Mikhail Eberil
 
 This file is part of Zakenak project and is released under the terms of the MIT License. See LICENSE file in the project root for full license information.
 

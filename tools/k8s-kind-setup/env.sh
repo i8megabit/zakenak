@@ -6,7 +6,7 @@
 # |_____|_| \_|  \_/    
 #              by @eberil
 #
-# Copyright (c) 2024 Mikhail Eberil
+# Copyright (c)  2025 Mikhail Eberil
 # Environment Configuration
 # Version: 1.0.0
 #

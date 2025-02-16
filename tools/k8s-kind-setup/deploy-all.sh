@@ -7,7 +7,7 @@
 #            |_|            |___/ 
 #                         by @eberil
 #
-# Copyright (c) 2024 Mikhail Eberil
+# Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
 # "Time to ship some containers!"
 
