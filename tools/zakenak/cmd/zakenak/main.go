@@ -13,6 +13,8 @@ import (
     "github.com/i8megabit/zakenak/pkg/config"
     "github.com/i8megabit/zakenak/pkg/converge"
     "github.com/i8megabit/zakenak/pkg/build"
+    "github.com/i8megabit/zakenak/pkg/state"
+    "path/filepath"
     "github.com/spf13/cobra"
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/tools/clientcmd"
@@ -126,8 +128,11 @@ func runConverge() error {
         return fmt.Errorf("error loading config: %w", err)
     }
 
+    // Создаем менеджер состояния
+    stateManager := state.NewFileStateManager(filepath.Join(os.TempDir(), "zakenak-state.json"))
+
     // Создаем менеджер конвергенции
-    manager := converge.NewManager(clientset, cfg)
+    manager := converge.NewManager(clientset, cfg, stateManager)
     
     // Запускаем процесс конвергенции
     if err := manager.Converge(ctx); err != nil {
