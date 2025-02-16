@@ -20,32 +20,32 @@ TAG ?= $(VERSION)
 all: clean build test
 
 build:
-    cd tools/zakenak && $(GO) build $(GOFLAGS) \
-        -ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)" \
-        -o ../../bin/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
+	cd tools/zakenak && $(GO) build $(GOFLAGS) \
+		-ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)" \
+		-o ../../bin/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
 
 test:
-    cd tools/zakenak && $(GO) test -v ./...
+	cd tools/zakenak && $(GO) test -v ./...
 
 clean:
-    rm -rf bin/
-    rm -f $(BINARY_NAME)
+	rm -rf bin/
+	rm -f $(BINARY_NAME)
 
 docker:
-    docker buildx build \
-        --platform linux/amd64 \
-        --tag $(REGISTRY)/$(IMAGE_NAME):$(TAG) \
-        --push \
-        -f tools/zakenak/Dockerfile .
+	docker buildx build \
+		--platform linux/amd64 \
+		--tag $(REGISTRY)/$(IMAGE_NAME):$(TAG) \
+		--push \
+		-f tools/zakenak/Dockerfile .
 
 # Development helpers
 dev-deps:
-    $(GO) install golang.org/x/lint/golint@latest
-    $(GO) install golang.org/x/tools/cmd/goimports@latest
+	$(GO) install golang.org/x/lint/golint@latest
+	$(GO) install golang.org/x/tools/cmd/goimports@latest
 
 lint:
-    cd tools/zakenak && golint ./...
-    cd tools/zakenak && go vet ./...
-    cd tools/zakenak && goimports -w .
+	cd tools/zakenak && golint ./...
+	cd tools/zakenak && go vet ./...
+	cd tools/zakenak && goimports -w .
 
 .DEFAULT_GOAL := build

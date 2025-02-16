@@ -20,32 +20,32 @@ TAG ?= $(VERSION)
 all: clean build test
 
 build:
-    $(GO) build $(GOFLAGS) \
-        -ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)" \
-        -o bin/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
+	$(GO) build $(GOFLAGS) \
+		-ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)" \
+		-o bin/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
 
 test:
-    $(GO) test -v ./...
+	$(GO) test -v ./...
 
 clean:
-    rm -rf bin/
-    rm -f $(BINARY_NAME)
+	rm -rf bin/
+	rm -f $(BINARY_NAME)
 
 docker:
-    docker buildx build \
-        --platform linux/amd64 \
-        --tag $(REGISTRY)/$(IMAGE_NAME):$(TAG) \
-        --push \
-        .
+	docker buildx build \
+		--platform linux/amd64 \
+		--tag $(REGISTRY)/$(IMAGE_NAME):$(TAG) \
+		--push \
+		.
 
 # Development helpers
 dev-deps:
-    $(GO) install golang.org/x/lint/golint@latest
-    $(GO) install golang.org/x/tools/cmd/goimports@latest
+	$(GO) install golang.org/x/lint/golint@latest
+	$(GO) install golang.org/x/tools/cmd/goimports@latest
 
 lint:
-    golint ./...
-    go vet ./...
-    goimports -w .
+	golint ./...
+	go vet ./...
+	goimports -w .
 
 .DEFAULT_GOAL := build
