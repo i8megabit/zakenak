@@ -48,54 +48,14 @@ var rootCmd = &cobra.Command{
 	Long: `Zakenak - карманный инструмент для ежедневной Helm-оркестрации 
 однонодового Kind кластера Kubernetes с поддержкой GPU.`,
 }
-// Author: @eberil
-// License: MIT with Trademark Protection
 
-package main
-
-import (
-	"context"
-	"fmt"
-	"os"
-	"path/filepath"
-	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	"github.com/i8megabit/zakenak/pkg/config"
-	"github.com/i8megabit/zakenak/pkg/state"
-	"github.com/i8megabit/zakenak/pkg/helm"
-)
-
-var (
-	Version    = "1.0.0"
-	kubeconfig string
-	namespace  string
-	debug      bool
-	configFile string
-	gpuEnabled bool
-)
-
-func init() {
-	rootCmd.PersistentFlags().StringVar(&kubeconfig, "kubeconfig", "", "путь к kubeconfig")
-	rootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "prod", "целевой namespace")
-	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "включить отладочный режим")
-	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "zakenak.yaml", "путь к конфигурации")
-	rootCmd.PersistentFlags().BoolVarP(&gpuEnabled, "gpu", "g", true, "включить поддержку GPU")
-
-	rootCmd.AddCommand(
-		newInitCmd(),
-		newUpCmd(),
-		newDownCmd(),
-		newStatusCmd(),
-	)
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "Ошибка: %v\n", err)
+		os.Exit(1)
+	}
 }
 
-var rootCmd = &cobra.Command{
-	Use:   "zakenak",
-	Short: "Zakenak - элегантный инструмент для GitOps и деплоя",
-	Long: `Zakenak - карманный инструмент для ежедневной Helm-оркестрации 
-однонодового Kind кластера Kubernetes с поддержкой GPU.`,
-}
 
 func newInitCmd() *cobra.Command {
 	return &cobra.Command{
@@ -137,14 +97,8 @@ func newStatusCmd() *cobra.Command {
 	}
 }
 
-func main() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "Ошибка: %v\n", err)
-		os.Exit(1)
-	}
-}
-
 func runInit() error {
+
 	ctx := context.Background()
 	
 	// Инициализация кластера
