@@ -1,4 +1,4 @@
-module github.com/i8meg/gitops
+module github.com/i8meg/zakenak
 
 go 1.21
 

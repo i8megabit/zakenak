@@ -2,7 +2,7 @@
 # Makefile for Ƶakenak™®
 
 # Версия проекта
-VERSION := 1.0.0
+VERSION := 1.3.1
 COMMIT := $(shell git rev-parse --short HEAD)
 DATE := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
 
@@ -19,7 +19,7 @@ LDFLAGS := -ldflags "-X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main
 GOFLAGS := -v
 
 # Пути
-SRC_DIR := ./src
+SRC_DIR := .
 BUILD_DIR := ./build
 DOCS_DIR := ./docs
 
