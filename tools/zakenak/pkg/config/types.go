@@ -5,11 +5,8 @@
 
 package config
 
-import (
-    "github.com/docker/docker/api/types/events"
-)
-
 // Config представляет основную конфигурацию приложения
+
 type Config struct {
     Docker   DockerConfig   `json:"docker"`
     Helm     HelmConfig     `json:"helm"`
@@ -31,7 +28,7 @@ type DockerConfig struct {
     Host      string       `json:"host"`
     TLS       bool        `json:"tls"`
     CertPath  string      `json:"certPath"`
-    EventType events.Type `json:"eventType"`
+    EventType string      `json:"eventType"` // Changed from events.Type to string
 }
 
 // HelmConfig содержит настройки для Helm
