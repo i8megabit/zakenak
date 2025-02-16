@@ -1,13 +1,13 @@
+# ƵakӖnak™®
 ```ascii
-	 ______     _                      _    
-	|___  /    | |                    | |   
-	   / / __ _| |  _ _   ___     ___ | |  _
-	  / / / _` | |/ / _`||  _ \ / _` || |/ /
-	 / /_| (_| |  < by_Eberil| | (_| ||   < 
-	/_____\__,_|_|\_\__,||_| |_|\__,_||_|\_\
+     ______     _                      _    
+    |___  /    | |                    | |   
+       / / __ _| |  _ _   ___     ___ | |  _
+      / / / _` | |/ / _`||  _ \ / _` || |/ /
+     / /_| (_| |  < by_Eberil| | (_| ||   < 
+    /_____\__,_|_|\_\__,||_| |_|\__,_||_|\_\
   
-	Should Harbour?				
-```
+    Should Harbour?	No.
 
 # [Zakenak](https://dic.academic.ru/dic.nsf/dic_synonims/390396/%D1%87%D0%B0%D0%BA%D0%B0%D0%BD%D0%B0%D0%BAчаканак "др.-чув. чӑканӑк — бухта, залив")
 [![Go Report Card](https://goreportcard.com/badge/github.com/i8megabit/zakenak)](https://goreportcard.com/report/github.com/i8megabit/zakenak)
@@ -71,22 +71,59 @@ zakenak build
 zakenak deploy
 ```
 ## Использование Docker образа
+
+### Получение образа
 ```bash
-# Получение образа
+# Получение последней версии
 docker pull ghcr.io/i8megabit/zakenak:latest
 
-# Базовое использование
-docker run -v $(pwd):/workspace \
-    -v ~/.kube:/root/.kube \
-    ghcr.io/i8megabit/zakenak:latest converge
+# Получение конкретной версии
+docker pull ghcr.io/i8megabit/zakenak:1.0.0
+```
 
-# Использование с GPU
+### Базовое использование
+```bash
+# Запуск с конфигурацией из текущей директории
+docker run -v $(pwd):/workspace \
+	-v ~/.kube:/root/.kube \
+	ghcr.io/i8megabit/zakenak:latest converge
+
+# Запуск с указанием конфигурации
+docker run -v $(pwd):/workspace \
+	-v ~/.kube:/root/.kube \
+	ghcr.io/i8megabit/zakenak:latest \
+	--config /workspace/zakenak.yaml \
+	converge
+```
+
+### Использование с GPU
+```bash
 docker run --gpus all \
-    -v $(pwd):/workspace \
-    -v ~/.kube:/root/.kube \
-    -e NVIDIA_VISIBLE_DEVICES=all \
-    -e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
-    ghcr.io/i8megabit/zakenak:latest converge
+	-v $(pwd):/workspace \
+	-v ~/.kube:/root/.kube \
+	-e NVIDIA_VISIBLE_DEVICES=all \
+	-e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+	ghcr.io/i8megabit/zakenak:latest converge
+```
+
+### Монтирование томов
+#### Обязательные тома
+- `/workspace`: Рабочая директория с конфигурацией
+- `~/.kube`: Конфигурация Kubernetes
+
+#### Опциональные тома
+- `/root/.cache`: Кэш для ускорения работы
+- `/var/run/docker.sock`: Для работы с локальным Docker
+
+### Безопасность Docker контейнера
+```bash
+# Пример безопасного запуска
+docker run --read-only \
+	--security-opt=no-new-privileges \
+	-v $(pwd):/workspace:ro \
+	-v ~/.kube:/root/.kube:ro \
+	--network=host \
+	ghcr.io/i8megabit/zakenak:1.0.0 converge
 ```
 
 ## Базовая конфигурация
@@ -183,3 +220,13 @@ Zakenak распространяется под модифицированной
 - Всем контрибьюторам
 
 [def]: https://github.com/i8megabit/zakenak/releases
+
+```plain text
+Copyright (c) 2024 Mikhail Eberil
+
+This file is part of Zakenak project and is released under the terms of the MIT License. See LICENSE file in the project root for full license information.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+The name "Zakenak" and associated branding are trademarks of @eberil and may not be used without express written permission.
+```
