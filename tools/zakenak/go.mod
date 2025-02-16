@@ -3,6 +3,7 @@ module github.com/i8megabit/zakenak
 go 1.21
 
 require (
+    github.com/distribution/reference v0.6.0
     github.com/docker/docker v20.10.24+incompatible
     github.com/docker/go-units v0.5.0
     github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
