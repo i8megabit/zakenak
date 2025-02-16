@@ -1,5 +1,4 @@
-module <github class="com"/>
-<i8megabit></i8megabit>/zakenak
+module github.com/i8megabit/zakenak
 
 go 1.21
 
