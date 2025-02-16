@@ -33,3 +33,4 @@ tools/k8s-kind-setup/setup-gpu.sh
 /local-ca
 
 /PROMPT.md
+/kubeconfig.yaml
