@@ -107,17 +107,82 @@ func createKubernetesClient(kubeconfig string) (*kubernetes.Clientset, error) {
 }
 
 func runConverge() error {
-    // TODO: Имплементация конвергенции
+    ctx := context.Background()
+    
+    // Создаем клиент Kubernetes
+    config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+    if err != nil {
+        return fmt.Errorf("error building kubeconfig: %w", err)
+    }
+
+    clientset, err := kubernetes.NewForConfig(config)
+    if err != nil {
+        return fmt.Errorf("error creating kubernetes client: %w", err)
+    }
+
+    // Загружаем конфигурацию
+    cfg, err := config.LoadConfig(configPath)
+    if err != nil {
+        return fmt.Errorf("error loading config: %w", err)
+    }
+
+    // Создаем менеджер конвергенции
+    manager := converge.NewManager(clientset, cfg)
+    
+    // Запускаем процесс конвергенции
+    if err := manager.Converge(ctx); err != nil {
+        return fmt.Errorf("convergence failed: %w", err)
+    }
+
     return nil
 }
 
 func runBuild() error {
-    // TODO: Имплементация сборки
+    // Загружаем конфигурацию
+    cfg, err := config.LoadConfig(configPath)
+    if err != nil {
+        return fmt.Errorf("error loading config: %w", err)
+    }
+
+    // Создаем билдер
+    builder := build.NewBuilder(&cfg.Build)
+    
+    // Настраиваем билдер
+    if err := builder.Configure(); err != nil {
+        return fmt.Errorf("builder configuration failed: %w", err)
+    }
+
     return nil
 }
 
 func runDeploy() error {
-    // TODO: Имплементация деплоя
+    ctx := context.Background()
+    
+    // Создаем клиент Kubernetes
+    config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+    if err != nil {
+        return fmt.Errorf("error building kubeconfig: %w", err)
+    }
+
+    clientset, err := kubernetes.NewForConfig(config)
+    if err != nil {
+        return fmt.Errorf("error creating kubernetes client: %w", err)
+    }
+
+    // Загружаем конфигурацию
+    cfg, err := config.LoadConfig(configPath)
+    if err != nil {
+        return fmt.Errorf("error loading config: %w", err)
+    }
+
+    // Создаем менеджер конвергенции для деплоя
+    manager := converge.NewManager(clientset, cfg)
+    
+    // Запускаем процесс деплоя
+    if err := manager.Deploy(ctx); err != nil {
+        return fmt.Errorf("deployment failed: %w", err)
+    }
+
     return nil
 }
 

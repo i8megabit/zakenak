@@ -3,7 +3,9 @@ package converge
 import (
     "context"
     "fmt"
+    "time"
     "github.com/i8megabit/zakenak/pkg/config"
+    "github.com/i8megabit/zakenak/pkg/state"
     "k8s.io/client-go/kubernetes"
 )
 
@@ -11,14 +13,16 @@ import (
 type Manager struct {
     client    *kubernetes.Clientset
     config    *config.Config
+    state     *state.FileStateManager
     namespace string
 }
 
 // NewManager создает новый менеджер конвергенции
-func NewManager(client *kubernetes.Clientset, cfg *config.Config) *Manager {
+func NewManager(client *kubernetes.Clientset, cfg *config.Config, stateManager *state.FileStateManager) *Manager {
     return &Manager{
         client:    client,
         config:    cfg,
+        state:     stateManager,
         namespace: cfg.Deploy.Namespace,
     }
 }
