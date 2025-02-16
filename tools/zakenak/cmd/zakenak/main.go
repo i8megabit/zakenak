@@ -6,9 +6,16 @@
 package main
 
 import (
+    "context"
+    "fmt"
     "os"
-    
+
+    "github.com/i8megabit/zakenak/pkg/config"
+    "github.com/i8megabit/zakenak/pkg/converge"
+    "github.com/i8megabit/zakenak/pkg/build"
     "github.com/spf13/cobra"
+    "k8s.io/client-go/kubernetes"
+    "k8s.io/client-go/tools/clientcmd"
 )
 
 var (
@@ -85,12 +92,18 @@ func newCleanCmd() *cobra.Command {
     return cmd
 }
 
-func initKubeClient() (*kubernetes.Clientset, error) {
+func createKubernetesClient(kubeconfig string) (*kubernetes.Clientset, error) {
     config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("error building kubeconfig: %w", err)
     }
-    return kubernetes.NewForConfig(config)
+
+    clientset, err := kubernetes.NewForConfig(config)
+    if err != nil {
+        return nil, fmt.Errorf("error creating kubernetes client: %w", err)
+    }
+
+    return clientset, nil
 }
 
 func runConverge() error {
