@@ -15,12 +15,19 @@ REGISTRY ?= ghcr.io
 IMAGE_NAME ?= i8megabit/gitops
 TAG ?= $(VERSION)
 
-.PHONY: all build clean test docker deps tidy vendor
+.PHONY: all build clean test docker deps tidy vendor init-modules
 
 all: clean deps build test
 
+# Initialize and update Go modules
+init-modules:
+	$(GO) mod init github.com/i8megabit/zakenak || true
+	$(GO) mod tidy
+	$(GO) mod download
+	$(GO) mod verify
+
 # Add explicit dependency management
-deps:
+deps: init-modules
 	$(GO) mod download
 	$(GO) mod verify
 	$(GO) mod tidy
