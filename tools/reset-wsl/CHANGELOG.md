@@ -9,19 +9,19 @@
 
 Should Harbour?	No.
 ```
-## [1.2.0] - 2024-01-09
+## [1.2.0] -  2025-01-09
 ### Added
 - Добавлена проверка политики выполнения скриптов в Reset-WSL.ps1
 - Добавлены инструкции по обходу ограничений политики выполнения
 - Расширена документация с информацией о настройке безопасности
 
-## [1.1.0] - 2024-01-09
+## [1.1.0] -  2025-01-09
 ### Changed
 - Перемещен скрипт Reset-WSL.ps1 в отдельную директорию tools/reset-wsl
 - Создана отдельная документация для инструмента Reset-WSL
 - Улучшена структура проекта
 
-## [1.0.0] - 2024-01-09
+## [1.0.0] -  2025-01-09
 ### Added
 - Создан скрипт Reset-WSL.ps1 для полного сброса и переустановки WSL
 - Скрипт включает в себя:
@@ -31,7 +31,7 @@ Should Harbour?	No.
   - Установку WSL2 и Ubuntu по умолчанию
 
 ```plain text
-Copyright (c) 2024 Mikhail Eberil
+Copyright (c)  2025 Mikhail Eberil
 
 This file is part of Zakenak project and is released under the terms of the MIT License. See LICENSE file in the project root for full license information.
 

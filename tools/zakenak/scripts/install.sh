@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2024 Mikhail Eberil
+# Copyright (c)  2025 Mikhail Eberil
 # Installation script for Ƶakenak™®
 
 set -e

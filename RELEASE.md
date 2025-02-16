@@ -9,7 +9,7 @@
 
 Should Harbour?	No.
 ```
-## [1.0.0] - 2024-01-20
+## [1.0.0] -  2025-01-20
 
 ### 🎉 Первый стабильный релиз
 
@@ -74,7 +74,7 @@ Should Harbour?	No.
 [1.0.0]: https://github.com/i8megabit/zakenak/releases/tag/v1.0.0
 
 ```plain text
-Copyright (c) 2024 Mikhail Eberil
+Copyright (c)  2025 Mikhail Eberil
 
 This file is part of Zakenak project and is released under the terms of the MIT License. See LICENSE file in the project root for full license information.
 

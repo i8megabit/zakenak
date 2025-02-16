@@ -10,7 +10,7 @@
   
     Should Harbour?	No.
 
-## [1.1.0] - 2024-01-XX
+## [1.1.0] -  2025-01-XX
 
 ### Added
 - Добавлена автоматическая генерация самоподписанных TLS-сертификатов
@@ -21,7 +21,7 @@
 - Исправлена проблема с невалидным контейнером init-ollama-dir
 - Исправлена проблема с отсутствующими TLS-секретами
 
-## [1.0.1] - 2024-02-13
+## [1.0.1] -  2025-02-13
 
 ### Added
 - Создана структура директорий для манифестов DNS
@@ -34,7 +34,7 @@
 - Оптимизирована конфигурация CoreDNS для локальных доменов
 
 ```plain text
-Copyright (c) 2024 Mikhail Eberil
+Copyright (c)  2025 Mikhail Eberil
 
 This file is part of Zakenak project and is released under the terms of the MIT License. See LICENSE file in the project root for full license information.
 

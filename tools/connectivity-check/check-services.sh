@@ -6,7 +6,7 @@
 #  \____|_| |_|\___|\___|_|\_\
 #                    by @eberil
 #
-# Copyright (c) 2024 Mikhail Eberil
+# Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
 # "Because monitoring should be thorough!"
 
