@@ -3,19 +3,36 @@ package state
 
 import (
     "time"
-    "encoding/json"
 )
 
-// State представляет текущее состояние системы, включая информацию о компонентах,
-// томах и GPU устройствах. Используется для отслеживания и сохранения состояния
-// между перезапусками.
+// State представляет текущее состояние системы
 type State struct {
     Version     string                 `json:"version"`     // Версия формата состояния
     LastUpdate  time.Time             `json:"lastUpdate"`  // Время последнего обновления
     Components  map[string]Component  `json:"components"`  // Карта компонентов системы
     Volumes     map[string]Volume     `json:"volumes"`     // Карта томов
     GPU         GPUState              `json:"gpu"`         // Состояние GPU
+    Status      Status                `json:"status"`      // Текущий статус системы
 }
+
+// Status представляет текущий статус системы
+type Status struct {
+    Phase          Phase      `json:"phase"`          // Текущая фаза
+    LastTransition time.Time  `json:"lastTransition"` // Время последнего перехода
+    Message        string     `json:"message"`        // Дополнительное сообщение
+}
+
+// Phase представляет возможные фазы состояния системы
+type Phase string
+
+// Определение возможных фаз
+const (
+    PhaseInitializing Phase = "Initializing" // Система инициализируется
+    PhaseRunning     Phase = "Running"      // Система работает
+    PhaseStopping    Phase = "Stopping"     // Система останавливается
+    PhaseStopped     Phase = "Stopped"      // Система остановлена
+    PhaseError       Phase = "Error"        // Произошла ошибка
+)
 
 // Component представляет состояние отдельного компонента системы,
 // включая его версию, статус и время последней синхронизации.
@@ -53,13 +70,5 @@ type Device struct {
     InUse       bool      `json:"inUse"`      // Флаг использования
 }
 
-// Status представляет возможные состояния компонента
-type Status string
 
-// Константы для различных статусов компонента
-const (
-    StatusPending    Status = "Pending"    // Компонент ожидает инициализации
-    StatusRunning    Status = "Running"    // Компонент работает
-    StatusStopped    Status = "Stopped"    // Компонент остановлен
-    StatusError      Status = "Error"      // Ошибка в работе компонента
-)
+
