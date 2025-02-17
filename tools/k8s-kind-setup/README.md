@@ -42,7 +42,7 @@
 ## Структура
 ```
 .
-├── manifests/                 # Манифесты Kubernetes
+├── manifests/                # Манифесты Kubernetes
 │   ├── coredns/              # Конфигурация DNS
 │   │   ├── custom-config.yaml
 │   │   └── patch.yaml

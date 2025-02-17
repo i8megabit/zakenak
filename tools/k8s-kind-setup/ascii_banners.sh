@@ -9,7 +9,6 @@ cat << "EOF"
 # | |_| |  __/\ V /| |_| | |_) \__ \ 
 # |____/ \___| \_/  \___/| .__/|___/ 
 #                        |_|          
-#                     by @eberil
 #
 # Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
@@ -26,7 +25,6 @@ cat << "EOF"
 # | |_| |  __/ |_) | | (_) | |_| |
 # |____/ \___| .__/|_|\___/ \__, |
 #            |_|            |___/ 
-#                         by @eberil
 #
 # Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
@@ -42,7 +40,6 @@ cat << "EOF"
 # | ' / (_) |__) |
 # | . \> _ </ __/ 
 # |_|\_\___/_____|
-#            by @eberil
 #
 # Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
@@ -76,7 +73,6 @@ cat << "EOF"
 # |  _| | |_) | |_) | | | | |_) |
 # | |___|  _ <|  _ <| |_| |  _ < 
 # |_____|_| \_\_| \_\\___/|_| \_\
-#                       by @eberil
 #
 # Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
@@ -92,7 +88,6 @@ cat << "EOF"
 # \___ \| | | | |  | |   |  _| \___ \___ \ 
 #  ___) | |_| | |__| |___| |___ ___) |__) |
 # |____/ \___/ \____\____|_____|____/____/ 
-#                                by @eberil
 #
 # Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
@@ -109,7 +104,6 @@ cat << "EOF"
 # | |    | '_ \ / _` | '__| __/ __|
 # | |____| | | | (_| | |  | |_\__ \
 #  \_____|_| |_|\__,_|_|   \__|___/
-#                         by @eberil
 #
 # Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
@@ -125,7 +119,6 @@ cat << "EOF"
 # |  _| | |_) |  _| | |_) || || |    
 # | |___|  _ <| |___|  _ < | || |___ 
 # |_____|_| \_\_____|_| \_\___|_____|
-#                         by @eberil
 #
 # Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
@@ -142,7 +135,6 @@ cat << "EOF"
 # | |   | | | |  _| |  _| |  _| |  _|  
 # | |___| |_| | |   | |   | |   | |    
 #  \_____\___/|_|   |_|   |_|   |_|    
-#                         by @eberil
 #
 # Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
@@ -158,7 +150,6 @@ cat << "EOF"
 # | | | |  _| | |_) | | | | |  _ 
 # | |_| | |___|  _ <| |_| | |_| |
 # |____/|_____|_| \_\\___/ \____|
-#                     by @eberil
 #
 # Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
@@ -174,7 +165,6 @@ cat << "EOF"
 #   \ \ / / _ \ | |\/| | |    
 #    \ V / ___ \| |  | | |___ 
 #     \_/_/   \_\_|  |_|_____|
-#                   by @eberil
 #
 # Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
@@ -190,7 +180,6 @@ cat << "EOF"
 # | | | |/ _ \ \ / / | | | '_ \/ __| | |   | | |_ / _ \
 # | |_| |  __/\ V /| |_| | |_) \__ \ | |___| |  _|  __/
 # |____/ \___| \_/  \___/| .__/|___/ |_____|_|_|  \___|
-#                        |_|            by @eberil
 #
 # Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
@@ -206,7 +195,6 @@ cat << "EOF"
 # | |_) / _ \ |  \| || | |    
 # |  __/ ___ \| |\  || | |___ 
 # |_| /_/   \_\_| \_|___\____|
-#                   by @eberil
 #
 # Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
@@ -222,7 +210,6 @@ cat << "EOF"
 # | | | |  \| \___ \ 
 # | |_| | |\  |___) |
 # |____/|_| \_|____/ 
-#            by @eberil
 #
 # Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!
@@ -238,7 +225,6 @@ cat << "EOF"
 # | |   | '_ \ / _ \/ __| |/ /
 # | |___| | | |  __/ (__|   < 
 #  \____|_| |_|\___|\___|_|\_\
-#                    by @eberil
 #
 # Copyright (c)  2025 Mikhail Eberil
 # This code is free! Share it, spread peace and technology!

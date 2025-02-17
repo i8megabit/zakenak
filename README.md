@@ -173,14 +173,14 @@ zakenak deploy
 ```
 
 ## Переменные окружения
+| Переменная | Описание | По умолчанию |
+|------------|-----------|--------------|
+| `KUBECONFIG` | Путь к kubeconfig | `~/.kube/config` |
+| `ZAKENAK_DEBUG` | Включение отладки | `false` |
+| `NVIDIA_VISIBLE_DEVICES` | GPU устройства | `all` |
+| `REGISTRY_USER` | Пользователь registry | - |
+| `REGISTRY_PASS` | Пароль registry | - |
 
-Переменные окружения
-Переменная	Описание	По умолчанию
-KUBECONFIG	Путь к kubeconfig	~/.kube/config
-ZAKENAK_DEBUG	Включение отладки	false
-NVIDIA_VISIBLE_DEVICES	GPU устройства	all
-REGISTRY_USER	Пользователь registry	-
-REGISTRY_PASS	Пароль registry	-
 ## Архитектура
 ```mermaid
 graph TD

@@ -1,13 +1,13 @@
 # ƵakӖnak™®
 ```ascii
-	 ______     _                      _    
-	|___  /    | |                    | |   
-	   / / __ _| |  _ _   ___     ___ | |  _
-	  / / / _` | |/ / _`||  _ \ / _` || |/ /
-	 / /_| (_| |  < by_Eberil| | (_| ||   < 
-	/_____\__,_|_|\_\__,||_| |_|\__,_||_|\_\
-  
-	Should Harbour?				
+ ______     _                      _    
+|___  /    | |                    | |   
+   / / __ _| |  _ _   ___     ___ | |  _
+  / / / _` | |/ / _`||  _ \ / _` || |/ /
+ / /_| (_| |  < by_Eberil| | (_| ||   < 
+/_____\__,_|_|\_\__,||_| |_|\__,_||_|\_\
+
+Should Harbour?	No.
 ```
 
 ## [Zakenak](https://dic.academic.ru/dic.nsf/dic_synonims/390396/%D1%87%D0%B0%D0%BA%D0%B0%D0%BD%D0%B0%D0%BAчаканак "др.-чув. чӑканӑк — бухта, залив")
@@ -16,7 +16,7 @@
 [![Release](https://img.shields.io/github/v/release/i8megabit/zakenak)][def]
 
 ## О проекте
-Zakenak — это   инструмент для GitOps и деплоя, специально разработанный для эффективной Helm-оркестрации однонодового Kind кластера Kubernetes с поддержкой GPU.
+Zakenak — это   инструмент для GitOps и деплоя, специально разработанный для эффективной Helm-оркестрации кластеров Kubernetes с поддержкой GPU.
 
 ### Ключевые особенности
 - 🚀 **Единый бинарный файл** без внешних зависимостей
@@ -36,7 +36,7 @@ Zakenak — это   инструмент для GitOps и деплоя, спе�
 
 ## Быстрый старт
 
-### Установка
+### Установка из исходного кода
 ```bash
 # Клонирование репозитория
 git clone https://github.com/i8megabit/zakenak
@@ -71,6 +71,115 @@ zakenak build
 # Деплой в кластер
 zakenak deploy
 ```
+## Использование Docker образа
+
+### Получение образа
+```bash
+# Получение последней версии
+docker pull ghcr.io/i8megabit/zakenak:latest
+
+# Получение конкретной версии
+docker pull ghcr.io/i8megabit/zakenak:1.0.0
+```
+
+### Базовое использование
+```bash
+# Запуск с конфигурацией из текущей директории
+docker run -v $(pwd):/workspace \
+	-v ~/.kube:/root/.kube \
+	ghcr.io/i8megabit/zakenak:latest converge
+
+# Запуск с указанием конфигурации
+docker run -v $(pwd):/workspace \
+	-v ~/.kube:/root/.kube \
+	ghcr.io/i8megabit/zakenak:latest \
+	--config /workspace/zakenak.yaml \
+	converge
+```
+
+### Использование с GPU
+```bash
+docker run --gpus all \
+	-v $(pwd):/workspace \
+	-v ~/.kube:/root/.kube \
+	-e NVIDIA_VISIBLE_DEVICES=all \
+	-e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+	ghcr.io/i8megabit/zakenak:latest converge
+```
+
+### Монтирование томов
+#### Обязательные тома
+- `/workspace`: Рабочая директория с конфигурацией
+- `~/.kube`: Конфигурация Kubernetes
+
+#### Опциональные тома
+- `/root/.cache`: Кэш для ускорения работы
+- `/var/run/docker.sock`: Для работы с локальным Docker
+
+### Безопасность Docker контейнера
+```bash
+# Пример безопасного запуска
+docker run --read-only \
+	--security-opt=no-new-privileges \
+	-v $(pwd):/workspace:ro \
+	-v ~/.kube:/root/.kube:ro \
+	--network=host \
+	ghcr.io/i8megabit/zakenak:1.0.0 converge
+```
+
+## Базовая конфигурация
+```bash
+project: myapp
+environment: prod
+
+registry:
+    url: registry.local
+    username: ${REGISTRY_USER}
+    password: ${REGISTRY_PASS}
+
+deploy:
+    namespace: prod
+    charts:
+        - ./helm-charts/cert-manager
+        - ./helm-charts/local-ca
+        - ./helm-charts/ollama
+        - ./helm-charts/open-webui
+    values:
+        - values.yaml
+        - values-prod.yaml
+
+build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+        VERSION: v1.0.0
+    gpu:
+        enabled: true
+        runtime: nvidia
+        memory: "8Gi"
+        devices: "all"
+```
+
+## Основные команды
+```bash
+# Конвергенция состояния
+zakenak converge
+
+# Сборка образов
+zakenak build
+
+# Деплой в кластер
+zakenak deploy
+```
+
+## Переменные окружения
+| Переменная | Описание | По умолчанию |
+|------------|-----------|--------------|
+| `KUBECONFIG` | Путь к kubeconfig | `~/.kube/config` |
+| `ZAKENAK_DEBUG` | Включение отладки | `false` |
+| `NVIDIA_VISIBLE_DEVICES` | GPU устройства | `all` |
+| `REGISTRY_USER` | Пользователь registry | - |
+| `REGISTRY_PASS` | Пароль registry | - |
 
 ## Архитектура
 ```mermaid

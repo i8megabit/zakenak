@@ -42,31 +42,31 @@ project: myapp
 environment: prod
 
 registry:
-	url: registry.local
-	username: ${REGISTRY_USER}
-	password: ${REGISTRY_PASS}
+  url: registry.local
+  username: ${REGISTRY_USER}
+  password: ${REGISTRY_PASS}
 
 deploy:
-	namespace: prod
-	charts:
-		- ./helm-charts/cert-manager
-		- ./helm-charts/local-ca
-		- ./helm-charts/ollama
-		- ./helm-charts/open-webui
+  namespace: prod
+  charts:
+    - ./helm-charts/cert-manager
+    - ./helm-charts/local-ca
+    - ./helm-charts/ollama
+    - ./helm-charts/open-webui
 	values:
-		- values.yaml
-		- values-prod.yaml
+    - values.yaml
+    - values-prod.yaml
 
 build:
-	context: .
-	dockerfile: Dockerfile
-	args:
-		VERSION: v1.0.0
-	gpu:
-		enabled: true
-		runtime: nvidia
-		memory: "8Gi"
-		devices: "all"
+  context: .
+  dockerfile: Dockerfile
+  args:
+    VERSION: v1.0.0
+  gpu:
+    enabled: true
+    runtime: nvidia
+    memory: "8Gi"
+    devices: "all"
 ```
 
 ### Использование GPU
