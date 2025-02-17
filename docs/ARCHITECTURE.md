@@ -1,5 +1,5 @@
 
-# Архитектура Ƶakenak™®
+# Архитектура Zakenak
 
 Version: 1.0.0
 
@@ -185,7 +185,7 @@ zakenak/
 - Kubernetes 1.25+
 - Helm 3.x
 
-## Лицензирование и товарные знаки
+## Лицензирование
 
 ```plain text
 Copyright (c) 2025 Mikhail Eberil
@@ -196,7 +196,4 @@ See LICENSE file in the project root for full license information.
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
 INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
 PURPOSE AND NONINFRINGEMENT.
-
-The name "Zakenak" and associated branding are trademarks of @eberil and may not be used 
-without express written permission.
 ```
