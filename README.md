@@ -1,4 +1,4 @@
-# Ƶakӗnak™®
+# Ƶakӗnak
 ```ascii
  ______     _                      _    
 |___  /    | |                    | |   
@@ -14,8 +14,9 @@ Should Harbour?	No.
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/i8megabit/zakenak)][releases]
 
-## Обзор
-Ƶakӗnak™® — профессиональный инструмент GitOps для эффективной оркестрации Kubernetes-кластеров с поддержкой GPU через Helm. Название происходит от древне-чувашского "чӑканӑк" (бухта, залив).
+## [Zakenak](https://dic.academic.ru/dic.nsf/dic_synonims/390396/%D1%87%D0%B0%D0%BA%D0%B0%D0%BD%D0%B0%D0%BAчаканак "др.-чув. чӑканӑк — бухта, залив")
+
+Zakenak — профессиональный инструмент GitOps для эффективной оркестрации Kubernetes-кластеров с поддержкой GPU через Helm.
 
 
 ### Ключевые преимущества
@@ -204,7 +205,7 @@ graph TD
 - ✅ Валидация конфигураций
 
 ## Лицензирование
-Zakenak распространяется под модифицированной MIT лицензией с защитой торговой марки. Использование названия "Zakenak" требует письменного разрешения владельца.
+Zakenak распространяется под MIT лицензией.
 
 ## Поддержка
 - 📚 [Документация](docs/)
@@ -223,11 +224,12 @@ Zakenak распространяется под модифицированной
 [def]: https://github.com/i8megabit/zakenak/releases
 
 ```plain text
-Copyright (c)  2025 Mikhail Eberil
+Copyright (c) 2025 Mikhail Eberil
 
-This file is part of Zakenak project and is released under the terms of the MIT License. See LICENSE file in the project root for full license information.
+This file is part of Zakenak project and is released under the terms of the MIT License. 
+See LICENSE file in the project root for full license information.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-
-The name "Zakenak" and associated branding are trademarks of @eberil and may not be used without express written permission.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+PURPOSE AND NONINFRINGEMENT.
 ```
