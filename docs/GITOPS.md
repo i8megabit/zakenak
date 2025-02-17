@@ -38,7 +38,7 @@ Should Harbour?	No.
 ### Компоненты
 ```mermaid
 graph TD
-    A[Git Repository] --> |Pull| B[Ƶakenak Controller]
+    A[Git Repository] --> |Pull| B[Zakenak Controller]
     B --> |Reconcile| C[State Manager]
     C --> |Apply| D[Kubernetes API]
     B --> |Pull| E[Container Registry]
