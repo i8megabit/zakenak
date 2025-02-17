@@ -19,6 +19,7 @@ vendor/
 .vscode/
 *.swp
 *.swo
+.codestoryai.json
 
 # OS specific files
 .DS_Store
