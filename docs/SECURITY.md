@@ -26,14 +26,14 @@ Should Harbour?	No.
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-	name: zakenak-cert
+  name: zakenak-cert
 spec:
-	secretName: zakenak-tls-secret
-	duration: 2160h # 90 дней
-	renewBefore: 360h # 15 дней
-	privateKey:
-		algorithm: ECDSA
-		size: 256
+  secretName: zakenak-tls-secret
+  duration: 2160h # 90 дней
+  renewBefore: 360h # 15 дней
+  privateKey:
+    algorithm: ECDSA
+    size: 256
 ```
 
 ### Управление сертификатами
@@ -49,12 +49,12 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-	name: zakenak-default-deny
+  name: zakenak-default-deny
 spec:
-	podSelector: {}
-	policyTypes:
-	- Ingress
-	- Egress
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
 ```
 
 ### Ingress Security
@@ -91,14 +91,14 @@ resources:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-	name: zakenak-gpu-user
+  name: zakenak-gpu-user
 rules:
 - apiGroups: [""]
-	resources: ["pods", "pods/log"]
-	verbs: ["get", "list"]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list"]
 - apiGroups: [""]
-	resources: ["pods/exec"]
-	verbs: ["create"]
+  resources: ["pods/exec"]
+  verbs: ["create"]
 ```
 
 ### Service Accounts
@@ -176,6 +176,77 @@ rules:
 - Управление патчами безопасности
 - Hardening конфигурации WSL2
 - Регулярный аудит доступов
+
+## GPG Подпись Коммитов
+
+### Автоматическая настройка
+Для автоматической настройки GPG используйте скрипт:
+```bash
+./scripts/setup-gpg.sh
+```
+
+### Ручная настройка
+
+#### 1. Установка GPG
+```bash
+sudo apt-get update
+sudo apt-get install -y gnupg2
+```
+
+#### 2. Генерация ключа
+```bash
+gpg --full-generate-key
+```
+При генерации:
+- Выберите RSA and RSA (default)
+- Размер ключа: 4096 бит
+- Срок действия: 0 = бессрочно
+- Укажите ваше имя и email
+
+#### 3. Получение ID ключа
+```bash
+gpg --list-secret-keys --keyid-format=long
+```
+
+#### 4. Настройка Git
+```bash
+git config --global user.signingkey YOUR_KEY_ID
+git config --global commit.gpgsign true
+```
+
+#### 5. Экспорт публичного ключа
+```bash
+gpg --armor --export YOUR_KEY_ID
+```
+
+#### 6. Добавление в GitHub
+1. Скопируйте весь вывод команды экспорта
+2. Перейдите в GitHub Settings -> SSH and GPG keys
+3. Нажмите "New GPG key"
+4. Вставьте скопированный ключ
+
+### Проверка настройки
+```bash
+# Создание подписанного коммита
+git commit -S -m "Тестовый подписанный коммит"
+
+# Проверка подписи
+git verify-commit HEAD
+```
+
+### Устранение проблем
+
+#### Ошибка "secret key not available"
+```bash
+gpg --list-secret-keys
+git config --global user.signingkey YOUR_KEY_ID
+```
+
+#### Ошибка "gpg: signing failed: Inappropriate ioctl for device"
+```bash
+export GPG_TTY=$(tty)
+```
+Добавьте эту строку в ~/.bashrc или ~/.zshrc
 
 ## Контакты
 

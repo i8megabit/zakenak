@@ -1,6 +1,6 @@
 # MIT License with Trademark Protection
 
-Copyright (c)  2025 Mikhail Eberil
+Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -9,8 +9,8 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+The above copyright notice, this permission notice and the trademark notice
+shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -22,11 +22,15 @@ SOFTWARE.
 
 ## Trademark Notice
 
-The name "Zakenak" and associated branding are trademarks of @eberil and may not 
-be used without express written permission. This includes but is not limited to:
+Ƶakenak™® and the Ƶakenak logo are registered trademarks of Mikhail Eberil.
+The Ƶakenak trademark and brand may not be used in any way without express
+written permission from the trademark owner.
 
-1. The name "Zakenak" in any form or variation
-2. The Zakenak logo and brand identity
-3. Any promotional materials using the Zakenak name or brand
+This includes, but is not limited to:
+1. Using the Ƶakenak name or logo in any commercial product
+2. Using the Ƶakenak name or logo in any marketing materials
+3. Using the Ƶakenak name or logo in any way that implies endorsement
+4. Modifying the Ƶakenak logo or creating derivative works
+5. Registering the Ƶakenak name or similar names as trademarks
 
-For trademark permissions, please contact: i8megabit@gmail.com
+For trademark usage permissions, please contact: @eberil
