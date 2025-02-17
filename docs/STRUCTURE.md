@@ -1,4 +1,4 @@
-# Структура проекта Ƶakenak™®
+# Структура проекта Zakenak
 
 ```ascii
  ______     _                      _    
@@ -253,7 +253,4 @@ See LICENSE file in the project root for full license information.
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
 INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
 PURPOSE AND NONINFRINGEMENT.
-
-The name "Zakenak" and associated branding are trademarks of @eberil and may not be used 
-without express written permission.
 ```
