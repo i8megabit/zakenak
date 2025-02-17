@@ -10,37 +10,83 @@
 
 Should Harbour?	No.
 ```
-## Обзор системы безопасности
 
-### Архитектура безопасности
-- Многоуровневая модель защиты
-- Изоляция компонентов в WSL2
+## Модель безопасности
+
+### Принципы
+- Zero Trust Architecture
+- Defense in Depth
 - Принцип наименьших привилегий
-- Защита GPU ресурсов NVIDIA
+- Изоляция компонентов
+- Постоянный мониторинг
 
-## TLS/SSL Защита
+### Уровни защиты
+1. Инфраструктурный уровень
+   - WSL2 изоляция
+   - Kubernetes security context
+   - Network policies
+   - Pod security standards
 
-### Сертификаты
+2. Уровень приложений
+   - TLS везде
+   - Аутентификация и авторизация
+   - Валидация входных данных
+   - Безопасная обработка ошибок
+
+3. Уровень данных
+   - Шифрование в состоянии покоя
+   - Шифрование в транзите
+   - Управление секретами
+   - Аудит доступа
+
+## Защита GPU ресурсов
+
+### Изоляция GPU
 ```yaml
-# Пример конфигурации cert-manager
-apiVersion: cert-manager.io/v1
-kind: Certificate
+# Пример Pod Security Context для GPU workload
+apiVersion: v1
+kind: Pod
 metadata:
-  name: zakenak-cert
+    name: gpu-workload
 spec:
-  secretName: zakenak-tls-secret
-  duration: 2160h # 90 дней
-  renewBefore: 360h # 15 дней
-  privateKey:
-    algorithm: ECDSA
-    size: 256
+    securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+            type: RuntimeDefault
+    containers:
+    - name: gpu-container
+        securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+                drop:
+                - ALL
+        resources:
+            limits:
+                nvidia.com/gpu: "1"
+            requests:
+                nvidia.com/gpu: "1"
 ```
 
-### Управление сертификатами
-1. Автоматическое обновление через cert-manager
-2. Мониторинг срока действия сертификатов
-3. Автоматическая ротация ключей
-4. Безопасное хранение в Kubernetes secrets
+### NVIDIA Security
+1. Device Plugin безопасность
+     - Валидация устройств
+     - Контроль доступа
+     - Мониторинг использования
+     - Изоляция ресурсов
+
+2. Runtime Security
+     - Контейнерная изоляция
+     - Ограничение возможностей
+     - Мониторинг процессов
+     - Аудит операций
+
+3. Memory Security
+     - Изоляция памяти GPU
+     - Очистка после использования
+     - Мониторинг утечек
+     - Защита от переполнения
 
 ## Сетевая безопасность
 
