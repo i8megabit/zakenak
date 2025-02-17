@@ -1,4 +1,4 @@
-# Ƶakӗnak
+# Zakenak
 ```ascii
  ______     _                      _    
 |___  /    | |                    | |   

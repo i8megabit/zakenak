@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Copyright (c)  2025 Mikhail Eberil
-# Setup script for Ƶakenak™® AI Assistant user
+# Setup script for Zakenak AI Assistant user
 
 # Проверка на root права
 if [ "$EUID" -ne 0 ]; then 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Copyright (c)  2025 Mikhail Eberil
-# Installation script for Ƶakenak™®
+# Installation script for Zakenak
 
 set -e
 
@@ -12,7 +12,7 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-echo -e "${CYAN}Установка Ƶakenak™®...${NC}"
+echo -e "${CYAN}Установка Zakenak...${NC}"
 
 # Проверка наличия CUDA
 check_cuda() {
@@ -34,20 +34,20 @@ install_dependencies() {
 
 # Сборка и установка
 build_and_install() {
-    echo -e "${CYAN}Сборка Ƶakenak™®...${NC}"
+    echo -e "${CYAN}Сборка Zakenak...${NC}"
     make build
     
-    echo -e "${CYAN}Установка Ƶakenak™®...${NC}"
+    echo -e "${CYAN}Установка Zakenak...${NC}"
     sudo make install
 }
 
 # Проверка установки
 verify_installation() {
     if command -v zakenak &> /dev/null; then
-        echo -e "${GREEN}Ƶakenak™® успешно установлен!${NC}"
+        echo -e "${GREEN}Zakenak успешно установлен!${NC}"
         zakenak version
     else
-        echo -e "${RED}Ошибка установки Ƶakenak™®${NC}"
+        echo -e "${RED}Ошибка установки Zakenak${NC}"
         exit 1
     fi
 }

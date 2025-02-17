@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Copyright (c) 2025 Mikhail Eberil
-# This file is part of Ƶakenak™® project.
+# This file is part of Zakenak project.
 
 set -e
 
