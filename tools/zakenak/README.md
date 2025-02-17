@@ -10,33 +10,34 @@
 Should Harbour?	No.
 ```
 
-## [Zakenak](https://dic.academic.ru/dic.nsf/dic_synonims/390396/%D1%87%D0%B0%D0%BA%D0%B0%D0%BD%D0%B0%D0%BAчаканак "др.-чув. чӑканӑк — бухта, залив")
 [![Go Report Card](https://goreportcard.com/badge/github.com/i8megabit/zakenak)](https://goreportcard.com/report/github.com/i8megabit/zakenak)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/i8megabit/zakenak)][def]
+[![Release](https://img.shields.io/github/v/release/i8megabit/zakenak)][releases]
 
-## О проекте
-Zakenak — это   инструмент для GitOps и деплоя, специально разработанный для эффективной Helm-оркестрации кластеров Kubernetes с поддержкой GPU.
+## [Zakenak](https://dic.academic.ru/dic.nsf/dic_synonims/390396/%D1%87%D0%B0%D0%BA%D0%B0%D0%BD%D0%B0%D0%BAчаканак "др.-чув. чӑканӑк — бухта, залив")
 
-### Ключевые особенности
-- 🚀 **Единый бинарный файл** без внешних зависимостей
-- 🔄 **Встроенная поддержка GitOps** и конвергенции
-- 🐳 **Интеграция с container registry**
-- 🖥️ **Нативная поддержка WSL2** и NVIDIA GPU
-- 📝 **Упрощенная но мощная** система шаблонизации
+Zakenak — профессиональный инструмент GitOps для эффективной оркестрации Kubernetes-кластеров с поддержкой GPU через Helm.
 
-## Системные требования
+
+### Ключевые преимущества
+- 🚀 **Автономность**: Единый бинарный файл без внешних зависимостей
+- 🔄 **GitOps**: Встроенная поддержка GitOps и автоматической конвергенции
+- 🐳 **Интеграция**: Нативная работа с container registry
+- 🖥️ **Совместимость**: Полная поддержка WSL2 и NVIDIA GPU
+- 📝 **Простота**: Интуитивная но мощная система шаблонизации
+
+## Начало работы
+
+### Системные требования
 - Go 1.21+
 - WSL2 (Ubuntu 22.04 LTS)
-- Docker с поддержкой NVIDIA Container Runtime
-- NVIDIA GPU + драйверы (версия 535 или выше)
+- Docker с NVIDIA Container Runtime
+- NVIDIA GPU + драйверы (535+)
 - CUDA Toolkit 12.8
 - Kind v0.20.0+
 - Helm 3.0+
 
-## Быстрый старт
-
-### Установка из исходного кода
+### Установка
 ```bash
 # Клонирование репозитория
 git clone https://github.com/i8megabit/zakenak
@@ -86,25 +87,25 @@ docker pull ghcr.io/i8megabit/zakenak:1.0.0
 ```bash
 # Запуск с конфигурацией из текущей директории
 docker run -v $(pwd):/workspace \
-	-v ~/.kube:/root/.kube \
-	ghcr.io/i8megabit/zakenak:latest converge
+    -v ~/.kube:/root/.kube \
+    ghcr.io/i8megabit/zakenak:latest converge
 
 # Запуск с указанием конфигурации
 docker run -v $(pwd):/workspace \
-	-v ~/.kube:/root/.kube \
-	ghcr.io/i8megabit/zakenak:latest \
-	--config /workspace/zakenak.yaml \
-	converge
+    -v ~/.kube:/root/.kube \
+    ghcr.io/i8megabit/zakenak:latest \
+    --config /workspace/zakenak.yaml \
+    converge
 ```
 
 ### Использование с GPU
 ```bash
 docker run --gpus all \
-	-v $(pwd):/workspace \
-	-v ~/.kube:/root/.kube \
-	-e NVIDIA_VISIBLE_DEVICES=all \
-	-e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
-	ghcr.io/i8megabit/zakenak:latest converge
+    -v $(pwd):/workspace \
+    -v ~/.kube:/root/.kube \
+    -e NVIDIA_VISIBLE_DEVICES=all \
+    -e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+    ghcr.io/i8megabit/zakenak:latest converge
 ```
 
 ### Монтирование томов
@@ -120,11 +121,11 @@ docker run --gpus all \
 ```bash
 # Пример безопасного запуска
 docker run --read-only \
-	--security-opt=no-new-privileges \
-	-v $(pwd):/workspace:ro \
-	-v ~/.kube:/root/.kube:ro \
-	--network=host \
-	ghcr.io/i8megabit/zakenak:1.0.0 converge
+    --security-opt=no-new-privileges \
+    -v $(pwd):/workspace:ro \
+    -v ~/.kube:/root/.kube:ro \
+    --network=host \
+    ghcr.io/i8megabit/zakenak:1.0.0 converge
 ```
 
 ## Базовая конфигурация
@@ -204,7 +205,7 @@ graph TD
 - ✅ Валидация конфигураций
 
 ## Лицензирование
-Zakenak распространяется под модифицированной MIT лицензией с защитой торговой марки. Использование названия "Zakenak" требует письменного разрешения владельца.
+Zakenak распространяется под MIT лицензией.
 
 ## Поддержка
 - 📚 [Документация](docs/)
@@ -220,26 +221,15 @@ Zakenak распространяется под модифицированной
 - Сообществу Kubernetes
 - Всем контрибьюторам
 
-[def]: https://github.com/i8megabit/zakenak/releases
+[releases]: https://github.com/i8megabit/zakenak/releases
 
 ```plain text
-Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
+Copyright (c) 2025 Mikhail Eberil
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This file is part of Zakenak project and is released under the terms of the MIT License. 
+See LICENSE file in the project root for full license information.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+PURPOSE AND NONINFRINGEMENT.
 ```

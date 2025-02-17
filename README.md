@@ -221,7 +221,7 @@ Zakenak распространяется под MIT лицензией.
 - Сообществу Kubernetes
 - Всем контрибьюторам
 
-[def]: https://github.com/i8megabit/zakenak/releases
+[releases]: https://github.com/i8megabit/zakenak/releases
 
 ```plain text
 Copyright (c) 2025 Mikhail Eberil
