@@ -1,14 +1,27 @@
-#!/usr/bin/bash
+#!/bin/bash
+#
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
+# 
+# This file is part of Ƶakenak™® project.
+# https://github.com/i8megabit/zakenak
+#
+# This program is free software and is released under the terms of the MIT License.
+# See LICENSE.md file in the project root for full license information.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#
+# TRADEMARK NOTICE:
+# Ƶakenak™® and the Ƶakenak logo are registered trademarks of Mikhail Eberil.
+# All rights reserved. The Ƶakenak trademark and brand may not be used in any way 
+# without express written permission from the trademark owner.
 #   ____ _____ ____  _____
 #  / ___|_   _|  _ \|_   _|
 # | |     | | | |_) | | |
 # | |___  | | |  _ <  | |
 #  \____| |_| |_| \_\ |_|
 #                by @eberil
-#
-# Copyright (c)  2025 Mikhail Eberil
-# This code is free! Share it, spread peace and technology!
-# "Because certificates should be automated!"
 
 # Определение пути к директории скрипта и корню репозитория
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

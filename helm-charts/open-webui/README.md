@@ -1,3 +1,21 @@
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
+# 
+# This file is part of Ƶakenak™® project.
+# https://github.com/i8megabit/zakenak
+#
+# This program is free software and is released under the terms of the MIT License.
+# See LICENSE.md file in the project root for full license information.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#
+# TRADEMARK NOTICE:
+# Ƶakenak™® and the Ƶakenak logo are registered trademarks of Mikhail Eberil.
+# All rights reserved. The Ƶakenak trademark and brand may not be used in any way 
+# without express written permission from the trademark owner.
+
+
 # Open WebUI Helm Chart
 ```ascii
  ______     _                      _    
@@ -32,13 +50,3 @@ Helm чарт для развертывания Open WebUI в Kubernetes кла�
 - service.port: Порт сервиса
 - service.targetPort: Целевой порт контейнера
 - release.namespace: Namespace для развертывания
-
-```plain text
-Copyright (c)  2025 Mikhail Eberil
-
-This file is part of Zakenak project and is released under the terms of the MIT License. See LICENSE file in the project root for full license information.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-
-The name "Zakenak" and associated branding are trademarks of @eberil and may not be used without express written permission.
-```

@@ -1,4 +1,21 @@
-#!/usr/bin/bash
+#!/bin/bash
+#
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
+# 
+# This file is part of Ƶakenak™® project.
+# https://github.com/i8megabit/zakenak
+#
+# This program is free software and is released under the terms of the MIT License.
+# See LICENSE.md file in the project root for full license information.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#
+# TRADEMARK NOTICE:
+# Ƶakenak™® and the Ƶakenak logo are registered trademarks of Mikhail Eberil.
+# All rights reserved. The Ƶakenak trademark and brand may not be used in any way 
+# without express written permission from the trademark owner.
 #   _____ _                _       
 #  / ____| |              | |      
 # | |    | |__   __ _ _ __| |_ ___ 
@@ -6,13 +23,6 @@
 # | |____| | | | (_| | |  | |_\__ \
 #  \_____|_| |_|\__,_|_|   \__|___/
 #                         by @eberil
-#
-# Copyright (c)  2025 Mikhail Eberil
-# Helm Charts Management Tool
-# Version: 1.2.0
-#
-# HUJAK-HUJAK PRODUCTION PRESENTS...
-# "Because managing charts shouldn't be a pain"
 
 # Определение пути к директории скрипта и корню репозитория
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
