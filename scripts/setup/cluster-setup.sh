@@ -17,8 +17,26 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 source "${SCRIPT_DIR}/env.sh"
 source "${SCRIPT_DIR}/ascii_banners.sh"
 
+# Парсинг аргументов
+NO_REMOVE=false
+for arg in "$@"; do
+    case $arg in
+        --no-remove)
+            NO_REMOVE=true
+            shift
+            ;;
+    esac
+done
+
 # Функция очистки при ошибках
 cleanup() {
+    if [ "$NO_REMOVE" = true ]; then
+        echo -e "${YELLOW}Пропуск очистки (--no-remove)...${NC}"
+        error_banner
+        echo -e "${RED}Установка прервана. Проверьте логи для деталей.${NC}"
+        exit 1
+    fi
+
     echo -e "${RED}Произошла ошибка, выполняем очистку...${NC}"
     
     # Удаление манифестов
@@ -135,10 +153,13 @@ install_components() {
     # Создание namespace
     kubectl create namespace prod --dry-run=client -o yaml | kubectl apply -f -
     
+    # Ensure KUBECONFIG is set to the correct path
+    export KUBECONFIG="${REPO_ROOT}/kubeconfig.yaml"
+    
     # Подготовка монтирования для Docker
     MOUNT_FLAGS=(
-        -v "$(pwd):/workspace"
-        -v "${HOME}/.kube:/root/.kube"
+        -v "${REPO_ROOT}:/workspace"
+        -v "${REPO_ROOT}/kubeconfig.yaml:/root/.kube/config:ro"
         -v "${HOME}/.cache/zakenak:/root/.cache/zakenak"
         --network host
     )
@@ -149,17 +170,21 @@ install_components() {
         "${MOUNT_FLAGS[@]}" \
         -e NVIDIA_VISIBLE_DEVICES=all \
         -e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+        -e KUBECONFIG=/root/.kube/config \
         ghcr.io/i8megabit/zakenak:latest \
         converge \
-        --config /workspace/zakenak.yaml
+        --config /workspace/zakenak.yaml \
+        --kubeconfig /root/.kube/config
     check_error "Ошибка развертывания компонентов"
 
     # Проверка статуса развертывания
     echo -e "${CYAN}Проверка статуса компонентов...${NC}"
     docker run --gpus all \
         "${MOUNT_FLAGS[@]}" \
+        -e KUBECONFIG=/root/.kube/config \
         ghcr.io/i8megabit/zakenak:latest \
-        status
+        status \
+        --kubeconfig /root/.kube/config
     check_error "Ошибка проверки статуса компонентов"
 
     # Ожидание готовности всех компонентов
@@ -208,4 +233,4 @@ main() {
 }
 
 # Запуск установки
-main
+main "$@"
