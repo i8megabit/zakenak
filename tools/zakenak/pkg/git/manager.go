@@ -113,53 +113,22 @@ func (m *Manager) EnsureMainBranch() error {
 		return err
 	}
 
-	// Проверяем существование .git директории
-	if _, err := os.Stat(m.workDir + "/.git"); os.IsNotExist(err) {
-		m.logDebug("Git repository not found, initializing new one")
-		if err := m.InitRepo(); err != nil {
-			return err
-		}
-		if err := m.run("add", "."); err != nil {
-			return fmt.Errorf("failed to add files: %w", err)
-		}
-		if err := m.run("commit", "-m", "Initial commit by Zakenak"); err != nil {
-			return fmt.Errorf("failed to create initial commit: %w", err)
-		}
-		if err := m.run("branch", "-M", "main"); err != nil {
-			return fmt.Errorf("failed to create main branch: %w", err)
-		}
-		return nil
-	}
-
 	// Проверяем существование ветки main
 	if err := m.run("rev-parse", "--verify", "main"); err != nil {
-		m.logDebug("Main branch not found, checking current branch")
-		currentBranch, err := m.getCurrentBranch()
-		if err != nil {
-			m.logDebug("Failed to get current branch: %v", err)
-			return fmt.Errorf("failed to get current branch: %w", err)
-		}
-		m.logDebug("Current branch: %s", currentBranch)
-		
-		if currentBranch != "main" {
-			m.logDebug("Creating main branch")
-			if err := m.run("checkout", "-B", "main"); err != nil {
-				return fmt.Errorf("failed to create main branch: %w", err)
-			}
+		m.logDebug("Main branch not found, creating from current branch")
+		if err := m.run("checkout", "-b", "main"); err != nil {
+			return fmt.Errorf("failed to create main branch: %w", err)
 		}
 	} else {
-		m.logDebug("Checking out existing main branch")
-		if err := m.run("checkout", "main", "--no-track"); err != nil {
+		m.logDebug("Main branch exists, checking out")
+		if err := m.run("checkout", "main"); err != nil {
 			return fmt.Errorf("failed to checkout main: %w", err)
 		}
 	}
 
-	m.logDebug("Unsetting upstream for main branch")
-	m.run("branch", "--unset-upstream")
-
-	m.logDebug("EnsureMainBranch completed successfully")
 	return nil
 }
+
 
 // getCurrentBranch возвращает текущую ветку
 func (m *Manager) getCurrentBranch() (string, error) {

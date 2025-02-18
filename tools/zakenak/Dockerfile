@@ -1,31 +1,15 @@
-# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
-# Dockerfile for Zakenak
+FROM golang:1.21 as builder
 
-# Build stage
-FROM golang:1.21-alpine AS builder
+ARG VERSION=dev
 
 WORKDIR /app
 COPY . .
 
-# Установка зависимостей
-RUN apk add --no-cache git
-RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux go build -o zakenak \
+    -ldflags="-X main.Version=${VERSION}" \
+    ./tools/zakenak/cmd/zakenak
 
-# Сборка с поддержкой GPU
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -o zakenak ./cmd/zakenak
-
-# Final stage
 FROM nvidia/cuda:12.8.0-base-ubuntu22.04
-
-WORKDIR /app
-COPY --from=builder /app/zakenak .
-
-# Установка необходимых runtime зависимостей
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    git \
-    && rm -rf /var/lib/apt/lists/*
 
 # Настройка переменных окружения для NVIDIA
 ENV NVIDIA_VISIBLE_DEVICES=all
@@ -33,18 +17,14 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV PATH="/usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}"
 ENV LD_LIBRARY_PATH="/usr/lib/wsl/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH}"
 
-# Создаем entrypoint скрипт
-COPY <<EOF /app/entrypoint.sh
-#!/bin/bash
-set -e
+# Установка необходимых runtime зависимостей
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-cd /workspace
+COPY --from=builder /app/zakenak /usr/local/bin/
+RUN chmod +x /usr/local/bin/zakenak
 
-# Запуск основной команды с автоматической инициализацией Git
-exec /app/zakenak "\$@"
-EOF
-
-
-
-RUN chmod +x /app/entrypoint.sh
-ENTRYPOINT ["/app/entrypoint.sh"]
+WORKDIR /workspace
+ENTRYPOINT ["zakenak"]

@@ -4,7 +4,7 @@
 VERSION=${1:-"dev"}
 
 # Создаем директорию для бинарных файлов
-mkdir -p bin
+mkdir -p tools/zakenak/build
 
 # Список целевых платформ
 PLATFORMS=(
@@ -24,7 +24,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
 	echo "Building for $OS/$ARCH..."
 	
 	# Формируем имя выходного файла
-	OUTPUT="bin/zakenak-$OS-$ARCH"
+	OUTPUT="tools/zakenak/build/zakenak-$OS-$ARCH"
 	if [ "$OS" = "windows" ]; then
 		OUTPUT="${OUTPUT}.exe"
 	fi
@@ -33,7 +33,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
 	GOOS=$OS GOARCH=$ARCH go build \
 		-o "$OUTPUT" \
 		-ldflags="-X main.Version=$VERSION" \
-		./cmd/zakenak
+		./tools/zakenak/cmd/zakenak
 	
 	if [ $? -eq 0 ]; then
 		echo "✓ Successfully built $OUTPUT"
