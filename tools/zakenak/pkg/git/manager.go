@@ -80,7 +80,7 @@ func (m *Manager) InitRepo() error {
 // ConfigureGlobal устанавливает глобальные настройки Git
 func (m *Manager) ConfigureGlobal() error {
 	configs := map[string]string{
-		"safe.directory":     "*",
+		"safe.directory":     m.workDir, // Changed from "*" to specific directory
 		"init.defaultBranch": "main",
 		"user.email":         "zakenak@local",
 		"user.name":         "Zakenak",
@@ -99,6 +99,12 @@ func (m *Manager) EnsureMainBranch() error {
 	if m.debug {
 		m.logDebug("Starting EnsureMainBranch operation")
 		m.logDebug("Working directory: %s", m.workDir)
+	}
+
+	// Сначала настраиваем глобальные параметры Git
+	if err := m.ConfigureGlobal(); err != nil {
+		m.logDebug("Failed to configure global git settings: %v", err)
+		return fmt.Errorf("failed to configure git: %w", err)
 	}
 
 	// Сохраняем текущую ветку перед переключением
