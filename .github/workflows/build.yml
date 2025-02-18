@@ -34,8 +34,6 @@ jobs:
 
     - name: Setup Directory Structure
       run: |
-        mkdir -p cmd/zakenak
-        mkdir -p pkg/{banner,build,config,converge,helm,kind,state}
         mkdir -p build
 
     - name: Initialize Go module
@@ -45,7 +43,8 @@ jobs:
 
     - name: Build Binary
       run: |
-        go build -o build/zakenak ./cmd/zakenak
+        go build -o build/zakenak ./tools/zakenak/cmd/zakenak
+
 
 
     - name: Test Binary
@@ -63,7 +62,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: Dockerfile
+        file: tools/zakenak/Dockerfile
         push: false
         tags: ghcr.io/i8megabit/zakenak:${{ github.sha }}
 
@@ -92,7 +91,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: Dockerfile
+        file: tools/zakenak/Dockerfile
         push: true
         tags: |
           ghcr.io/i8megabit/zakenak:${{ github.sha }}

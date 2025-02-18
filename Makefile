@@ -22,13 +22,13 @@ all: clean build test
 build:
 	@echo "Building zakenak..."
 	@mkdir -p bin
-	cd tools/zakenak && $(GO) build $(GOFLAGS) \
+	$(GO) build $(GOFLAGS) \
 		-ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)" \
-		-o ../../bin/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
+		-o bin/$(BINARY_NAME) ./tools/zakenak/cmd/zakenak
 
 test:
 	@echo "Running tests..."
-	cd tools/zakenak && $(GO) test -v ./...
+	$(GO) test -v ./...
 
 clean:
 	@echo "Cleaning..."
@@ -48,8 +48,8 @@ dev-deps:
 	$(GO) install golang.org/x/tools/cmd/goimports@latest
 
 lint:
-	cd tools/zakenak && golint ./...
-	cd tools/zakenak && go vet ./...
-	cd tools/zakenak && goimports -w .
+	golint ./...
+	go vet ./...
+	goimports -w .
 
 .DEFAULT_GOAL := build
