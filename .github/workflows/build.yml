@@ -32,11 +32,13 @@ jobs:
           ${{ runner.os }}-go-
 
     - name: Initialize Go module
+      working-directory: .
       run: |
         go mod init github.com/i8megabit/zakenak
         go mod tidy
 
     - name: Build Binary
+      working-directory: .
       run: |
         mkdir -p build
         go build -o build/zakenak ./cmd/zakenak

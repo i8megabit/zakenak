@@ -49,11 +49,13 @@ jobs:
           go-version: '1.21'
 
       - name: Initialize Go module
+        working-directory: .
         run: |
           go mod init github.com/i8megabit/zakenak
           go mod tidy
 
       - name: Build Binary
+        working-directory: .
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
