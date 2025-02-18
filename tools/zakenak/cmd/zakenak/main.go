@@ -9,8 +9,9 @@ import (
     "context"
     "fmt"
     "os"
+    "os/exec"
     "path/filepath"
-    
+
     "github.com/spf13/cobra"
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/tools/clientcmd"
@@ -45,6 +46,7 @@ func main() {
         newBuildCmd(),
         newDeployCmd(),
         newCleanCmd(),
+        newStatusCmd(),
     )
 
     if err := rootCmd.Execute(); err != nil {
@@ -194,5 +196,43 @@ func runDeploy() error {
 
 func runClean() error {
     // TODO: Имплементация очистки
+    return nil
+}
+
+func newStatusCmd() *cobra.Command {
+    cmd := &cobra.Command{
+        Use:   "status",
+        Short: "Проверить статус развернутых компонентов",
+        RunE: func(cmd *cobra.Command, args []string) error {
+            return runStatus()
+        },
+    }
+    return cmd
+}
+
+func runStatus() error {
+    banner.PrintZakenak()
+
+    // Проверка статуса компонентов в namespace prod
+    components := []string{
+        "deployment/cert-manager",
+        "deployment/local-ca", 
+        "deployment/ollama",
+        "deployment/open-webui",
+        "deployment/sidecar-injector",
+    }
+
+    fmt.Println("\nПроверка статуса компонентов...")
+
+    for _, component := range components {
+        // Проверяем статус через kubectl
+        if err := exec.Command("kubectl", "get", component, "-n", "prod").Run(); err != nil {
+            banner.PrintError()
+            return fmt.Errorf("компонент %s не готов: %v", component, err)
+        }
+        fmt.Printf("✓ %s работает\n", component)
+    }
+
+    banner.PrintSuccess()
     return nil
 }

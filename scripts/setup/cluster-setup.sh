@@ -90,6 +90,24 @@ check_error() {
     fi
 }
 
+# Функция чтения конфигурации из zakenak.yaml
+read_config() {
+    local config_file="${REPO_ROOT}/zakenak.yaml"
+    if [ ! -f "$config_file" ]; then
+        echo -e "${RED}Ошибка: файл $config_file не найден${NC}"
+        exit 1
+    }
+
+    # Чтение основных параметров из конфигурации
+    ZAKENAK_PROJECT=$(python3 -c "import yaml; print(yaml.safe_load(open('$config_file'))['project'])")
+    ZAKENAK_ENV=$(python3 -c "import yaml; print(yaml.safe_load(open('$config_file'))['environment'])")
+    ZAKENAK_NAMESPACE=$(python3 -c "import yaml; print(yaml.safe_load(open('$config_file'))['deploy']['namespace'])")
+    
+    # Установка значений по умолчанию, если не найдены
+    ZAKENAK_NAMESPACE=${ZAKENAK_NAMESPACE:-"prod"}
+    ZAKENAK_ENV=${ZAKENAK_ENV:-"prod"}
+}
+
 # Функция проверки зависимостей
 check_dependencies() {
     echo -e "${CYAN}Проверка зависимостей...${NC}"
@@ -178,11 +196,11 @@ generate_zakenak_config() {
     
     cat > "${REPO_ROOT}/zakenak.yaml" << EOF
 version: "1.0"
-project: zakenak
-environment: prod
+project: ${ZAKENAK_PROJECT:-"zakenak"}
+environment: ${ZAKENAK_ENV:-"prod"}
 
 deploy:
-  namespace: prod
+  namespace: ${ZAKENAK_NAMESPACE:-"prod"}
   charts:
     - ./helm-charts/cert-manager
     - ./helm-charts/local-ca
@@ -201,7 +219,7 @@ build:
 security:
   rbac:
     enabled: true
-    serviceAccount: zakenak
+    serviceAccount: ${ZAKENAK_PROJECT:-"zakenak"}
   networkPolicies:
     enabled: true
   podSecurityContext:
@@ -232,9 +250,14 @@ EOF
 install_components() {
     echo -e "${CYAN}Установка компонентов...${NC}"
     
-    # Создание namespace
-    echo -e "${CYAN}Создание namespace prod...${NC}"
-    kubectl create namespace prod --dry-run=client -o yaml | kubectl apply -f -
+    # Чтение конфигурации, если файл существует
+    if [ -f "${REPO_ROOT}/zakenak.yaml" ]; then
+        read_config
+    fi
+    
+    # Создание namespace с использованием значения из конфигурации
+    echo -e "${CYAN}Создание namespace ${ZAKENAK_NAMESPACE}...${NC}"
+    kubectl create namespace ${ZAKENAK_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
     
     # Ensure KUBECONFIG is set to the correct path
     export KUBECONFIG="${REPO_ROOT}/kubeconfig.yaml"
@@ -247,18 +270,6 @@ install_components() {
         -v "${HOME}/.cache/zakenak:/root/.cache/zakenak"
         --network host
     )
-
-    # Инициализация Git репозитория
-    echo -e "${CYAN}Инициализация Git репозитория...${NC}"
-    if [ -d "${REPO_ROOT}/.git" ]; then
-        rm -rf "${REPO_ROOT}/.git"
-    fi
-    git init "${REPO_ROOT}"
-    git -C "${REPO_ROOT}" config user.email "zakenak@local"
-    git -C "${REPO_ROOT}" config user.name "Zakenak"
-    git -C "${REPO_ROOT}" branch -M main
-    git -C "${REPO_ROOT}" add .
-    git -C "${REPO_ROOT}" commit -m "Initial commit"
 
     # Проверка конфигурационного файла
     echo -e "${CYAN}Проверка конфигурационного файла zakenak.yaml...${NC}"
@@ -286,15 +297,15 @@ install_components() {
         -e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
         -e KUBECONFIG=/root/.kube/config \
         -e ZAKENAK_DEBUG=true \
+        -e ZAKENAK_NAMESPACE="${ZAKENAK_NAMESPACE}" \
+        -e ZAKENAK_ENV="${ZAKENAK_ENV}" \
         --user root \
         --workdir /workspace \
         ghcr.io/i8megabit/zakenak:latest \
         converge \
         --config /workspace/zakenak.yaml \
-        --kubeconfig /root/.kube/config
-
-
-
+        --kubeconfig /root/.kube/config \
+        --namespace "${ZAKENAK_NAMESPACE}"
     
     DEPLOY_STATUS=$?
     if [ $DEPLOY_STATUS -ne 0 ]; then
@@ -306,21 +317,12 @@ install_components() {
         check_error "Ошибка развертывания компонентов"
     fi
 
-    # Проверка статуса развертывания
-    echo -e "${CYAN}Проверка статуса компонентов...${NC}"
-    docker run --gpus all \
-        "${MOUNT_FLAGS[@]}" \
-        -e KUBECONFIG=/root/.kube/config \
-        ghcr.io/i8megabit/zakenak:latest \
-        status \
-        --kubeconfig /root/.kube/config
-    check_error "Ошибка проверки статуса компонентов"
-
     # Ожидание готовности всех компонентов
     echo -e "${CYAN}Ожидание готовности всех компонентов...${NC}"
     kubectl wait --for=condition=Ready pods --all -n prod --timeout=300s
     check_error "Компоненты не готовы"
 }
+
 
 
 # Функция проверки установки
@@ -334,6 +336,22 @@ verify_installation() {
     # Проверка подов
     kubectl get pods -n prod
     check_error "Ошибка получения списка подов"
+    
+    # Проверка статуса компонентов через zakenak
+    echo -e "${CYAN}Проверка статуса компонентов...${NC}"
+    docker run --gpus all \
+        "${MOUNT_FLAGS[@]}" \
+        -e NVIDIA_VISIBLE_DEVICES=all \
+        -e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+        -e KUBECONFIG=/root/.kube/config \
+        -e ZAKENAK_DEBUG=true \
+        --user root \
+        --workdir /workspace \
+        ghcr.io/i8megabit/zakenak:latest \
+        status \
+        --kubeconfig /root/.kube/config
+    
+    check_error "Ошибка проверки статуса компонентов"
     
     # Проверка GPU
     kubectl exec -it -n prod deployment/ollama -- nvidia-smi

@@ -61,8 +61,9 @@ elif ! git rev-parse --verify main >/dev/null 2>&1; then
     fi
 fi
 
-# Убеждаемся что мы на правильной ветке
+# Убеждаемся что мы на правильной ветке и сбрасываем upstream
 git checkout main
+git branch --unset-upstream || true
 
 # Запуск основной команды
 exec /app/zakenak "\$@"
