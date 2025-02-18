@@ -6,7 +6,7 @@
 #  \____| |_| |_| \_\ |_|
 #                by @eberil
 #
-# Copyright (c)  2025 Mikhail Eberil
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 # This code is free! Share it, spread peace and technology!
 # "Because certificates should be automated!"
 

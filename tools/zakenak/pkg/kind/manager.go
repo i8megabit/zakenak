@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2025 Mikhail Eberil
+ * Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
  * 
  * This file is part of Ƶakenak, a GitOps deployment tool.
  * 
@@ -11,7 +11,17 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * MIT License for more details.
  * 
- * The name "Ƶakenak" and associated branding are trademarks of @eberil
+ * The name "Ƶakenak" and associated branding are  * Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
+ * 
+ * This file is part of Zakenak project.
+ * https://github.com/i8megabit/zakenak
+ *
+ * This program is free software and is released under the terms of the MIT License.
+ * See LICENSE.md file in the project root for full license information.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.of @eberil
  * and may not be used without express written permission.
  */
 

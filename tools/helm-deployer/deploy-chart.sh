@@ -6,7 +6,7 @@
 #  \____|___|  \____|____/ 
 #                by @eberil
 #
-# Copyright (c)  2025 Mikhail Eberil
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 # CI/CD Helm Deployment Tool
 # Version: 2.0.0
 

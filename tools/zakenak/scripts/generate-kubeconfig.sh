@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Copyright (c)  2025 Mikhail Eberil
-# Script for generating kubeconfig for Ƶakenak™®
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
+# Script for generating kubeconfig for Zakenak
 
 set -e
 

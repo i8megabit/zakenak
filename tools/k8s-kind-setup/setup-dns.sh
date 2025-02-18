@@ -6,7 +6,7 @@
 # |____/|_| \_|____/ 
 #            by @eberil
 #
-# Copyright (c)  2025 Mikhail Eberil
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 # This code is free! Share it, spread peace and technology!
 # "Because DNS should just work!"
 
@@ -25,17 +25,17 @@ echo ""
 echo -e "${CYAN}Настройка CoreDNS...${NC}"
 
 # Проверка наличия директории manifests
-MANIFESTS_DIR="${SCRIPT_DIR}/manifests"
+MANIFESTS_DIR="./tools/k8s-kind-setup/manifests"
 if [ ! -d "$MANIFESTS_DIR" ]; then
     echo -e "${RED}Ошибка: Директория manifests не найдена${NC}"
     exit 1
 fi
 
 # Применение конфигурации CoreDNS
-kubectl apply -f "${MANIFESTS_DIR}/coredns/coredns-custom-config.yaml"
+kubectl apply -f "${MANIFESTS_DIR}/coredns-custom-config.yaml"
 check_error "Не удалось применить конфигурацию CoreDNS"
 
-kubectl apply -f "${MANIFESTS_DIR}/coredns/coredns-patch.yaml"
+kubectl apply -f "${MANIFESTS_DIR}/coredns-patch.yaml"
 check_error "Не удалось применить патч CoreDNS"
 
 # Перезапуск CoreDNS
