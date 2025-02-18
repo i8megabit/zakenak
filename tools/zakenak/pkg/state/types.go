@@ -64,10 +64,20 @@ type Volume struct {
 // GPUState представляет состояние GPU в системе,
 // включая информацию о драйвере и устройствах.
 type GPUState struct {
-    Enabled     bool      `json:"enabled"`    // Флаг включения GPU
-    Driver      string    `json:"driver"`     // Версия драйвера
-    Memory      string    `json:"memory"`     // Доступная память
-    Devices     []Device  `json:"devices"`    // Список GPU устройств
+    Enabled     bool         `json:"enabled"`    // Флаг включения GPU
+    Driver      string       `json:"driver"`     // Версия драйвера
+    Memory      string       `json:"memory"`     // Доступная память
+    Devices     []Device     `json:"devices"`    // Список GPU устройств
+    Security    GPUSecurity  `json:"security"`   // Настройки безопасности GPU
+}
+
+// GPUSecurity определяет настройки безопасности для GPU
+type GPUSecurity struct {
+    Isolation      bool     `json:"isolation"`      // Изоляция GPU ресурсов
+    MemoryLimit    string   `json:"memoryLimit"`    // Лимит памяти на контейнер
+    TimeSlice      int      `json:"timeSlice"`      // Временной слот для GPU (мс)
+    AllowedDevices []string `json:"allowedDevices"` // Разрешенные GPU устройства
+    Capabilities   []string `json:"capabilities"`    // Разрешенные возможности
 }
 
 // Device представляет отдельное GPU устройство в системе.
