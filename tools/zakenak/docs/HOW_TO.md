@@ -3,10 +3,10 @@
     |___  /    | |                    | |   
        / / __ _| |  _ _   ___     ___ | |  _
       / / / _` | |/ / _`||  _ \ / _` || |/ /
-     / /_| (_| |  < by_Ӗberil| | (_| ||   < 
+     / /_| (_| |  < by_Eberil| | (_| ||   < 
     /_____\__,_|_|\_\__,||_| |_|\__,_||_|\_\
-  
-                          Should Harbour?				
+
+    Should Harbour?	No.
 # [Zakenak](https://dic.academic.ru/dic.nsf/dic_synonims/390396/%D1%87%D0%B0%D0%BA%D0%B0%D0%BD%D0%B0%D0%BAчаканак "др.-чув. чӑканӑк — бухта, залив")
 [![Go Report Card](https://goreportcard.com/badge/github.com/i8megabit/zakenak)](https://goreportcard.com/report/github.com/i8megabit/zakenak)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -14,7 +14,7 @@
 
 ## Содержание
 1. [Введение](#введение)
-2. [Установка](#установка)Docker Desktop - WSL distro te
+2. [Установка](#установка)
 3. [Конфигурация](#конфигурация)
 4. [Основные операции](#основные-операции)
 5. [Продвинутые сценарии](#продвинутые-сценарии)
@@ -22,7 +22,7 @@
 
 ## Введение
 
-Ƶakanak (Чаканак) - это инструмент для GitOps и деплоя, разработанный для максимальной эффективности и простоты использования. Основные области применения:
+Zakenak (Чаканак) - это инструмент для GitOps и деплоя, разработанный для максимальной эффективности и простоты использования. Основные области применения:
 
 ### 1. GitOps автоматизация
 - Синхронизация состояния кластера с Git-репозиторием
@@ -219,7 +219,7 @@ zakenak build --debug --verbose
 ### Логи и отладка
 ```bash
 # Включение отладочного режима
-export ZAKANAK_DEBUG=true
+export ZAKENAK_DEBUG=true
 zakenak converge
 
 # Сбор диагностической информации
