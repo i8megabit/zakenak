@@ -8,6 +8,7 @@ WORKDIR /app
 COPY . .
 
 # Установка зависимостей
+RUN apk add --no-cache git
 RUN go mod download
 
 # Сборка с поддержкой GPU
@@ -23,6 +24,7 @@ COPY --from=builder /app/zakenak .
 # Установка необходимых runtime зависимостей
 RUN apt-get update && apt-get install -y \
     ca-certificates \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Настройка переменных окружения для NVIDIA
