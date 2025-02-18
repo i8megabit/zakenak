@@ -10,12 +10,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
       id-token: write
     steps:
-    - uses: actions/checkout@v4
-
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        persist-credentials: true
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
@@ -28,15 +31,21 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ hashFiles('tools/zakenak/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
 
-    - name: Build Binary
+    - name: Setup Go workspace
+      working-directory: ./tools/zakenak
       run: |
-        cd tools/zakenak
-        make build
-        
+        go mod tidy
+        mkdir -p build
+
+    - name: Build Binary
+      working-directory: ./tools/zakenak
+      run: |
+        go build -o build/zakenak ./cmd/zakenak
+      
     - name: Build Docker image
       uses: docker/build-push-action@v5
       with:
@@ -46,9 +55,8 @@ jobs:
         tags: ghcr.io/i8megabit/zakenak:${{ github.sha }}
 
     - name: Run tests
-      run: |
-        cd tools/zakenak
-        make test
+      working-directory: ./tools/zakenak
+      run: make test
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
