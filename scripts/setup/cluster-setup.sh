@@ -1,13 +1,4 @@
 #!/bin/bash
-#  _  _____ ____  
-# | |/ / _ \___ \ 
-# | ' / (_) |__) |
-# | . \> _ </ __/ 
-# |_|\_\___/_____|
-#            by @eberil
-#
-# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
-# This code is free! Share it, spread peace and technology!
 
 # Определение пути к директории скрипта и корню репозитория
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -39,7 +30,7 @@ check_dependencies() {
     if ! command -v nvidia-smi &> /dev/null; then
         echo -e "${RED}NVIDIA драйверы не установлены${NC}"
         exit 1
-    }
+    fi
 }
 
 # Функция настройки Docker и NVIDIA
@@ -58,10 +49,6 @@ setup_zakenak() {
     # Загрузка последней версии образа
     docker pull ghcr.io/i8megabit/zakenak:latest
     check_error "Ошибка загрузки образа Zakenak"
-    
-    # Создание алиаса для удобства использования
-    echo 'alias zakenak="docker run --rm --gpus all -v $(pwd):/workspace -v ~/.kube:/root/.kube -v ~/.cache/zakenak:/root/.cache/zakenak --network host ghcr.io/i8megabit/zakenak:latest"' >> ~/.bashrc
-    source ~/.bashrc
 }
 
 # Функция создания кластера
@@ -82,11 +69,6 @@ setup_cluster() {
     # Ожидание готовности узлов
     echo -e "${CYAN}Ожидание готовности узлов кластера...${NC}"
     sleep 30
-
-    # Генерация конфигурации кластера
-    echo -e "${CYAN}Генерация конфигурации кластера...${NC}"
-    "${SCRIPT_DIR}/generate-cluster-config.sh"
-    check_error "Ошибка генерации конфигурации кластера"
 }
 
 # Функция установки компонентов
