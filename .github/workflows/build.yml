@@ -36,12 +36,11 @@ jobs:
       run: |
         mkdir -p build
 
-    - name: Initialize Go module
-      run: |
-        go mod init github.com/i8megabit/zakenak
-        go mod tidy
+    - name: Download dependencies
+      run: go mod download
 
     - name: Build Binary
+
       run: |
         go build -o build/zakenak ./tools/zakenak/cmd/zakenak
 
