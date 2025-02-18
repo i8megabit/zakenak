@@ -240,7 +240,6 @@ install_components() {
     export KUBECONFIG="${REPO_ROOT}/kubeconfig.yaml"
     
     # Подготовка монтирования для Docker
-    echo -e "${CYAN}Подготовка монтирования для Docker...${NC}"
     MOUNT_FLAGS=(
         -v "${REPO_ROOT}:/workspace"
         -v "${REPO_ROOT}/kubeconfig.yaml:/root/.kube/config:ro"
@@ -249,18 +248,12 @@ install_components() {
     )
 
     # Проверка конфигурационного файла
-    echo -e "${CYAN}Проверка конфигурационного файла zakenak.yaml...${NC}"
     if [ ! -f "${REPO_ROOT}/zakenak.yaml" ]; then
         echo -e "${RED}Ошибка: файл ${REPO_ROOT}/zakenak.yaml не найден${NC}"
         exit 1
     fi
-
-    # Вывод содержимого конфига для отладки
-    echo -e "${CYAN}Содержимое конфигурационного файла:${NC}"
-    cat "${REPO_ROOT}/zakenak.yaml"
     
     # Проверка синтаксиса YAML
-    echo -e "${CYAN}Проверка синтаксиса YAML...${NC}"
     if ! python3 -c "import yaml; yaml.safe_load(open('${REPO_ROOT}/zakenak.yaml'))"; then
         echo -e "${RED}Ошибка: некорректный синтаксис YAML в файле конфигурации${NC}"
         exit 1
@@ -274,10 +267,12 @@ install_components() {
         -e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
         -e KUBECONFIG=/root/.kube/config \
         -e ZAKENAK_DEBUG=true \
+        -e ZAKENAK_QUIET=true \
         ghcr.io/i8megabit/zakenak:latest \
         converge \
         --config /workspace/zakenak.yaml \
         --kubeconfig /root/.kube/config
+
     
     DEPLOY_STATUS=$?
     if [ $DEPLOY_STATUS -ne 0 ]; then
@@ -325,10 +320,8 @@ verify_installation() {
 
 # Основная функция
 main() {
-    # Отображение баннера
+    # Отображение баннера только при старте
     k8s_banner
-    echo ""
-    
     echo -e "${YELLOW}Начинаем установку кластера...${NC}"
     
     # Проверка наличия необходимых файлов при --no-generate
@@ -353,10 +346,11 @@ main() {
     install_components
     verify_installation
     
-    echo -e "\n"
+    # Баннер успешного завершения
     success_banner
     echo -e "\n${GREEN}Установка кластера успешно завершена!${NC}"
 }
+
 
 # Запуск установки
 main "$@"

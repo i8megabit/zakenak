@@ -13,11 +13,12 @@ func PrintZakenak() {
 	 ______     _                      _    
 	|___  /    | |                    | |   
 	   / / __ _| |  _ _   ___     ___ | |  _
-	  / / / _  | |/ / _ ||  _ \ / _  || |/ /
+	  / / / _` + "`" + ` | |/ / _` + "`" + `||  _ \ / _` + "`" + ` || |/ /
 	 / /_| (_| |  < by_Eberil| | (_| ||   < 
 	/_____\__,_|_|\_\__,||_| |_|\__,_||_|\_\
-  
-	Should Harbour?	No.
+
+	GPU-Accelerated GitOps Platform v1.3.2
+	Kubernetes Native | NVIDIA GPU Support
 	`)
 }
 
