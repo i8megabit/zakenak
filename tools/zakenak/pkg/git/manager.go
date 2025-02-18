@@ -14,7 +14,8 @@ import (
 
 // Manager предоставляет интерфейс для работы с Git
 type Manager struct {
-	workDir string
+	workDir       string
+	originalBranch string
 }
 
 // NewManager создает новый экземпляр Manager
@@ -22,6 +23,31 @@ func NewManager(workDir string) *Manager {
 	return &Manager{
 		workDir: workDir,
 	}
+}
+
+// SaveCurrentBranch сохраняет текущую ветку
+func (m *Manager) SaveCurrentBranch() error {
+	branch, err := m.getCurrentBranch()
+	if err != nil {
+		return fmt.Errorf("failed to get current branch: %w", err)
+	}
+	m.originalBranch = branch
+	return nil
+}
+
+// RestoreOriginalBranch восстанавливает исходную ветку
+func (m *Manager) RestoreOriginalBranch() error {
+	if m.originalBranch == "" || m.originalBranch == "main" {
+		return nil
+	}
+
+	// Проверяем существование ветки
+	if err := m.run("rev-parse", "--verify", m.originalBranch); err == nil {
+		if err := m.run("checkout", m.originalBranch); err != nil {
+			return fmt.Errorf("failed to restore original branch %s: %w", m.originalBranch, err)
+		}
+	}
+	return nil
 }
 
 // InitRepo инициализирует Git репозиторий
@@ -51,6 +77,11 @@ func (m *Manager) ConfigureGlobal() error {
 
 // EnsureMainBranch проверяет и создает ветку main если необходимо
 func (m *Manager) EnsureMainBranch() error {
+	// Сохраняем текущую ветку перед переключением
+	if err := m.SaveCurrentBranch(); err != nil {
+		return err
+	}
+
 	// Проверяем существование .git директории
 	if _, err := os.Stat(m.workDir + "/.git"); os.IsNotExist(err) {
 		if err := m.InitRepo(); err != nil {
@@ -75,18 +106,19 @@ func (m *Manager) EnsureMainBranch() error {
 			return fmt.Errorf("failed to get current branch: %w", err)
 		}
 		if currentBranch != "main" {
-			if err := m.run("branch", "-M", "main"); err != nil {
-				return fmt.Errorf("failed to rename branch to main: %w", err)
+			// Создаем main ветку из текущей
+			if err := m.run("checkout", "-B", "main"); err != nil {
+				return fmt.Errorf("failed to create main branch: %w", err)
 			}
+		}
+	} else {
+		// Переключаемся на существующую main ветку
+		if err := m.run("checkout", "main", "--no-track"); err != nil {
+			return fmt.Errorf("failed to checkout main: %w", err)
 		}
 	}
 
-	// Переключаемся на main
-	if err := m.run("checkout", "main"); err != nil {
-		return fmt.Errorf("failed to checkout main: %w", err)
-	}
-
-	// Сбрасываем upstream
+	// Отключаем отслеживание upstream для main ветки
 	m.run("branch", "--unset-upstream")
 
 	return nil
