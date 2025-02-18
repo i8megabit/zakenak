@@ -10,11 +10,13 @@ import (
 
 // SystemInfo содержит информацию о системе
 type SystemInfo struct {
-	CUDAVersion    string
-	WSLLibPath     string
-	CUDALibPath    string
-	HasNvidia      bool
-	PortMappings   []PortMapping
+	OS            string
+	Architecture  string
+	CUDAVersion   string
+	WSLLibPath    string
+	CUDALibPath   string
+	HasNvidia     bool
+	PortMappings  []PortMapping
 }
 
 // PortMapping описывает проброс портов
@@ -34,6 +36,8 @@ func DefaultPorts() []PortMapping {
 // Detect обнаруживает системные параметры
 func Detect() (*SystemInfo, error) {
 	info := &SystemInfo{
+		OS:           runtime.GOOS,
+		Architecture: runtime.GOARCH,
 		PortMappings: DefaultPorts(),
 	}
 
