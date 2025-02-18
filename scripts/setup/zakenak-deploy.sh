@@ -172,18 +172,67 @@ setup_docker_nvidia() {
 			exit 1
 		fi
 
-		# Проверка версии CUDA
-		CUDA_VERSION=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader)
-		if [[ "${CUDA_VERSION%%.*}" -lt 12 ]]; then
-			echo -e "${YELLOW}Предупреждение: Рекомендуется CUDA версии 12.8+${NC}"
-		fi
-
-		# Проверка Compute Capability
-		CC=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader)
-		if [[ "${CC%%.*}" -lt 7 ]]; then
-			echo -e "${RED}Ошибка: Требуется GPU с Compute Capability 7.0+${NC}"
+		# Проверка NVIDIA Container Runtime
+		if ! command -v nvidia-container-runtime &> /dev/null; then
+			echo -e "${RED}NVIDIA Container Runtime не установлен${NC}"
 			exit 1
 		fi
+
+		# Создание/обновление конфигурации Docker daemon
+		echo -e "${CYAN}Настройка Docker daemon для NVIDIA...${NC}"
+		sudo mkdir -p /etc/docker
+		cat << EOF | sudo tee /etc/docker/daemon.json
+{
+	"default-runtime": "nvidia",
+	"runtimes": {
+		"nvidia": {
+			"path": "/usr/bin/nvidia-container-runtime",
+			"runtimeArgs": []
+		}
+	},
+	"exec-opts": ["native.cgroupdriver=systemd"],
+	"log-driver": "json-file",
+	"log-opts": {
+		"max-size": "100m"
+	},
+	"storage-driver": "overlay2"
+}
+EOF
+		check_error "Не удалось создать конфигурацию Docker daemon"
+
+		# Перезапуск Docker daemon после настройки NVIDIA
+		echo -e "${CYAN}Перезапуск Docker daemon для применения настроек NVIDIA...${NC}"
+		if command -v systemctl &> /dev/null; then
+			sudo systemctl restart docker
+			check_error "Не удалось перезапустить Docker daemon через systemctl"
+		else
+			sudo service docker restart
+			check_error "Не удалось перезапустить Docker daemon через service"
+		fi
+
+		# Ожидание запуска Docker daemon с увеличенным таймаутом
+		echo -e "${CYAN}Ожидание запуска Docker daemon...${NC}"
+		for i in {1..60}; do
+			if docker info &>/dev/null; then
+				break
+			fi
+			if [ $i -eq 60 ]; then
+				echo -e "${RED}Ошибка: Docker daemon не запустился после перезапуска${NC}"
+				exit 1
+			fi
+			sleep 2
+		done
+
+		# Проверка NVIDIA runtime с подробным выводом
+		echo -e "${CYAN}Проверка конфигурации NVIDIA runtime...${NC}"
+		if ! docker info 2>/dev/null | grep -q "Runtimes.*nvidia"; then
+			echo -e "${RED}Ошибка: NVIDIA runtime не обнаружен в Docker${NC}"
+			echo -e "${YELLOW}Текущие runtime-ы:${NC}"
+			docker info 2>/dev/null | grep -A5 "Runtimes"
+			exit 1
+		fi
+
+		echo -e "${GREEN}NVIDIA runtime успешно настроен${NC}"
 	fi
 }
 
@@ -211,7 +260,7 @@ setup_cluster() {
 			--device-write-bps /dev/sda:"${DEFAULT_IO_LIMIT}"
 			-v "${REPO_ROOT}:/workspace:ro"
 			-v "${KUBECONFIG%/*}:/root/.kube:ro"
-			--network=none
+			--network=host  # Changed from --network=none to allow cluster setup
 		)
 
 		# Добавление GPU параметров если доступны
@@ -235,13 +284,26 @@ setup_cluster() {
 			-e VERIFY_COMPONENTS=true
 		)
 
-		# Запуск setup
-		docker run "${docker_args[@]}" \
+		echo -e "${CYAN}Запуск настройки кластера...${NC}"
+		
+		# Запуск setup с таймаутом и отслеживанием прогресса
+		timeout 300 docker run "${docker_args[@]}" \
 			"${ZAKENAK_IMAGE}:${ZAKENAK_VERSION}" setup \
 			--workdir /workspace \
-			--namespace "${NAMESPACE}"
+			--namespace "${NAMESPACE}" \
+			--progress \
+			--verbose
+
+		local setup_status=$?
+		if [ $setup_status -eq 124 ]; then
+			echo -e "${RED}Ошибка: Превышено время ожидания настройки кластера${NC}"
+			exit 1
+		elif [ $setup_status -ne 0 ]; then
+			echo -e "${RED}Ошибка: Настройка кластера завершилась с ошибкой (код $setup_status)${NC}"
+			exit 1
+		fi
 		
-		check_error "Настройка кластера завершилась с ошибкой"
+		echo -e "${GREEN}Настройка кластера успешно завершена${NC}"
 	fi
 }
 
