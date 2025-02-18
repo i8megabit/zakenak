@@ -7,21 +7,33 @@ package git
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/i8megabit/zakenak/pkg/logger"
 )
+
+// logDebug выводит отладочную информацию
+func (m *Manager) logDebug(format string, args ...interface{}) {
+	if m.debug {
+		log.Printf("[GIT DEBUG] "+format, args...)
+	}
+}
 
 // Manager предоставляет интерфейс для работы с Git
 type Manager struct {
-	workDir       string
+	workDir        string
 	originalBranch string
+	debug         bool
 }
 
 // NewManager создает новый экземпляр Manager
 func NewManager(workDir string) *Manager {
 	return &Manager{
 		workDir: workDir,
+		debug:  os.Getenv("ZAKENAK_DEBUG") == "true",
 	}
 }
 
@@ -85,13 +97,20 @@ func (m *Manager) ConfigureGlobal() error {
 
 // EnsureMainBranch проверяет и создает ветку main если необходимо
 func (m *Manager) EnsureMainBranch() error {
+	if m.debug {
+		m.logDebug("Starting EnsureMainBranch operation")
+		m.logDebug("Working directory: %s", m.workDir)
+	}
+
 	// Сохраняем текущую ветку перед переключением
 	if err := m.SaveCurrentBranch(); err != nil {
+		m.logDebug("Failed to save current branch: %v", err)
 		return err
 	}
 
 	// Проверяем существование .git директории
 	if _, err := os.Stat(m.workDir + "/.git"); os.IsNotExist(err) {
+		m.logDebug("Git repository not found, initializing new one")
 		if err := m.InitRepo(); err != nil {
 			return err
 		}
@@ -109,26 +128,31 @@ func (m *Manager) EnsureMainBranch() error {
 
 	// Проверяем существование ветки main
 	if err := m.run("rev-parse", "--verify", "main"); err != nil {
+		m.logDebug("Main branch not found, checking current branch")
 		currentBranch, err := m.getCurrentBranch()
 		if err != nil {
+			m.logDebug("Failed to get current branch: %v", err)
 			return fmt.Errorf("failed to get current branch: %w", err)
 		}
+		m.logDebug("Current branch: %s", currentBranch)
+		
 		if currentBranch != "main" {
-			// Создаем main ветку из текущей
+			m.logDebug("Creating main branch")
 			if err := m.run("checkout", "-B", "main"); err != nil {
 				return fmt.Errorf("failed to create main branch: %w", err)
 			}
 		}
 	} else {
-		// Переключаемся на существующую main ветку
+		m.logDebug("Checking out existing main branch")
 		if err := m.run("checkout", "main", "--no-track"); err != nil {
 			return fmt.Errorf("failed to checkout main: %w", err)
 		}
 	}
 
-	// Отключаем отслеживание upstream для main ветки
+	m.logDebug("Unsetting upstream for main branch")
 	m.run("branch", "--unset-upstream")
 
+	m.logDebug("EnsureMainBranch completed successfully")
 	return nil
 }
 
@@ -141,22 +165,70 @@ func (m *Manager) getCurrentBranch() (string, error) {
 	return strings.TrimSpace(out), nil
 }
 
-// run выполняет git команду
+// run выполняет git команду с расширенным логированием
 func (m *Manager) run(args ...string) error {
+	logger.Command("git", args)
+	
 	cmd := exec.Command("git", args...)
 	cmd.Dir = m.workDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+
+	if m.debug {
+		m.logDebug("Executing git command: git %s", strings.Join(args, " "))
+		m.logDebug("Working directory: %s", m.workDir)
+	}
+
+	err := cmd.Run()
+	if err != nil {
+		logger.CommandError(err)
+		if m.debug {
+			m.logDebug("Git command failed: %v", err)
+			// Проверяем состояние репозитория
+			m.logDebug("Checking repository state...")
+			if _, err := os.Stat(m.workDir + "/.git"); os.IsNotExist(err) {
+				m.logDebug("Git repository does not exist at %s", m.workDir)
+			} else {
+				if head, err := m.output("rev-parse", "--abbrev-ref", "HEAD"); err == nil {
+					m.logDebug("Current branch: %s", head)
+				}
+				if status, err := m.output("status", "--porcelain"); err == nil {
+					m.logDebug("Working directory status:\n%s", status)
+				}
+			}
+		}
+		return fmt.Errorf("git command failed: %w", err)
+	}
+	return nil
 }
 
-// output выполняет git команду и возвращает вывод
+// output выполняет git команду и возвращает вывод с логированием
 func (m *Manager) output(args ...string) (string, error) {
+	logger.Command("git", args)
+	
+	if m.debug {
+		m.logDebug("Executing git command for output: git %s", strings.Join(args, " "))
+	}
+
 	cmd := exec.Command("git", args...)
 	cmd.Dir = m.workDir
 	out, err := cmd.Output()
+	
 	if err != nil {
+		logger.CommandError(err)
+		if m.debug {
+			m.logDebug("Git command failed: %v", err)
+			if exitErr, ok := err.(*exec.ExitError); ok {
+				m.logDebug("Stderr: %s", string(exitErr.Stderr))
+			}
+		}
 		return "", err
 	}
-	return string(out), nil
+	
+	output := string(out)
+	logger.CommandOutput(output)
+	if m.debug {
+		m.logDebug("Command output: %s", output)
+	}
+	return output, nil
 }
