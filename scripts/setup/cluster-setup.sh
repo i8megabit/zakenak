@@ -154,25 +154,31 @@ setup_cluster() {
 generate_zakenak_config() {
     echo -e "${CYAN}Генерация конфигурации zakenak...${NC}"
     
-    # Загрузка автообнаруженных параметров
-    eval "$(${SCRIPT_DIR}/discover.sh)"
+    # Создание временного файла для charts конфигурации
+    local temp_charts=""
     
-    # Формирование списка чартов
-    local charts_config=""
-    IFS=' ' read -ra CHART_LIST <<< "$HELM_CHARTS"
-    for chart_info in "${CHART_LIST[@]}"; do
-        IFS=':' read -r name values <<< "$chart_info"
-        charts_config+="    - name: $name\n      path: ./helm-charts/$name\n"
-        if [ ! -z "$values" ]; then
-            charts_config+="      values:\n"
-            IFS=' ' read -ra VALUE_FILES <<< "$values"
-            for value in "${VALUE_FILES[@]}"; do
-                charts_config+="        - $value\n"
-            done
+    # Обход всех директорий в helm-charts
+    for chart_dir in "${REPO_ROOT}"/helm-charts/*/; do
+        if [ -d "$chart_dir" ]; then
+            chart_name=$(basename "$chart_dir")
+            temp_charts+="    - name: $chart_name"$'\n'
+            temp_charts+="      path: ./helm-charts/$chart_name"$'\n'
+            
+            if [ -f "${chart_dir}/values.yaml" ]; then
+                temp_charts+="      values:"$'\n'
+                temp_charts+="        - values.yaml"$'\n'
+                
+                if [ -f "${chart_dir}/values-prod.yaml" ]; then
+                    temp_charts+="        - values-prod.yaml"$'\n'
+                fi
+                if [ -f "${chart_dir}/values-gpu.yaml" ]; then
+                    temp_charts+="        - values-gpu.yaml"$'\n'
+                fi
+            fi
         fi
     done
 
-    # Генерация конфигурационного файла
+    # Генерация файла конфигурации с правильным форматированием YAML
     cat > "${REPO_ROOT}/zakenak.yaml" << EOF
 version: "1.0"
 project: zakenak
@@ -182,7 +188,7 @@ environment: prod
 deploy:
   namespace: prod
   charts:
-$charts_config
+$temp_charts
 
 # Настройки GPU
 build:
@@ -212,6 +218,17 @@ EOF
 
     check_error "Ошибка генерации конфигурации zakenak"
     echo -e "${GREEN}Конфигурация zakenak.yaml успешно создана${NC}"
+    
+    # Вывод сгенерированной конфигурации для отладки
+    echo -e "${CYAN}Сгенерированная конфигурация:${NC}"
+    cat "${REPO_ROOT}/zakenak.yaml"
+    
+    # Проверка синтаксиса YAML
+    echo -e "${CYAN}Проверка синтаксиса YAML...${NC}"
+    if ! python3 -c "import yaml; yaml.safe_load(open('${REPO_ROOT}/zakenak.yaml'))"; then
+        echo -e "${RED}Ошибка: некорректный синтаксис YAML в файле конфигурации${NC}"
+        exit 1
+    fi
 
 }
 
