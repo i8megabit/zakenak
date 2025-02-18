@@ -20,14 +20,18 @@ TAG ?= $(VERSION)
 all: clean build test
 
 build:
+	@echo "Building zakenak..."
+	@mkdir -p bin
 	cd tools/zakenak && $(GO) build $(GOFLAGS) \
 		-ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)" \
 		-o ../../bin/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
 
 test:
+	@echo "Running tests..."
 	cd tools/zakenak && $(GO) test -v ./...
 
 clean:
+	@echo "Cleaning..."
 	rm -rf bin/
 	rm -f $(BINARY_NAME)
 
