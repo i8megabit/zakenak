@@ -146,6 +146,91 @@ setup_cluster() {
     check_error "Ошибка обновления kubeconfig"
 }
 
+# Функция генерации конфигурации zakenak
+generate_zakenak_config() {
+    echo -e "${CYAN}Генерация конфигурации zakenak...${NC}"
+    
+    # Проверка наличия директории helm-charts
+    if [ ! -d "${REPO_ROOT}/helm-charts" ]; then
+        echo -e "${RED}Ошибка: директория helm-charts не найдена${NC}"
+        exit 1
+    }
+
+    # Создание временного массива для хранения конфигурации чартов
+    declare -a chart_configs
+
+    # Обход всех директорий в helm-charts
+    for chart_dir in "${REPO_ROOT}"/helm-charts/*/; do
+        if [ -d "$chart_dir" ]; then
+            # Получение имени чарта из пути
+            chart_name=$(basename "$chart_dir")
+            
+            # Формирование конфигурации для чарта
+            chart_config="    - name: $chart_name\n      path: ./helm-charts/$chart_name"
+            
+            # Проверка наличия values файлов
+            if [ -f "${chart_dir}/values.yaml" ]; then
+                chart_config+="\n      values:\n        - values.yaml"
+                
+                # Проверка дополнительных values файлов
+                if [ -f "${chart_dir}/values-prod.yaml" ]; then
+                    chart_config+="\n        - values-prod.yaml"
+                fi
+                if [ -f "${chart_dir}/values-gpu.yaml" ]; then
+                    chart_config+="\n        - values-gpu.yaml"
+                fi
+            fi
+            
+            chart_configs+=("$chart_config")
+        fi
+    done
+
+    # Генерация файла конфигурации
+    cat > "${REPO_ROOT}/zakenak.yaml" << EOF
+version: "1.0"
+project: zakenak
+environment: prod
+
+# Настройки развертывания
+deploy:
+  namespace: prod
+  charts:
+$(printf '%s\n' "${chart_configs[@]}")
+
+# Настройки GPU
+build:
+  gpu:
+    enabled: true
+    runtime: nvidia
+    memory: "8Gi"
+    devices: "all"
+    capabilities:
+      - compute
+      - utility
+    options:
+      - "device=all"
+      - "require=cuda>=12.0"
+
+# Настройки безопасности
+security:
+  rbac:
+    enabled: true
+    serviceAccount: zakenak
+  networkPolicies:
+    enabled: true
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+EOF
+
+    check_error "Ошибка генерации конфигурации zakenak"
+    echo -e "${GREEN}Конфигурация zakenak.yaml успешно создана${NC}"
+    
+    # Вывод сгенерированной конфигурации для отладки
+    echo -e "${CYAN}Сгенерированная конфигурация:${NC}"
+    cat "${REPO_ROOT}/zakenak.yaml"
+}
+
 # Функция установки компонентов
 install_components() {
     echo -e "${CYAN}Установка компонентов...${NC}"
@@ -254,6 +339,7 @@ main() {
     setup_docker_nvidia
     setup_zakenak
     setup_cluster
+    generate_zakenak_config
     install_components
     verify_installation
     
