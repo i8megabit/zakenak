@@ -1,5 +1,5 @@
-# Copyright (c)  2025 Mikhail Eberil
-# Dockerfile for Ƶakenak™®
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
+# Dockerfile for Zakenak
 
 # Build stage
 FROM golang:1.21-alpine AS builder

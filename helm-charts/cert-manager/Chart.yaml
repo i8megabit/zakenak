@@ -5,9 +5,9 @@
 #  \____|_____|_| \_\ |_|  
 #                 by @eberil
 #
-# Copyright (c)  2025 Mikhail Eberil
-# HUJAK-HUJAK PRODUCTION PRESENTS...
+# Copyright (c) 2025 Mikhail Eberil
 # "Because TLS should be easy"
+
 
 apiVersion: v2
 name: cert-manager-setup

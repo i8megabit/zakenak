@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 # 
-# This file is part of Ƶakenak™® project.
+# This file is part of Zakenak project.
 # https://github.com/i8megabit/zakenak
 #
 # This program is free software and is released under the terms of the MIT License.
@@ -11,11 +11,6 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-#
-# TRADEMARK NOTICE:
-# Ƶakenak™® and the Ƶakenak logo are registered trademarks of Mikhail Eberil.
-# All rights reserved. The Ƶakenak trademark and brand may not be used in any way 
-# without express written permission from the trademark owner.
 
 set -e
 
@@ -28,7 +23,7 @@ NC='\033[0m'
 GO_HEADER='/*
  * Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
  * 
- * This file is part of Ƶakenak™® project.
+ * This file is part of Zakenak project.
  * https://github.com/i8megabit/zakenak
  *
  * This program is free software and is released under the terms of the MIT License.
@@ -37,16 +32,11 @@ GO_HEADER='/*
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- *
- * TRADEMARK NOTICE:
- * Ƶakenak™® and the Ƶakenak logo are registered trademarks of Mikhail Eberil.
- * All rights reserved. The Ƶakenak trademark and brand may not be used in any way 
- * without express written permission from the trademark owner.
  */\n\n'
 
 MD_HEADER='# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 # 
-# This file is part of Ƶakenak™® project.
+# This file is part of Zakenak project.
 # https://github.com/i8megabit/zakenak
 #
 # This program is free software and is released under the terms of the MIT License.
@@ -55,17 +45,12 @@ MD_HEADER='# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-#
-# TRADEMARK NOTICE:
-# Ƶakenak™® and the Ƶakenak logo are registered trademarks of Mikhail Eberil.
-# All rights reserved. The Ƶakenak trademark and brand may not be used in any way 
-# without express written permission from the trademark owner.\n\n'
 
 SH_HEADER='#!/bin/bash
 #
 # Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 # 
-# This file is part of Ƶakenak™® project.
+# This file is part of Zakenak project.
 # https://github.com/i8megabit/zakenak
 #
 # This program is free software and is released under the terms of the MIT License.
@@ -73,16 +58,11 @@ SH_HEADER='#!/bin/bash
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-#
-# TRADEMARK NOTICE:
-# Ƶakenak™® and the Ƶakenak logo are registered trademarks of Mikhail Eberil.
-# All rights reserved. The Ƶakenak trademark and brand may not be used in any way 
-# without express written permission from the trademark owner.\n\n'
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\n\n'
 
 YAML_HEADER='# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 # 
-# This file is part of Ƶakenak™® project.
+# This file is part of Zakenak project.
 # https://github.com/i8megabit/zakenak
 #
 # This program is free software and is released under the terms of the MIT License.
@@ -91,11 +71,6 @@ YAML_HEADER='# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-#
-# TRADEMARK NOTICE:
-# Ƶakenak™® and the Ƶakenak logo are registered trademarks of Mikhail Eberil.
-# All rights reserved. The Ƶakenak trademark and brand may not be used in any way 
-# without express written permission from the trademark owner.\n\n'
 
 update_file() {
 	local file=$1
