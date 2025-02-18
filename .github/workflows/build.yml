@@ -31,17 +31,21 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
 
+    - name: Setup Directory Structure
+      run: |
+        mkdir -p cmd/zakenak
+        mkdir -p pkg/{banner,build,config,converge,helm,kind,state}
+        mkdir -p build
+
     - name: Initialize Go module
-      working-directory: .
       run: |
         go mod init github.com/i8megabit/zakenak
         go mod tidy
 
     - name: Build Binary
-      working-directory: .
       run: |
-        mkdir -p build
         go build -o build/zakenak ./cmd/zakenak
+
 
     - name: Test Binary
       if: github.ref == 'refs/heads/develop'
