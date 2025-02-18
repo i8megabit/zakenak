@@ -151,18 +151,38 @@ install_components() {
     echo -e "${CYAN}Установка компонентов...${NC}"
     
     # Создание namespace
+    echo -e "${CYAN}Создание namespace prod...${NC}"
     kubectl create namespace prod --dry-run=client -o yaml | kubectl apply -f -
     
     # Ensure KUBECONFIG is set to the correct path
     export KUBECONFIG="${REPO_ROOT}/kubeconfig.yaml"
     
     # Подготовка монтирования для Docker
+    echo -e "${CYAN}Подготовка монтирования для Docker...${NC}"
     MOUNT_FLAGS=(
         -v "${REPO_ROOT}:/workspace"
         -v "${REPO_ROOT}/kubeconfig.yaml:/root/.kube/config:ro"
         -v "${HOME}/.cache/zakenak:/root/.cache/zakenak"
         --network host
     )
+
+    # Проверка конфигурационного файла
+    echo -e "${CYAN}Проверка конфигурационного файла zakenak.yaml...${NC}"
+    if [ ! -f "${REPO_ROOT}/zakenak.yaml" ]; then
+        echo -e "${RED}Ошибка: файл ${REPO_ROOT}/zakenak.yaml не найден${NC}"
+        exit 1
+    fi
+
+    # Вывод содержимого конфига для отладки
+    echo -e "${CYAN}Содержимое конфигурационного файла:${NC}"
+    cat "${REPO_ROOT}/zakenak.yaml"
+    
+    # Проверка синтаксиса YAML
+    echo -e "${CYAN}Проверка синтаксиса YAML...${NC}"
+    if ! python3 -c "import yaml; yaml.safe_load(open('${REPO_ROOT}/zakenak.yaml'))"; then
+        echo -e "${RED}Ошибка: некорректный синтаксис YAML в файле конфигурации${NC}"
+        exit 1
+    fi
 
     # Установка компонентов через zakenak в Docker
     echo -e "${CYAN}Запуск конвергентного развертывания через zakenak...${NC}"
@@ -171,11 +191,21 @@ install_components() {
         -e NVIDIA_VISIBLE_DEVICES=all \
         -e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
         -e KUBECONFIG=/root/.kube/config \
+        -e ZAKENAK_DEBUG=true \
         ghcr.io/i8megabit/zakenak:latest \
         converge \
         --config /workspace/zakenak.yaml \
         --kubeconfig /root/.kube/config
-    check_error "Ошибка развертывания компонентов"
+    
+    DEPLOY_STATUS=$?
+    if [ $DEPLOY_STATUS -ne 0 ]; then
+        echo -e "${RED}Ошибка при развертывании компонентов (код: $DEPLOY_STATUS)${NC}"
+        echo -e "${YELLOW}Проверьте следующие моменты:${NC}"
+        echo "1. Правильность синтаксиса YAML в zakenak.yaml"
+        echo "2. Доступность кластера Kubernetes"
+        echo "3. Наличие необходимых прав доступа"
+        check_error "Ошибка развертывания компонентов"
+    fi
 
     # Проверка статуса развертывания
     echo -e "${CYAN}Проверка статуса компонентов...${NC}"
