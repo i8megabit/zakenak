@@ -11,6 +11,10 @@ jobs:
   build:
     name: Build Binaries
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
     strategy:
       matrix:
         include:
@@ -113,16 +117,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push Docker Image
+        if: github.event_name != 'pull_request'
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
           docker build \
           --build-arg VERSION=${VERSION} \
           -t ghcr.io/${{ github.repository }}:${VERSION} \
           .
           docker push ghcr.io/${{ github.repository }}:${VERSION}
-
-            
-            if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            docker tag ghcr.io/${{ github.repository }}:${VERSION} ghcr.io/${{ github.repository }}:latest
-            docker push ghcr.io/${{ github.repository }}:latest
-            fi
+          
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          docker tag ghcr.io/${{ github.repository }}:${VERSION} ghcr.io/${{ github.repository }}:latest
+          docker push ghcr.io/${{ github.repository }}:latest
+          fi
