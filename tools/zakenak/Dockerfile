@@ -46,24 +46,34 @@ git config --global user.name "Zakenak"
 
 cd /workspace
 
-# Инициализация Git если нужно
+# Проверка и настройка Git репозитория
 if [ ! -d .git ]; then
     echo "Initializing new git repository..."
     git init
     git add .
     git commit -m "Initial commit by Zakenak"
     git branch -M main
-elif ! git rev-parse --verify main >/dev/null 2>&1; then
-    echo "Main branch not found, creating..."
-    current_branch=\$(git rev-parse --abbrev-ref HEAD)
-    if [ "\$current_branch" != "main" ]; then
-        git branch -M main
+else
+    echo "Git repository exists, ensuring correct branch..."
+    # Проверяем существование ветки main
+    if git rev-parse --verify main >/dev/null 2>&1; then
+        echo "Main branch exists, checking out..."
+        git checkout main || {
+            echo "Failed to checkout main, attempting to fix..."
+            # Сохраняем текущие изменения
+            git stash || true
+            git checkout -B main
+            git stash pop || true
+        }
+    else
+        echo "Main branch does not exist, creating..."
+        current_branch=\$(git rev-parse --abbrev-ref HEAD || echo "unknown")
+        git checkout -B main
     fi
 fi
 
-# Убеждаемся что мы на правильной ветке и сбрасываем upstream
-git checkout main
-git branch --unset-upstream || true
+# Сброс upstream если он установлен
+git branch --unset-upstream 2>/dev/null || true
 
 # Запуск основной команды
 exec /app/zakenak "\$@"
