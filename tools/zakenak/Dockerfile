@@ -44,21 +44,20 @@ git config --global init.defaultBranch main
 git config --global user.email "zakenak@local"
 git config --global user.name "Zakenak"
 
-# Переход в рабочую директорию
 cd /workspace
 
-# Проверка и инициализация Git
+# Инициализация Git если нужно
 if [ ! -d .git ]; then
     echo "Initializing new git repository..."
     git init
-    git checkout -b main
     git add .
     git commit -m "Initial commit by Zakenak"
+    git branch -M main
 elif ! git rev-parse --verify main >/dev/null 2>&1; then
     echo "Main branch not found, creating..."
-    current_branch=$(git rev-parse --abbrev-ref HEAD)
-    if [ "$current_branch" != "main" ]; then
-        git branch -m $current_branch main
+    current_branch=\$(git rev-parse --abbrev-ref HEAD)
+    if [ "\$current_branch" != "main" ]; then
+        git branch -M main
     fi
 fi
 
@@ -68,6 +67,7 @@ git checkout main
 # Запуск основной команды
 exec /app/zakenak "\$@"
 EOF
+
 
 
 RUN chmod +x /app/entrypoint.sh
