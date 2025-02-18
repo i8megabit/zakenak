@@ -38,3 +38,7 @@ export LINUX_MOUNTS=(
 	"/dev/nvidia-uvm:/dev/nvidia-uvm"
 	"/dev/nvidia-modeset:/dev/nvidia-modeset"
 )
+
+# Порты для кластера
+export INGRESS_HTTP_PORT=80
+export INGRESS_HTTPS_PORT=443

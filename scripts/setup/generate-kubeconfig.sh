@@ -20,24 +20,8 @@ check_error() {
 	fi
 }
 
-# Определение окружения
-is_wsl() {
-	grep -q "microsoft" /proc/version 2>/dev/null
-	return $?
-}
-
 # Создание базовой конфигурации кластера
 generate_kind_config() {
-	local mounts=()
-	
-	if is_wsl; then
-		echo "Generating WSL2 configuration..."
-		mounts=("${WSL_MOUNTS[@]}")
-	else
-		echo "Generating Linux configuration..."
-		mounts=("${LINUX_MOUNTS[@]}")
-	fi
-	
 	cat > "${REPO_ROOT}/kind-config.yaml" << EOF
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -50,11 +34,11 @@ nodes:
 	  kubeletExtraArgs:
 		node-labels: "ingress-ready=true,nvidia.com/gpu=present"
   extraPortMappings:
-  - containerPort: 80
-	hostPort: 80
+  - containerPort: ${INGRESS_HTTP_PORT}
+	hostPort: ${INGRESS_HTTP_PORT}
 	protocol: TCP
-  - containerPort: 443
-	hostPort: 443
+  - containerPort: ${INGRESS_HTTPS_PORT}
+	hostPort: ${INGRESS_HTTPS_PORT}
 	protocol: TCP
   extraMounts:
   # Путь к общим манифестам
@@ -90,9 +74,14 @@ get_cluster_data() {
 	check_error "Failed to get client key data"
 }
 
-
 # Создание kubeconfig
 generate_kubeconfig() {
+	# Принудительное создание/перезапись kubeconfig
+	if [ -f "${REPO_ROOT}/kubeconfig.yaml" ]; then
+		echo "Existing kubeconfig.yaml found, overwriting..."
+		rm -f "${REPO_ROOT}/kubeconfig.yaml"
+	fi
+
 	cat > "${REPO_ROOT}/kubeconfig.yaml" << EOF
 apiVersion: v1
 kind: Config
