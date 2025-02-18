@@ -124,6 +124,7 @@ func runConverge() error {
     // Создаем и настраиваем Git manager в начале
     gitManager := git.NewManager("/workspace")
     if err := gitManager.EnsureMainBranch(); err != nil {
+        log.Printf("Git initialization failed with details: %v", err)
         return fmt.Errorf("failed to ensure main branch: %w", err)
     }
     
