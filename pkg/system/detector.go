@@ -8,6 +8,21 @@ import (
 	"strings"
 )
 
+// Platform определяет тип платформы
+type Platform string
+
+const (
+	PlatformWSL    Platform = "wsl"
+	PlatformUbuntu Platform = "ubuntu"
+	PlatformOther  Platform = "other"
+)
+
+// KindVersion представляет версию Kind API
+type KindVersion struct {
+	API     string
+	Runtime string
+}
+
 // PortMapping определяет маппинг портов для Kind
 type PortMapping struct {
 	ContainerPort int
@@ -19,6 +34,7 @@ type PortMapping struct {
 type SystemInfo struct {
 	OS              string
 	Architecture    string
+	Platform        Platform
 	GPUAvailable    bool
 	CUDAVersion     string
 	WSLVersion      string
@@ -27,6 +43,48 @@ type SystemInfo struct {
 	WSLLibPath      string
 	RuntimePaths    []string
 	PortMappings    []PortMapping
+	KindVersion     KindVersion
+}
+
+// detectKindVersion определяет версию Kind API
+func detectKindVersion() KindVersion {
+	version := KindVersion{
+		API:     "v1alpha4", // значение по умолчанию
+		Runtime: "docker",
+	}
+
+	// Проверка версии kind
+	if out, err := exec.Command("kind", "version").Output(); err == nil {
+		versionStr := strings.TrimSpace(string(out))
+		// Если версия >= 0.20.0, используем более новую версию API
+		if strings.Contains(versionStr, "v0.20") || strings.Contains(versionStr, "v0.21") {
+			version.API = "v1beta1"
+		}
+	}
+
+	// Проверка container runtime
+	if out, err := exec.Command("docker", "info", "--format", "{{.DefaultRuntime}}").Output(); err == nil {
+		version.Runtime = strings.TrimSpace(string(out))
+	}
+
+	return version
+}
+
+// detectPlatform определяет текущую платформу
+func detectPlatform() Platform {
+	// Проверка WSL
+	if out, err := exec.Command("uname", "-r").Output(); err == nil {
+		if strings.Contains(strings.ToLower(string(out)), "microsoft") {
+			return PlatformWSL
+		}
+	}
+
+	// Проверка Ubuntu
+	if _, err := os.ReadFile("/etc/lsb-release"); err == nil {
+		return PlatformUbuntu
+	}
+
+	return PlatformOther
 }
 
 // Detect определяет системную информацию
@@ -34,10 +92,12 @@ func Detect() (*SystemInfo, error) {
 	info := &SystemInfo{
 		OS:           runtime.GOOS,
 		Architecture: runtime.GOARCH,
+		Platform:     detectPlatform(),
+		KindVersion:  detectKindVersion(),
 		PortMappings: []PortMapping{
 			{ContainerPort: 80, HostPort: 80, Protocol: "TCP"},
 			{ContainerPort: 443, HostPort: 443, Protocol: "TCP"},
-			{ContainerPort: 6443, HostPort: 6443, Protocol: "TCP"}, // Kubernetes API
+			{ContainerPort: 6443, HostPort: 6443, Protocol: "TCP"},
 		},
 	}
 
@@ -106,16 +166,32 @@ func Detect() (*SystemInfo, error) {
 
 // GenerateKindConfig генерирует конфигурацию для Kind кластера
 func (si *SystemInfo) GenerateKindConfig() string {
-	config := `kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
+	config := fmt.Sprintf(`kind: Cluster
+apiVersion: %s
 nodes:
 - role: control-plane
   kubeadmConfigPatches:
   - |
-	kind: InitConfiguration
-	nodeRegistration:
-	  kubeletExtraArgs:
-		node-labels: "ingress-ready=true"`
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "ingress-ready=true"`, si.KindVersion.API)
+
+	// Добавляем специфичные для платформы настройки
+	switch si.Platform {
+	case PlatformWSL:
+		config += `
+  extraMounts:
+  - hostPath: /usr/lib/wsl
+    containerPath: /usr/lib/wsl
+  - hostPath: /tmp
+    containerPath: /tmp`
+	case PlatformUbuntu:
+		config += `
+  extraMounts:
+  - hostPath: /var/run/docker.sock
+    containerPath: /var/run/docker.sock`
+	}
 
 	if si.GPUAvailable {
 		config += `,nvidia.com/gpu=present`
@@ -145,13 +221,16 @@ nodes:
 		}
 	}
 
-	// Стандартные порты
-	config += `
-  extraPortMappings:
-  - containerPort: 80
-	hostPort: 80
-  - containerPort: 443
-	hostPort: 443`
+	// Добавляем порты
+	if len(si.PortMappings) > 0 {
+		config += "\n  extraPortMappings:"
+		for _, port := range si.PortMappings {
+			config += fmt.Sprintf(`
+  - containerPort: %d
+    hostPort: %d
+    protocol: %s`, port.ContainerPort, port.HostPort, port.Protocol)
+		}
+	}
 
 	return config
 }
