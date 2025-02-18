@@ -11,9 +11,16 @@ jobs:
   build:
     name: Build Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
       - name: Set up Go
         uses: actions/setup-go@v5
         with:

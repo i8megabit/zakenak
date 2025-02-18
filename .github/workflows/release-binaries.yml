@@ -9,6 +9,10 @@ jobs:
   build:
     name: Build Release Binaries
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
     strategy:
       matrix:
         include:
@@ -26,6 +30,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
       - name: Set up Go
         uses: actions/setup-go@v5
         with:

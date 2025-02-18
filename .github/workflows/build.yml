@@ -10,12 +10,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
       id-token: write
     steps:
-    - uses: actions/checkout@v4
-
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        persist-credentials: true
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
@@ -36,10 +39,12 @@ jobs:
       working-directory: ./tools/zakenak
       run: |
         go mod tidy
+        mkdir -p build
 
     - name: Build Binary
       working-directory: ./tools/zakenak
-      run: make build
+      run: |
+        go build -o build/zakenak ./cmd/zakenak
       
     - name: Build Docker image
       uses: docker/build-push-action@v5
@@ -57,7 +62,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: zakenak
-        path: tools/zakenak/bin/zakenak
+        path: tools/zakenak/build/zakenak
         compression-level: 9
         retention-days: 5
 
