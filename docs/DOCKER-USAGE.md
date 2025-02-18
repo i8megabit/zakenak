@@ -11,106 +11,73 @@
 Should Harbour?	No.
 ```
 
+## Содержание
+1. [Подготовка окружения](#подготовка-окружения)
+2. [Использование образа](#использование-образа)
+3. [Конфигурация](#конфигурация)
+4. [GPU оптимизация](#gpu-оптимизация)
+5. [Примеры использования](#примеры-использования)
+6. [Переменные окружения](#переменные-окружения)
+7. [Монтирование томов](#монтирование-томов)
+8. [Безопасность](#безопасность)
+9. [Устранение неполадок](#устранение-неполадок)
+
 ## Подготовка окружения
 
-### Требования
-- Windows 11 Pro/Enterprise
-- WSL2 с Ubuntu 22.04
-- Docker Desktop с WSL2 бэкендом
+### Системные требования
+- Windows 11 Pro/Enterprise или Linux
+- WSL2 с Ubuntu 22.04 (для Windows)
+- Docker Desktop с WSL2 бэкендом (для Windows)
 - NVIDIA Container Toolkit
 - CUDA Toolkit 12.8+
 - Минимум 16GB RAM
 - NVIDIA GPU (Compute Capability 7.0+)
 
-### Автоматическая установка
-Для автоматической установки и настройки Docker и NVIDIA Container Toolkit используйте скрипт `docker-setup.sh`:
-
+### Быстрая установка
 ```bash
-# Клонирование репозитория
 git clone https://github.com/i8megabit/zakenak
 cd zakenak
-
-# Запуск скрипта установки
 sudo ./scripts/setup/docker-setup.sh
 ```
 
-Скрипт выполняет следующие действия:
-- Проверяет системные требования (RAM, GPU)
-- Определяет окружение (WSL2/native Linux)
-- Устанавливает необходимые зависимости
+Скрипт автоматически:
+- Проверяет системные требования
+- Устанавливает зависимости
 - Настраивает NVIDIA Container Toolkit
 - Проверяет корректность установки
 
-#### Особенности работы скрипта
-- В WSL2 пропускает установку Docker (должен быть установлен через Docker Desktop)
-- В native Linux устанавливает Docker и добавляет пользователя в группу docker
-- Автоматически настраивает NVIDIA Container Runtime
-- Имеет встроенную систему повторных попыток при сбоях
-- Предоставляет подробный вывод о процессе установки
-
-#### Проверка установки
-После завершения работы скрипта, проверьте установку:
+### Проверка установки
 ```bash
-# Проверка Docker
+# Базовая проверка Docker
 docker info
 
-# Проверка NVIDIA Container Toolkit
+# Проверка GPU поддержки
 docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
 ```
 
-### Настройка NVIDIA Container Toolkit вручную
-Если вы предпочитаете ручную установку, выполните следующие шаги:
-
-```bash
-# Установка необходимых пакетов
-sudo apt-get update
-sudo apt-get install -y wget curl
-
-# Настройка keyring и репозитория
-curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
-
-curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
-    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
-
-# Установка toolkit
-sudo apt-get update
-sudo apt-get install -y nvidia-container-toolkit
-sudo nvidia-ctk runtime configure --runtime=docker
-sudo systemctl restart docker
-
-# Проверка установки
-sudo docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
-```
-
-## Использование официального образа
+## Использование образа
 
 ### Получение образа
 ```bash
-# Последняя версия
-docker pull ghcr.io/i8megabit/zakenak:latest
-
-# Конкретная версия (рекомендуется)
+# Рекомендуемый способ (фиксированная версия)
 docker pull ghcr.io/i8megabit/zakenak:1.0.0
 
-# Проверка GPU поддержки
-docker run --rm --gpus all ghcr.io/i8megabit/zakenak:1.0.0 nvidia-smi
+# Последняя версия (не рекомендуется для production)
+docker pull ghcr.io/i8megabit/zakenak:latest
 ```
 
 ### Базовое использование
 
-#### 1. Запуск с локальной конфигурацией
 ```bash
+# Стандартный запуск
 docker run --gpus all \
     -v $(pwd):/workspace \
     -v ~/.kube:/root/.kube \
     -v ~/.cache/zakenak:/root/.cache/zakenak \
     --network host \
     ghcr.io/i8megabit/zakenak:1.0.0 converge
-```
 
-#### 2. Запуск с указанием конфигурации
-```bash
+# Запуск с дополнительными параметрами
 docker run --gpus all \
     -v $(pwd):/workspace \
     -v ~/.kube:/root/.kube \
@@ -129,14 +96,12 @@ version: "1.0"
 project: myapp
 environment: prod
 
-# Настройки registry
 registry:
   url: registry.local
   username: ${REGISTRY_USER}
   password: ${REGISTRY_PASS}
   insecure: false
 
-# Настройки развертывания
 deploy:
   namespace: prod
   charts:
@@ -145,16 +110,11 @@ deploy:
       values:
         - values.yaml
         - values-prod.yaml
-    - name: local-ca
-      path: ./helm-charts/local-ca
     - name: ollama
       path: ./helm-charts/ollama
       values:
         - values-gpu.yaml
-    - name: open-webui
-      path: ./helm-charts/open-webui
 
-# Настройки сборки
 build:
   context: .
   dockerfile: Dockerfile
@@ -168,11 +128,7 @@ build:
     capabilities:
       - compute
       - utility
-    options:
-      - "device=all"
-      - "require=cuda>=12.0"
 
-# Настройки безопасности
 security:
   rbac:
     enabled: true
@@ -186,40 +142,23 @@ security:
 
 ## GPU оптимизация
 
-### Настройка памяти GPU
+### Настройка производительности
 ```bash
+# Ограничение памяти GPU
 docker run --gpus all \
-    -e NVIDIA_VISIBLE_DEVICES=all \
-    -e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
     -e GPU_MEMORY_FRACTION=0.8 \
     ghcr.io/i8megabit/zakenak:1.0.0 converge
-```
 
-### Multi-GPU конфигурация
-```bash
-# Использование конкретных GPU
+# Multi-GPU конфигурация
 docker run --gpus '"device=0,1"' \
-    -v $(pwd):/workspace \
-    ghcr.io/i8megabit/zakenak:1.0.0 converge
-
-# Распределение нагрузки
-docker run --gpus all \
     -e GPU_SPLIT_MODE="balanced" \
-    -e GPU_MEMORY_FRACTION=0.7 \
     ghcr.io/i8megabit/zakenak:1.0.0 converge
 ```
 
 ## Примеры использования
 
-### 1. Установка компонентов
+### Развертывание компонентов
 ```bash
-# Установка cert-manager
-docker run --gpus all \
-    -v $(pwd):/workspace \
-    -v ~/.kube:/root/.kube \
-    ghcr.io/i8megabit/zakenak:1.0.0 \
-    deploy --chart ./helm-charts/cert-manager
-
 # Установка Ollama с GPU
 docker run --gpus all \
     -v $(pwd):/workspace \
@@ -229,33 +168,18 @@ docker run --gpus all \
     --values ./helm-charts/ollama/values-gpu.yaml
 ```
 
-### 2. Мониторинг GPU
+### Мониторинг
 ```bash
-# Мониторинг использования GPU
+# GPU метрики
 docker run --gpus all \
     ghcr.io/i8megabit/zakenak:1.0.0 \
     nvidia-smi dmon -s pucvmet
 
-# Проверка памяти GPU
-docker run --gpus all \
-    ghcr.io/i8megabit/zakenak:1.0.0 \
-    nvidia-smi --query-gpu=memory.used,memory.total --format=csv
-```
-
-### 3. Отладка
-```bash
-# Включение отладочного режима
+# Отладка
 docker run --gpus all \
     -v $(pwd):/workspace \
     -e ZAKENAK_DEBUG=true \
-    -e NVIDIA_DEBUG=1 \
     ghcr.io/i8megabit/zakenak:1.0.0 converge
-
-# Проверка конфигурации
-docker run --gpus all \
-    -v $(pwd):/workspace \
-    ghcr.io/i8megabit/zakenak:1.0.0 \
-    validate --config /workspace/zakenak.yaml
 ```
 
 ## Переменные окружения
@@ -263,36 +187,24 @@ docker run --gpus all \
 | Переменная | Описание | По умолчанию |
 |------------|-----------|--------------|
 | `KUBECONFIG` | Путь к kubeconfig | `~/.kube/config` |
-| `ZAKENAK_DEBUG` | Включение отладки | `false` |
-| `NVIDIA_VISIBLE_DEVICES` | GPU устройства | `all` |
-| `NVIDIA_DRIVER_CAPABILITIES` | Возможности драйвера | `compute,utility` |
-| `GPU_MEMORY_FRACTION` | Доля памяти GPU | `0.9` |
-| `GPU_SPLIT_MODE` | Режим разделения GPU | `exclusive` |
-| `REGISTRY_USER` | Пользователь registry | - |
-| `REGISTRY_PASS` | Пароль registry | - |
+| `ZAKENAK_DEBUG` | Режим отладки | `false` |
+| `NVIDIA_VISIBLE_DEVICES` | Доступные GPU | `all` |
+| `GPU_MEMORY_FRACTION` | Лимит памяти GPU | `0.9` |
+| `GPU_SPLIT_MODE` | Режим Multi-GPU | `exclusive` |
 
 ## Монтирование томов
 
-### Обязательные тома
-- `/workspace`: Рабочая директория
-- `~/.kube`: Конфигурация Kubernetes
-
-### Опциональные тома
-- `~/.cache/zakenak`: Кэш для ускорения работы
-- `/var/run/docker.sock`: Доступ к Docker daemon
-- `/etc/nvidia`: Конфигурация NVIDIA
+### Основные точки монтирования
+- `/workspace`: Рабочая директория (обязательно)
+- `~/.kube`: Kubernetes конфигурация (обязательно)
+- `~/.cache/zakenak`: Кэш (опционально)
+- `/var/run/docker.sock`: Docker daemon (опционально)
 
 ## Безопасность
 
-### Рекомендации
-1. Использовать фиксированные версии образов
-2. Применять принцип минимальных привилегий
-3. Изолировать сетевой доступ
-4. Проверять целостность образов
-5. Регулярно обновлять компоненты
-
-### Пример безопасного запуска
+### Лучшие практики
 ```bash
+# Безопасный запуск
 docker run --gpus all \
     --read-only \
     --security-opt=no-new-privileges \
@@ -306,46 +218,17 @@ docker run --gpus all \
 
 ## Устранение неполадок
 
-### GPU проблемы
-1. Проверка доступности GPU:
+### Диагностика GPU
 ```bash
-docker run --gpus all nvidia/cuda:12.8.0-base nvidia-smi
-```
-
-2. Проверка драйверов:
-```bash
+# Проверка GPU статуса
 docker run --gpus all \
     ghcr.io/i8megabit/zakenak:1.0.0 \
     nvidia-smi -q
-```
 
-3. Проверка CUDA:
-```bash
-docker run --gpus all \
-    ghcr.io/i8megabit/zakenak:1.0.0 \
-    nvidia-smi -L
-```
-
-### Общие проблемы
-1. Проверка конфигурации:
-```bash
+# Проверка конфигурации
 docker run -v $(pwd):/workspace \
     ghcr.io/i8megabit/zakenak:1.0.0 \
     validate
-```
-
-2. Проверка прав доступа:
-```bash
-docker run -v $(pwd):/workspace \
-    ghcr.io/i8megabit/zakenak:1.0.0 \
-    check-permissions
-```
-
-3. Диагностика сети:
-```bash
-docker run --network host \
-    ghcr.io/i8megabit/zakenak:1.0.0 \
-    connectivity-test
 ```
 
 ```plain text
@@ -358,3 +241,4 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
 PURPOSE AND NONINFRINGEMENT.
 ```
+
