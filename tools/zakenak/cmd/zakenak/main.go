@@ -14,20 +14,23 @@ import (
     "path/filepath"
 
     "github.com/spf13/cobra"
-    "github.com/i8megabit/zakenak/pkg/git"
-    "github.com/i8megabit/zakenak/pkg/banner"
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/tools/clientcmd"
+
+    "github.com/i8megabit/zakenak/pkg/banner"
+    "github.com/i8megabit/zakenak/pkg/build"
+    "github.com/i8megabit/zakenak/pkg/cluster"
     "github.com/i8megabit/zakenak/pkg/config"
     "github.com/i8megabit/zakenak/pkg/converge"
-    "github.com/i8megabit/zakenak/pkg/build"
+    "github.com/i8megabit/zakenak/pkg/git"
     "github.com/i8megabit/zakenak/pkg/state"
-    "github.com/i8megabit/zakenak/pkg/cluster"
 )
 
 var (
-    kubeconfig string
+    // Version содержит версию приложения, устанавливается при сборке
+    Version = "dev"
 
+    kubeconfig string
     namespace  string
     configPath string
 )
