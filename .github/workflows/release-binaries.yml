@@ -30,23 +30,23 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
-      - name: Initialize Go Module
+      - name: Setup Go workspace
         run: |
-          if [ ! -f go.mod ]; then
           cd ./tools/zakenak
-          go mod init github.com/eberil/zakenak
           go mod tidy
-          fi
       - name: Build Binary
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
+        working-directory: ./tools/zakenak
         run: |
-          OUTPUT="./tools/zakenak/bin/zakenak-${{ matrix.os }}-${{ matrix.arch }}"
+          mkdir -p bin
+          OUTPUT="bin/zakenak-${{ matrix.os }}-${{ matrix.arch }}"
           if [ "${{ matrix.os }}" = "windows" ]; then
-            OUTPUT="${OUTPUT}.exe"
+          OUTPUT="${OUTPUT}.exe"
           fi
-            go build -o "${OUTPUT}" -ldflags="-X main.Version=${GITHUB_REF#refs/tags/}" ./tools/zakenak/cmd/zakenak
+          go build -o "${OUTPUT}" -ldflags="-X main.Version=${GITHUB_REF#refs/tags/}" ./cmd/zakenak
+
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
