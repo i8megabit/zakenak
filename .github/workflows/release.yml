@@ -18,6 +18,13 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
+      - name: Initialize Go Module
+        run: |
+          if [ ! -f go.mod ]; then
+          cd ./tools/zakenak 
+          go mod init github.com/eberil/zakenak
+          go mod tidy
+          fi
       - name: Build
         run: |
           make build			

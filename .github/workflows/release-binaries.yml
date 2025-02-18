@@ -30,13 +30,13 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
-      - name: Install CUDA Dependencies
-        if: matrix.os == 'linux'
+      - name: Initialize Go Module
         run: |
-          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
-          sudo dpkg -i cuda-keyring_1.1-1_all.deb
-          sudo apt-get update
-          sudo apt-get -y install cuda-toolkit-12-8
+          if [ ! -f go.mod ]; then
+          cd ./tools/zakenak
+          go mod init github.com/eberil/zakenak
+          go mod tidy
+          fi
       - name: Build Binary
         env:
           GOOS: ${{ matrix.os }}
@@ -46,7 +46,7 @@ jobs:
           if [ "${{ matrix.os }}" = "windows" ]; then
             OUTPUT="${OUTPUT}.exe"
           fi
-          go build -o "${OUTPUT}" -ldflags="-X main.Version=${GITHUB_REF#refs/tags/}" ./tools/zakenak/cmd/zakenak
+            go build -o "${OUTPUT}" -ldflags="-X main.Version=${GITHUB_REF#refs/tags/}" ./tools/zakenak/cmd/zakenak
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
