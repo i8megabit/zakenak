@@ -26,8 +26,11 @@ func NewFileStateManager(path string) *FileStateManager {
 func (m *FileStateManager) Load() (*State, error) {
     m.mu.RLock()
     defer m.mu.RUnlock()
+    return m.loadWithoutLock()
+}
 
-    // Create default state if file doesn't exist
+// loadWithoutLock загружает состояние без блокировки
+func (m *FileStateManager) loadWithoutLock() (*State, error) {
     if _, err := os.Stat(m.path); os.IsNotExist(err) {
         return &State{
             Version:    "1.0.0",
@@ -39,7 +42,7 @@ func (m *FileStateManager) Load() (*State, error) {
             },
             GPU: GPUState{
                 Enabled: true,
-                Driver: "auto",
+                Driver:  "auto",
             },
         }, nil
     }
@@ -61,7 +64,11 @@ func (m *FileStateManager) Load() (*State, error) {
 func (m *FileStateManager) Save(state *State) error {
     m.mu.Lock()
     defer m.mu.Unlock()
+    return m.saveWithoutLock(state)
+}
 
+// saveWithoutLock сохраняет состояние без блокировки
+func (m *FileStateManager) saveWithoutLock(state *State) error {
     // Обновляем время последнего обновления
     state.LastUpdate = time.Now()
 
@@ -93,16 +100,13 @@ func (m *FileStateManager) Save(state *State) error {
 
 // Update обновляет состояние атомарно
 func (m *FileStateManager) Update(fn func(*State) error) error {
-    m.mu.Lock()
-    defer m.mu.Unlock()
-
     // Create state directory if it doesn't exist
     if err := os.MkdirAll(filepath.Dir(m.path), 0755); err != nil {
         return fmt.Errorf("failed to create state directory: %w", err)
     }
 
-    // Load or create initial state
-    state, err := m.Load()
+    // First load state without lock
+    state, err := m.loadWithoutLock()
     if err != nil {
         return err
     }
@@ -112,6 +116,9 @@ func (m *FileStateManager) Update(fn func(*State) error) error {
         return err
     }
 
-    // Save updated state
-    return m.Save(state)
+    // Now acquire write lock only for save
+    m.mu.Lock()
+    defer m.mu.Unlock()
+    
+    return m.saveWithoutLock(state)
 }
