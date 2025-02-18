@@ -5,6 +5,13 @@ import (
     "time"
 )
 
+// StateManager определяет интерфейс для управления состоянием
+type StateManager interface {
+    Load() (*State, error)
+    Save(*State) error
+    Update(func(*State) error) error
+}
+
 // State представляет текущее состояние системы
 type State struct {
     Version     string                 `json:"version"`     // Версия формата состояния
