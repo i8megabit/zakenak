@@ -9,6 +9,8 @@ export NC='\033[0m'
 
 # Определение пути к директории скрипта
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
 
 # Установка прав на исполнение для discover.sh
 chmod +x "${SCRIPT_DIR}/discover.sh"
@@ -23,6 +25,8 @@ fi
 
 # Пути
 export KUBECONFIG="${HOME}/.kube/config"
+export GPU_RESTRICT_PROFILE="${REPO_ROOT}/config/gpu/gpu-security-profile.yaml"
+
 
 # Kubernetes конфигурация
 export CLUSTER_NAME="kind-zakenak"
