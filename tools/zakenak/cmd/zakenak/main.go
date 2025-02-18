@@ -8,22 +8,29 @@ package main
 import (
     "context"
     "fmt"
+    "log"
     "os"
+    "os/exec"
     "path/filepath"
-    
+
     "github.com/spf13/cobra"
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/tools/clientcmd"
+
+    "github.com/i8megabit/zakenak/pkg/banner"
+    "github.com/i8megabit/zakenak/pkg/build"
+    "github.com/i8megabit/zakenak/pkg/cluster"
     "github.com/i8megabit/zakenak/pkg/config"
     "github.com/i8megabit/zakenak/pkg/converge"
-    "github.com/i8megabit/zakenak/pkg/build"
+    "github.com/i8megabit/zakenak/pkg/git"
     "github.com/i8megabit/zakenak/pkg/state"
-    "github.com/i8megabit/zakenak/pkg/banner"
 )
 
 var (
-    kubeconfig string
+    // Version содержит версию приложения, устанавливается при сборке
+    Version = "dev"
 
+    kubeconfig string
     namespace  string
     configPath string
 )
@@ -45,6 +52,9 @@ func main() {
         newBuildCmd(),
         newDeployCmd(),
         newCleanCmd(),
+        newStatusCmd(),
+        newSetupCmd(),
+        newClusterCmd(),
     )
 
     if err := rootCmd.Execute(); err != nil {
@@ -115,12 +125,18 @@ func runConverge() error {
     banner.PrintDeploy()
     ctx := context.Background()
     
+    // Создаем и настраиваем Git manager в начале
+    gitManager := git.NewManager("/workspace")
+    if err := gitManager.EnsureMainBranch(); err != nil {
+        log.Printf("Git initialization failed with details: %v", err)
+        return fmt.Errorf("failed to ensure main branch: %w", err)
+    }
+    
     // Создаем клиент Kubernetes
     clientset, err := createKubernetesClient(kubeconfig)
     if err != nil {
         return fmt.Errorf("error creating kubernetes client: %w", err)
     }
-
 
     // Загружаем конфигурацию из файла
     cfg, err := config.LoadConfig(configPath)
@@ -137,10 +153,20 @@ func runConverge() error {
     // Запускаем процесс конвергенции
     if err := manager.Converge(ctx); err != nil {
         banner.PrintError()
+        // Восстанавливаем ветку даже при ошибке
+        if restoreErr := gitManager.RestoreOriginalBranch(); restoreErr != nil {
+            log.Printf("Warning: failed to restore original git branch: %v", restoreErr)
+        }
         return fmt.Errorf("convergence failed: %w", err)
     }
 
     banner.PrintSuccess()
+
+    // Восстанавливаем исходную ветку Git и удаляем main после успешной конвергенции
+    if err := gitManager.RestoreOriginalBranch(); err != nil {
+        log.Printf("Warning: failed to restore original git branch: %v", err)
+    }
+
     return nil
 }
 
@@ -194,5 +220,89 @@ func runDeploy() error {
 
 func runClean() error {
     // TODO: Имплементация очистки
+    return nil
+}
+
+func newStatusCmd() *cobra.Command {
+    cmd := &cobra.Command{
+        Use:   "status",
+        Short: "Проверить статус развернутых компонентов",
+        RunE: func(cmd *cobra.Command, args []string) error {
+            return runStatus()
+        },
+    }
+    return cmd
+}
+
+func newSetupCmd() *cobra.Command {
+    var (
+        noRemove    bool
+        noGenerate  bool
+        noRecreate  bool
+        workDir     string
+    )
+
+    cmd := &cobra.Command{
+        Use:   "setup",
+        Short: "Настройка кластера Kubernetes",
+        RunE: func(cmd *cobra.Command, args []string) error {
+            if workDir == "" {
+                var err error
+                workDir, err = os.Getwd()
+                if err != nil {
+                    return fmt.Errorf("failed to get working directory: %w", err)
+                }
+            }
+
+            manager := cluster.NewManager(workDir,
+                cluster.WithNoRemove(noRemove),
+                cluster.WithNoGenerate(noGenerate),
+                cluster.WithNoRecreate(noRecreate))
+
+            if err := manager.Setup(cmd.Context()); err != nil {
+                banner.PrintError()
+                return fmt.Errorf("setup failed: %w", err)
+            }
+
+            banner.PrintSuccess()
+            return nil
+        },
+    }
+
+    cmd.Flags().BoolVar(&noRemove, "no-remove", false, "не удалять ресурсы при ошибке")
+    cmd.Flags().BoolVar(&noGenerate, "no-generate", false, "не генерировать конфигурацию")
+    cmd.Flags().BoolVar(&noRecreate, "no-recreate", false, "не пересоздавать существующий кластер")
+    cmd.Flags().StringVar(&workDir, "workdir", "", "рабочая директория")
+
+    return cmd
+}
+
+
+
+
+func runStatus() error {
+    banner.PrintZakenak()
+
+    // Проверка статуса компонентов в namespace prod
+    components := []string{
+        "deployment/cert-manager",
+        "deployment/local-ca", 
+        "deployment/ollama",
+        "deployment/open-webui",
+        "deployment/sidecar-injector",
+    }
+
+    fmt.Println("\nПроверка статуса компонентов...")
+
+    for _, component := range components {
+        // Проверяем статус через kubectl
+        if err := exec.Command("kubectl", "get", component, "-n", "prod").Run(); err != nil {
+            banner.PrintError()
+            return fmt.Errorf("компонент %s не готов: %v", component, err)
+        }
+        fmt.Printf("✓ %s работает\n", component)
+    }
+
+    banner.PrintSuccess()
     return nil
 }

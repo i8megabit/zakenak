@@ -1,0 +1,132 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - develop
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build Binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+          - os: linux
+            arch: arm64
+          - os: windows
+            arch: amd64
+          - os: darwin
+            arch: amd64
+          - os: darwin
+            arch: arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set version
+        id: version
+        run: |
+            if [[ $GITHUB_REF == refs/tags/* ]]; then
+              echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+              echo "RELEASE_TYPE=release" >> $GITHUB_ENV
+            else
+              COMMIT_SHA=$(git rev-parse --short HEAD)
+              echo "VERSION=develop-${COMMIT_SHA}" >> $GITHUB_ENV
+              echo "RELEASE_TYPE=develop" >> $GITHUB_ENV
+            fi
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Setup Directory Structure
+        run: |
+          mkdir -p cmd/zakenak
+          mkdir -p pkg/{banner,build,config,converge,helm,kind,state}
+          mkdir -p build
+
+      - name: Initialize Go module
+        run: |
+          go mod init github.com/i8megabit/zakenak
+          go mod tidy
+
+      - name: Build Binary
+        working-directory: .
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+        run: |
+          mkdir -p build
+          OUTPUT="build/zakenak-${{ matrix.os }}-${{ matrix.arch }}"
+          if [ "${{ matrix.os }}" = "windows" ]; then
+          OUTPUT="${OUTPUT}.exe"
+          fi
+          go build -o "${OUTPUT}" -ldflags="-X main.Version=${VERSION}" ./cmd/zakenak
+
+      - name: Test Binary
+        if: matrix.os == 'linux' && matrix.arch == 'amd64'
+        run: |
+          chmod +x build/zakenak-linux-amd64
+          # Базовое тестирование версии
+          ./build/zakenak-linux-amd64 --version
+          # Проверка основных команд
+          ./build/zakenak-linux-amd64 --help
+          # Проверка конфигурации
+          ./build/zakenak-linux-amd64 --config test-config.yaml || true
+
+      - name: Upload Development Artifacts
+        uses: actions/upload-artifact@v4
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        with:
+          name: zakenak-develop-${{ matrix.os }}-${{ matrix.arch }}
+          path: build/zakenak-*
+          retention-days: 5
+          compression-level: 9
+
+      - name: Upload Release Artifacts
+        uses: actions/upload-artifact@v4
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        with:
+          name: zakenak-release-${{ matrix.os }}-${{ matrix.arch }}
+          path: build/zakenak-*
+          retention-days: 90
+          compression-level: 9
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: build/zakenak-*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        if: github.event_name != 'pull_request'
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+          docker build \
+          --build-arg VERSION=${VERSION} \
+          -t ghcr.io/${{ github.repository }}:${VERSION} \
+          .
+          docker push ghcr.io/${{ github.repository }}:${VERSION}
+          
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          docker tag ghcr.io/${{ github.repository }}:${VERSION} ghcr.io/${{ github.repository }}:latest
+          docker push ghcr.io/${{ github.repository }}:latest
+          fi

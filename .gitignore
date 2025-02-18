@@ -29,6 +29,7 @@ Thumbs.db
 .kube/
 kubeconfig
 kubeconfig.yaml
+kind-config.yaml
 
 # Helm
 charts/*/charts
@@ -54,8 +55,10 @@ tools/k8s-kind-setup/setup.sh
 tools/k8s-kind-setup/setup-gpu.sh
 
 # Configuration files
-PROMPT.md
+#PROMPT.md
 
 # CodeStory AI
-.aide-server/
-.codestoryai/
+#.aide-server/
+#.codestoryai/
+
+/zakenak.yaml
