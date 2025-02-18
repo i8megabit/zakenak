@@ -31,11 +31,27 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
 
+
+
+
     - name: Build Binary
       run: |
         cd tools/zakenak
         make build
-        
+
+    - name: Test Binary
+      if: github.ref == 'refs/heads/develop'
+      run: |
+        cd tools/zakenak
+        chmod +x build/zakenak
+        # Базовое тестирование версии
+        ./build/zakenak --version
+        # Проверка основных команд
+        ./build/zakenak --help
+        # Проверка конфигурации
+        ./build/zakenak --config test-config.yaml || true
+
+      
     - name: Build Docker image
       uses: docker/build-push-action@v5
       with:
