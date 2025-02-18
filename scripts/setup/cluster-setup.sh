@@ -135,50 +135,39 @@ install_components() {
     # Создание namespace
     kubectl create namespace prod --dry-run=client -o yaml | kubectl apply -f -
     
-    # Установка CRDs cert-manager
-    echo -e "${CYAN}Установка CRDs cert-manager...${NC}"
-    kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.crds.yaml
-    check_error "Ошибка установки CRDs cert-manager"
-    
-    # Ожидание готовности CRDs
-    echo -e "${CYAN}Ожидание готовности CRDs...${NC}"
-    sleep 10
-    
-    # Сборка зависимостей Helm чартов
-    echo -e "${CYAN}Сборка зависимостей Helm чартов...${NC}"
-    helm dependency build "${REPO_ROOT}/helm-charts/cert-manager"
-    check_error "Ошибка сборки зависимостей cert-manager"
-    
-    # Установка компонентов через Helm
-    local components=(
-        "cert-manager"
-        "local-ca"
-        "ollama"
-        "open-webui"
+    # Подготовка монтирования для Docker
+    MOUNT_FLAGS=(
+        -v "$(pwd):/workspace"
+        -v "${HOME}/.kube:/root/.kube"
+        -v "${HOME}/.cache/zakenak:/root/.cache/zakenak"
+        --network host
     )
-    
-    for component in "${components[@]}"; do
-        echo -e "${CYAN}Установка ${component}...${NC}"
-        helm upgrade --install ${component} \
-            "${REPO_ROOT}/helm-charts/${component}" \
-            --namespace prod \
-            --values "${REPO_ROOT}/helm-charts/${component}/values.yaml"
-        check_error "Ошибка установки ${component}"
-        
-        # Ожидание готовности pods
-        echo -e "${CYAN}Ожидание готовности pods ${component}...${NC}"
-        kubectl wait --for=condition=Ready pods -l app=${component} -n prod --timeout=300s
-        check_error "Pods ${component} не готовы"
-        
-        # Дополнительное ожидание для cert-manager
-        if [ "${component}" == "cert-manager" ]; then
-            echo -e "${CYAN}Ожидание готовности webhook cert-manager...${NC}"
-            kubectl wait --for=condition=Ready pods -l app.kubernetes.io/component=webhook -n prod --timeout=300s
-            check_error "Webhook cert-manager не готов"
-            sleep 10
-        fi
-    done
+
+    # Установка компонентов через zakenak в Docker
+    echo -e "${CYAN}Запуск конвергентного развертывания через zakenak...${NC}"
+    docker run --gpus all \
+        "${MOUNT_FLAGS[@]}" \
+        -e NVIDIA_VISIBLE_DEVICES=all \
+        -e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+        ghcr.io/i8megabit/zakenak:latest \
+        converge \
+        --config /workspace/zakenak.yaml
+    check_error "Ошибка развертывания компонентов"
+
+    # Проверка статуса развертывания
+    echo -e "${CYAN}Проверка статуса компонентов...${NC}"
+    docker run --gpus all \
+        "${MOUNT_FLAGS[@]}" \
+        ghcr.io/i8megabit/zakenak:latest \
+        status
+    check_error "Ошибка проверки статуса компонентов"
+
+    # Ожидание готовности всех компонентов
+    echo -e "${CYAN}Ожидание готовности всех компонентов...${NC}"
+    kubectl wait --for=condition=Ready pods --all -n prod --timeout=300s
+    check_error "Компоненты не готовы"
 }
+
 
 # Функция проверки установки
 verify_installation() {
