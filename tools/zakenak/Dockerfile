@@ -38,18 +38,37 @@ COPY <<EOF /app/entrypoint.sh
 #!/bin/bash
 set -e
 
-# Настройка Git
-git config --global --add safe.directory /workspace
+# Настройка Git глобально
+git config --global --add safe.directory "*"
+git config --global init.defaultBranch main
+git config --global user.email "zakenak@local"
+git config --global user.name "Zakenak"
+
+# Переход в рабочую директорию
 cd /workspace
 
-# Инициализация Git если нужно
+# Проверка и инициализация Git
 if [ ! -d .git ]; then
+    echo "Initializing new git repository..."
     git init
-    git config user.email "zakenak@local"
-    git config user.name "Zakenak"
     git add .
-    git commit -m "Initial commit"
+    git commit -m "Initial commit by Zakenak"
+elif ! git rev-parse --git-dir > /dev/null 2>&1; then
+    echo "Git repository corrupted, reinitializing..."
+    rm -rf .git
+    git init
+    git add .
+    git commit -m "Reinitialized by Zakenak"
 fi
+
+# Проверка и создание main ветки если она отсутствует
+if ! git rev-parse --verify main >/dev/null 2>&1; then
+    echo "Creating and switching to main branch..."
+    git checkout -b main
+fi
+
+# Убеждаемся что мы на правильной ветке
+git checkout main
 
 # Запуск основной команды
 exec /app/zakenak "\$@"

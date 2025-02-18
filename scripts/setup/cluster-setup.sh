@@ -239,33 +239,40 @@ install_components() {
     # Ensure KUBECONFIG is set to the correct path
     export KUBECONFIG="${REPO_ROOT}/kubeconfig.yaml"
     
-    # Подготовка монтирования для Docker с правильными правами
+    # Подготовка монтирования для Docker
     echo -e "${CYAN}Подготовка монтирования для Docker...${NC}"
     MOUNT_FLAGS=(
         -v "${REPO_ROOT}:/workspace"
         -v "${REPO_ROOT}/kubeconfig.yaml:/root/.kube/config:ro"
         -v "${HOME}/.cache/zakenak:/root/.cache/zakenak"
         --network host
-        --user "$(id -u):$(id -g)"
     )
 
-    # Инициализация Git репозитория если необходимо
-    if [ ! -d "${REPO_ROOT}/.git" ]; then
-        echo -e "${CYAN}Инициализация Git репозитория...${NC}"
-        git init "${REPO_ROOT}"
-        git -C "${REPO_ROOT}" config user.email "zakenak@local"
-        git -C "${REPO_ROOT}" config user.name "Zakenak"
-        git -C "${REPO_ROOT}" add .
-        git -C "${REPO_ROOT}" commit -m "Initial commit"
+    # Инициализация Git репозитория
+    echo -e "${CYAN}Инициализация Git репозитория...${NC}"
+    if [ -d "${REPO_ROOT}/.git" ]; then
+        rm -rf "${REPO_ROOT}/.git"
     fi
-
+    git init "${REPO_ROOT}"
+    git -C "${REPO_ROOT}" config user.email "zakenak@local"
+    git -C "${REPO_ROOT}" config user.name "Zakenak"
+    git -C "${REPO_ROOT}" checkout -b develop
+    git -C "${REPO_ROOT}" add .
+    git -C "${REPO_ROOT}" commit -m "Initial commit"
+    
     # Проверка конфигурационного файла
+    echo -e "${CYAN}Проверка конфигурационного файла zakenak.yaml...${NC}"
     if [ ! -f "${REPO_ROOT}/zakenak.yaml" ]; then
         echo -e "${RED}Ошибка: файл ${REPO_ROOT}/zakenak.yaml не найден${NC}"
         exit 1
     fi
+
+    # Вывод содержимого конфига для отладки
+    echo -e "${CYAN}Содержимое конфигурационного файла:${NC}"
+    cat "${REPO_ROOT}/zakenak.yaml"
     
     # Проверка синтаксиса YAML
+    echo -e "${CYAN}Проверка синтаксиса YAML...${NC}"
     if ! python3 -c "import yaml; yaml.safe_load(open('${REPO_ROOT}/zakenak.yaml'))"; then
         echo -e "${RED}Ошибка: некорректный синтаксис YAML в файле конфигурации${NC}"
         exit 1
@@ -279,16 +286,14 @@ install_components() {
         -e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
         -e KUBECONFIG=/root/.kube/config \
         -e ZAKENAK_DEBUG=true \
-        -e GIT_AUTHOR_NAME="Zakenak" \
-        -e GIT_AUTHOR_EMAIL="zakenak@local" \
-        -e GIT_COMMITTER_NAME="Zakenak" \
-        -e GIT_COMMITTER_EMAIL="zakenak@local" \
-        -w /workspace \
         --user root \
+        --workdir /workspace \
         ghcr.io/i8megabit/zakenak:latest \
         converge \
         --config /workspace/zakenak.yaml \
         --kubeconfig /root/.kube/config
+
+
 
     
     DEPLOY_STATUS=$?
