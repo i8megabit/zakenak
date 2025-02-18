@@ -7,38 +7,21 @@ export YELLOW='\033[1;33m'
 export CYAN='\033[0;36m'
 export NC='\033[0m'
 
-# Версии компонентов
-export KUBERNETES_VERSION="1.27.3"
-export CUDA_VERSION="12.8"
-export NVIDIA_DRIVER_VERSION="535.104.05"
+# Определение пути к директории скрипта
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Загрузка автообнаруженных параметров
+if [ -f "${SCRIPT_DIR}/discover.sh" ]; then
+	eval "$(${SCRIPT_DIR}/discover.sh)"
+else
+	echo -e "${RED}Error: discover.sh not found${NC}"
+	exit 1
+fi
 
 # Пути
 export KUBECONFIG="${HOME}/.kube/config"
 
 # Kubernetes конфигурация
 export CLUSTER_NAME="kind-zakenak"
-export WSL_MOUNTS=(
-	"/usr/lib/wsl/lib:/usr/lib/wsl/lib"
-	"/usr/local/cuda-12.8:/usr/local/cuda-12.8"
-	"/usr/local/cuda:/usr/local/cuda"
-	"/usr/lib/wsl/lib/libcuda.so.1:/usr/lib/wsl/lib/libcuda.so.1"
-	"/usr/lib/wsl/lib/libnvidia-ml.so.1:/usr/lib/wsl/lib/libnvidia-ml.so.1"
-	"/dev/nvidia0:/dev/nvidia0"
-	"/dev/nvidiactl:/dev/nvidiactl"
-	"/dev/nvidia-uvm:/dev/nvidia-uvm"
-	"/dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools"
-	"/dev/nvidia-modeset:/dev/nvidia-modeset"
-)
 
-export LINUX_MOUNTS=(
-	"/usr/local/cuda-12.8:/usr/local/cuda-12.8"
-	"/usr/local/cuda:/usr/local/cuda"
-	"/dev/nvidia0:/dev/nvidia0"
-	"/dev/nvidiactl:/dev/nvidiactl"
-	"/dev/nvidia-uvm:/dev/nvidia-uvm"
-	"/dev/nvidia-modeset:/dev/nvidia-modeset"
-)
-
-# Порты для кластера
-export INGRESS_HTTP_PORT=80
-export INGRESS_HTTPS_PORT=443
+# Остальные переменные загружаются динамически из discover.sh
