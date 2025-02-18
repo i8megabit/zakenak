@@ -36,13 +36,12 @@ jobs:
 
     - name: Build Binary
       run: |
-        cd tools/zakenak
-        make build
+        mkdir -p build
+        go build -o build/zakenak ./cmd/zakenak
 
     - name: Test Binary
       if: github.ref == 'refs/heads/develop'
       run: |
-        cd tools/zakenak
         chmod +x build/zakenak
         # Базовое тестирование версии
         ./build/zakenak --version
@@ -50,26 +49,24 @@ jobs:
         ./build/zakenak --help
         # Проверка конфигурации
         ./build/zakenak --config test-config.yaml || true
-
       
     - name: Build Docker image
       uses: docker/build-push-action@v5
       with:
-        context: tools/zakenak
-        file: tools/zakenak/Dockerfile
+        context: .
+        file: Dockerfile
         push: false
         tags: ghcr.io/i8megabit/zakenak:${{ github.sha }}
 
     - name: Run tests
       run: |
-        cd tools/zakenak
-        make test
+        go test ./...
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: zakenak
-        path: tools/zakenak/build/zakenak
+        path: build/zakenak
         compression-level: 9
         retention-days: 5
 
@@ -85,8 +82,8 @@ jobs:
       if: github.event_name != 'pull_request'
       uses: docker/build-push-action@v5
       with:
-        context: tools/zakenak
-        file: tools/zakenak/Dockerfile
+        context: .
+        file: Dockerfile
         push: true
         tags: |
           ghcr.io/i8megabit/zakenak:${{ github.sha }}
