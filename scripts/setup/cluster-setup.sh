@@ -122,6 +122,10 @@ setup_cluster() {
     echo -e "${CYAN}Ожидание готовности узлов кластера...${NC}"
     kubectl wait --for=condition=Ready nodes --all --timeout=300s
     check_error "Узлы кластера не готовы"
+
+    # Обновление kubeconfig правильными данными
+    kind get kubeconfig --name "${CLUSTER_NAME}" > "${REPO_ROOT}/kubeconfig.yaml"
+    check_error "Ошибка обновления kubeconfig"
 }
 
 # Функция установки компонентов
@@ -130,6 +134,15 @@ install_components() {
     
     # Создание namespace
     kubectl create namespace prod --dry-run=client -o yaml | kubectl apply -f -
+    
+    # Установка CRDs cert-manager
+    echo -e "${CYAN}Установка CRDs cert-manager...${NC}"
+    kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.crds.yaml
+    check_error "Ошибка установки CRDs cert-manager"
+    
+    # Ожидание готовности CRDs
+    echo -e "${CYAN}Ожидание готовности CRDs...${NC}"
+    sleep 10
     
     # Сборка зависимостей Helm чартов
     echo -e "${CYAN}Сборка зависимостей Helm чартов...${NC}"
@@ -153,8 +166,17 @@ install_components() {
         check_error "Ошибка установки ${component}"
         
         # Ожидание готовности pods
+        echo -e "${CYAN}Ожидание готовности pods ${component}...${NC}"
         kubectl wait --for=condition=Ready pods -l app=${component} -n prod --timeout=300s
         check_error "Pods ${component} не готовы"
+        
+        # Дополнительное ожидание для cert-manager
+        if [ "${component}" == "cert-manager" ]; then
+            echo -e "${CYAN}Ожидание готовности webhook cert-manager...${NC}"
+            kubectl wait --for=condition=Ready pods -l app.kubernetes.io/component=webhook -n prod --timeout=300s
+            check_error "Webhook cert-manager не готов"
+            sleep 10
+        fi
     done
 }
 

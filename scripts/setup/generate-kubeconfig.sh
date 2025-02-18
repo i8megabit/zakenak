@@ -72,26 +72,8 @@ EOF
 	check_error "Failed to generate kind config"
 }
 
-# Получение данных из текущего контекста
-get_cluster_data() {
-	CURRENT_CONTEXT=$(kubectl config current-context)
-	check_error "Failed to get current context"
-	
-	CLUSTER_SERVER=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')
-	check_error "Failed to get cluster server"
-	
-	CA_DATA=$(kubectl config view --minify --flatten -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')
-	check_error "Failed to get CA data"
-	
-	CLIENT_CERT_DATA=$(kubectl config view --minify --flatten -o jsonpath='{.users[0].user.client-certificate-data}')
-	check_error "Failed to get client cert data"
-	
-	CLIENT_KEY_DATA=$(kubectl config view --minify --flatten -o jsonpath='{.users[0].user.client-key-data}')
-	check_error "Failed to get client key data"
-}
-
-# Создание kubeconfig
-generate_kubeconfig() {
+# Создание начального kubeconfig
+generate_initial_kubeconfig() {
 	# Принудительное создание/перезапись kubeconfig
 	if [ -f "${REPO_ROOT}/kubeconfig.yaml" ]; then
 		echo "Existing kubeconfig.yaml found, overwriting..."
@@ -103,8 +85,8 @@ apiVersion: v1
 kind: Config
 clusters:
 - cluster:
-    server: ${CLUSTER_SERVER}
-    certificate-authority-data: ${CA_DATA}
+    server: https://kind-control-plane:6443
+    insecure-skip-tls-verify: true
   name: ${CLUSTER_NAME}
 contexts:
 - context:
@@ -116,10 +98,9 @@ preferences: {}
 users:
 - name: ${CLUSTER_NAME}
   user:
-    client-certificate-data: ${CLIENT_CERT_DATA}
-    client-key-data: ${CLIENT_KEY_DATA}
+    client-certificate-data: ""
+    client-key-data: ""
 EOF
-	check_error "Failed to generate kubeconfig"
 }
 
 # Основная функция
@@ -127,11 +108,8 @@ main() {
 	echo "Generating Kind configuration..."
 	generate_kind_config
 	
-	echo "Getting cluster data..."
-	get_cluster_data
-	
-	echo "Generating kubeconfig..."
-	generate_kubeconfig
+	echo "Generating initial kubeconfig..."
+	generate_initial_kubeconfig
 	
 	echo "Configuration files generated successfully:"
 	echo "- ${REPO_ROOT}/kind-config.yaml"

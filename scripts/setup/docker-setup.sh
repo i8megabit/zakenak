@@ -93,8 +93,8 @@ install_nvidia_toolkit() {
 	# Remove old repository configuration if exists
 	sudo rm -f /etc/apt/sources.list.d/nvidia-container-toolkit.list || true
 	
-	# Add NVIDIA repository key with proper error handling
-	if ! curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg; then
+	# Force overwrite the GPG key without prompting
+	if ! curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --yes --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg; then
 		log_error "Failed to add NVIDIA GPG key"
 		exit 1
 	fi
