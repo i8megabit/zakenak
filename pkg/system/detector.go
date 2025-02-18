@@ -4,8 +4,18 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 )
+
+// SystemDetector provides system information
+type SystemDetector struct{}
+
+// GetSystemInfo returns basic system information
+func (d *SystemDetector) GetSystemInfo() (string, string) {
+	return runtime.GOOS, runtime.GOARCH
+}
+
 
 
 // Platform определяет тип платформы

@@ -1,9 +1,9 @@
 package state
 
 import (
-	"fmt"
 	"sync"
 )
+
 
 // StateManager handles the state management for the application
 type StateManager struct {
