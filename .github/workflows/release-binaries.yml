@@ -46,7 +46,7 @@ jobs:
           if [ "${{ matrix.os }}" = "windows" ]; then
             OUTPUT="${OUTPUT}.exe"
           fi
-          go build -o "${OUTPUT}" -ldflags="-X main.Version=${GITHUB_REF#refs/tags/}" ./cmd/zakenak
+          go build -o "${OUTPUT}" -ldflags="-X main.Version=${GITHUB_REF#refs/tags/}" ./tools/zakenak/cmd/zakenak
 
       - name: Create Release
         uses: softprops/action-gh-release@v1

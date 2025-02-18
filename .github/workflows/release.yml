@@ -20,8 +20,6 @@ jobs:
           go-version: '1.21'
       - name: Build
         run: |
-          export PATH=/usr/local/cuda-12.8/bin:$PATH
-          export LD_LIBRARY_PATH=/usr/local/cuda-12.8/lib64:$LD_LIBRARY_PATH
           make build			
       - name: Run tests
         run: make test
@@ -30,7 +28,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            bin/zakenak
+            ./tools/zakenak/bin/zakenak
           draft: false
           prerelease: false
           generate_release_notes: true
@@ -41,4 +39,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: zakenak-binary
-          path: bin/zakenak
+          path: ./tools/zakenak/bin/zakenak
