@@ -31,17 +31,17 @@ jobs:
         with:
           go-version: '1.21'
       - name: Setup Go workspace
+        working-directory: ./tools/zakenak
         run: |
-          cd ./tools/zakenak
           go mod tidy
+          mkdir -p build
       - name: Build Binary
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
         working-directory: ./tools/zakenak
         run: |
-          mkdir -p bin
-          OUTPUT="bin/zakenak-${{ matrix.os }}-${{ matrix.arch }}"
+          OUTPUT="build/zakenak-${{ matrix.os }}-${{ matrix.arch }}"
           if [ "${{ matrix.os }}" = "windows" ]; then
           OUTPUT="${OUTPUT}.exe"
           fi
@@ -52,9 +52,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: ./tools/zakenak/bin/zakenak-*
-          draft: false
-          prerelease: false
-          generate_release_notes: true
+            files: ./tools/zakenak/build/zakenak-*
+            draft: false
+            prerelease: false
+            generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
