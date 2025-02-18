@@ -1,4 +1,4 @@
-# Copyright (c)  2025 Mikhail Eberil
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 #
 # This file is part of Zakenak project and is released under the terms of the
 # MIT License. See LICENSE file in the project root for full license information.

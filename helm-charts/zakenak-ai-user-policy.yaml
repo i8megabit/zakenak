@@ -1,5 +1,5 @@
-# Copyright (c)  2025 Mikhail Eberil
-# RBAC policy for Ƶakenak™® AI Assistant
+# Copyright (c) 2025 Mikhail Eberil
+# RBAC policy for Zakenak AI Assistant
 
 apiVersion: v1
 kind: ServiceAccount
