@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -23,16 +22,16 @@ func Info(format string, v ...interface{}) {
 	logger.Printf("[INFO] "+format, v...)
 }
 
-// Debug logs debug messages when debug mode is enabled
-func Debug(format string, v ...interface{}) {
-	if Debug {
-		logger.Printf("[DEBUG] "+format, v...)
-	}
-}
-
 // Error logs error messages
 func Error(format string, v ...interface{}) {
 	logger.Printf("[ERROR] "+format, v...)
+}
+
+// DebugLog logs debug messages when debug mode is enabled
+func DebugLog(format string, v ...interface{}) {
+	if Debug {
+		logger.Printf("[DEBUG] "+format, v...)
+	}
 }
 
 // Command logs command execution with its arguments
