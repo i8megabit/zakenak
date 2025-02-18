@@ -38,40 +38,11 @@ COPY <<EOF /app/entrypoint.sh
 #!/bin/bash
 set -e
 
-# Настройка Git глобально
-git config --global --add safe.directory "*"
-git config --global init.defaultBranch main
-git config --global user.email "zakenak@local"
-git config --global user.name "Zakenak"
-
 cd /workspace
 
-# Определение целевой ветки из переменной окружения или main по умолчанию
-TARGET_BRANCH=\${ZAKENAK_GIT_BRANCH:-"main"}
-
-# Инициализация Git если нужно
-if [ ! -d .git ]; then
-    echo "Initializing new git repository..."
-    git init
-    git add .
-    git commit -m "Initial commit by Zakenak"
-    git branch -M \$TARGET_BRANCH
-elif ! git rev-parse --verify \$TARGET_BRANCH >/dev/null 2>&1; then
-    echo "\$TARGET_BRANCH branch not found, creating..."
-    current_branch=\$(git rev-parse --abbrev-ref HEAD)
-    if [ "\$current_branch" != "\$TARGET_BRANCH" ]; then
-        git branch -M \$TARGET_BRANCH
-    fi
-fi
-
-# Убеждаемся что мы на правильной ветке
-git checkout \$TARGET_BRANCH
-
-# Запуск основной команды
+# Запуск основной команды с автоматической инициализацией Git
 exec /app/zakenak "\$@"
 EOF
-
-
 
 
 

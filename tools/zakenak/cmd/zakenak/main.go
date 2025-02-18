@@ -8,6 +8,7 @@ package main
 import (
     "context"
     "fmt"
+    "log"
     "os"
     "os/exec"
     "path/filepath"
@@ -18,6 +19,7 @@ import (
     "github.com/i8megabit/zakenak/pkg/config"
     "github.com/i8megabit/zakenak/pkg/converge"
     "github.com/i8megabit/zakenak/pkg/build"
+    "github.com/i8megabit/zakenak/pkg/git"
     "github.com/i8megabit/zakenak/pkg/state"
     "github.com/i8megabit/zakenak/pkg/banner"
 )
@@ -31,6 +33,19 @@ var (
 
 func main() {
     banner.PrintZakenak()
+
+    // Инициализация Git Manager
+    gitManager := git.NewManager("/workspace")
+    
+    // Настройка Git
+    if err := gitManager.ConfigureGlobal(); err != nil {
+        log.Printf("Warning: failed to configure git: %v", err)
+    }
+
+    // Обеспечение main ветки
+    if err := gitManager.EnsureMainBranch(); err != nil {
+        log.Printf("Warning: failed to ensure main branch: %v", err)
+    }
     
     rootCmd := &cobra.Command{
         Use:   "zakenak",
