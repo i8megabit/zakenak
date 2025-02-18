@@ -291,6 +291,7 @@ install_components() {
         -e ZAKENAK_DEBUG=true \
         -e ZAKENAK_NAMESPACE="${ZAKENAK_NAMESPACE}" \
         -e ZAKENAK_ENV="${ZAKENAK_ENV}" \
+        -e ZAKENAK_GIT_BRANCH="${ZAKENAK_GIT_BRANCH:-main}" \
         --user root \
         --workdir /workspace \
         ghcr.io/i8megabit/zakenak:latest \

@@ -46,43 +46,32 @@ git config --global user.name "Zakenak"
 
 cd /workspace
 
-# Проверка и настройка Git репозитория
+# Определение целевой ветки из переменной окружения или main по умолчанию
+TARGET_BRANCH=\${ZAKENAK_GIT_BRANCH:-"main"}
+
+# Инициализация Git если нужно
 if [ ! -d .git ]; then
     echo "Initializing new git repository..."
     git init
     git add .
     git commit -m "Initial commit by Zakenak"
-    git branch -M main
-else
-    echo "Git repository exists, ensuring clean state..."
-    # Сохраняем текущие изменения
-    if ! git diff --quiet || ! git diff --staged --quiet; then
-        echo "Stashing changes..."
-        git stash || true
-    fi
-    
-    # Проверяем существование ветки main
-    if git rev-parse --verify main >/dev/null 2>&1; then
-        echo "Main branch exists, checking out..."
-        git checkout main
-    else
-        echo "Main branch not found, creating..."
-        git checkout -b main
-    fi
-    
-    # Восстанавливаем изменения если они были
-    if git stash list | grep -q 'stash@{0}'; then
-        echo "Restoring changes..."
-        git stash pop || true
+    git branch -M \$TARGET_BRANCH
+elif ! git rev-parse --verify \$TARGET_BRANCH >/dev/null 2>&1; then
+    echo "\$TARGET_BRANCH branch not found, creating..."
+    current_branch=\$(git rev-parse --abbrev-ref HEAD)
+    if [ "\$current_branch" != "\$TARGET_BRANCH" ]; then
+        git branch -M \$TARGET_BRANCH
     fi
 fi
 
-# Сброс upstream если он установлен
-git branch --unset-upstream 2>/dev/null || true
+# Убеждаемся что мы на правильной ветке
+git checkout \$TARGET_BRANCH
 
 # Запуск основной команды
 exec /app/zakenak "\$@"
 EOF
+
+
 
 
 
