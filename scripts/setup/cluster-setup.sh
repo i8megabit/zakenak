@@ -1,4 +1,13 @@
 #!/bin/bash
+#  _  _____ ____  
+# | |/ / _ \___ \ 
+# | ' / (_) |__) |
+# | . \> _ </ __/ 
+# |_|\_\___/_____|
+#            by @eberil
+#
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
+# This code is free! Share it, spread peace and technology!
 
 # Определение пути к директории скрипта и корню репозитория
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -31,6 +40,12 @@ check_dependencies() {
         echo -e "${RED}NVIDIA драйверы не установлены${NC}"
         exit 1
     fi
+
+    # Проверка kind
+    if ! command -v kind &> /dev/null; then
+        echo -e "${YELLOW}Kind не установлен, устанавливаем...${NC}"
+        go install sigs.k8s.io/kind@latest
+    fi
 }
 
 # Функция настройки Docker и NVIDIA
@@ -55,52 +70,72 @@ setup_zakenak() {
 setup_cluster() {
     echo -e "${CYAN}Создание кластера...${NC}"
     
-    # Создание конфигурации
-    docker run --rm --gpus all \
-        -v "${REPO_ROOT}":/workspace \
-        -v ~/.kube:/root/.kube \
-        -v ~/.cache/zakenak:/root/.cache/zakenak \
-        --network host \
-        ghcr.io/i8megabit/zakenak:latest \
-        cluster create --gpu --config /workspace/helm-charts/kind-config.yaml
+    # Генерация конфигурации кластера
+    "${SCRIPT_DIR}/generate-kubeconfig.sh"
+    check_error "Ошибка генерации конфигурации кластера"
     
+    # Проверка существующего кластера
+    if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
+        echo -e "${YELLOW}Обнаружен существующий кластер '${CLUSTER_NAME}'. Удаляем...${NC}"
+        kind delete cluster --name "${CLUSTER_NAME}"
+        check_error "Не удалось удалить существующий кластер"
+        sleep 5
+    fi
+    
+    # Создание нового кластера
+    kind create cluster --name "${CLUSTER_NAME}" --config "${REPO_ROOT}/kind-config.yaml"
     check_error "Ошибка создания кластера"
     
     # Ожидание готовности узлов
     echo -e "${CYAN}Ожидание готовности узлов кластера...${NC}"
-    sleep 30
+    kubectl wait --for=condition=Ready nodes --all --timeout=300s
+    check_error "Узлы кластера не готовы"
 }
 
 # Функция установки компонентов
 install_components() {
     echo -e "${CYAN}Установка компонентов...${NC}"
     
-    # Установка компонентов через zakenak
-    docker run --rm --gpus all \
-        -v "${REPO_ROOT}":/workspace \
-        -v ~/.kube:/root/.kube \
-        -v ~/.cache/zakenak:/root/.cache/zakenak \
-        --network host \
-        ghcr.io/i8megabit/zakenak:latest \
-        deploy --config /workspace/zakenak.yaml
+    # Создание namespace
+    kubectl create namespace prod --dry-run=client -o yaml | kubectl apply -f -
     
-    check_error "Ошибка установки компонентов"
+    # Установка компонентов через Helm
+    local components=(
+        "cert-manager"
+        "local-ca"
+        "ollama"
+        "open-webui"
+    )
+    
+    for component in "${components[@]}"; do
+        echo -e "${CYAN}Установка ${component}...${NC}"
+        helm upgrade --install ${component} \
+            "${REPO_ROOT}/helm-charts/${component}" \
+            --namespace prod \
+            --values "${REPO_ROOT}/helm-charts/${component}/values.yaml"
+        check_error "Ошибка установки ${component}"
+        
+        # Ожидание готовности pods
+        kubectl wait --for=condition=Ready pods -l app=${component} -n prod --timeout=300s
+        check_error "Pods ${component} не готовы"
+    done
 }
 
 # Функция проверки установки
 verify_installation() {
     echo -e "${CYAN}Проверка установки...${NC}"
     
-    # Проверка через zakenak
-    docker run --rm --gpus all \
-        -v "${REPO_ROOT}":/workspace \
-        -v ~/.kube:/root/.kube \
-        -v ~/.cache/zakenak:/root/.cache/zakenak \
-        --network host \
-        ghcr.io/i8megabit/zakenak:latest \
-        status
+    # Проверка узлов
+    kubectl get nodes
+    check_error "Ошибка получения списка узлов"
     
-    check_error "Ошибка проверки установки"
+    # Проверка подов
+    kubectl get pods -n prod
+    check_error "Ошибка получения списка подов"
+    
+    # Проверка GPU
+    kubectl exec -it -n prod deployment/ollama -- nvidia-smi
+    check_error "Ошибка проверки GPU"
 }
 
 # Основная функция
