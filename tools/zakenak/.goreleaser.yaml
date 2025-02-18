@@ -69,4 +69,4 @@ release:
     name: zakenak
   prerelease: auto
   draft: false
-  name_template: "Ƶakenak™® {{.Version}}"
+  name_template: "Zakenak {{.Version}}"

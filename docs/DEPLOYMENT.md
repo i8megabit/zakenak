@@ -1,4 +1,5 @@
-# Руководство по развертыванию Ƶakenak™®
+# Руководство по развертыванию Zakenak
+
 ```ascii
  ______     _                      _    
 |___  /    | |                    | |   
@@ -9,17 +10,44 @@
 
 Should Harbour?	No.
 ```
-## Подготовка окружения
 
-### Требования к системе
-- Windows 11 с WSL2
-- NVIDIA GPU с поддержкой CUDA
-- Docker Desktop с поддержкой WSL2
+## Требования к системе
+
+### Hardware
+- NVIDIA GPU (Compute Capability 7.0+)
+- 16GB RAM минимум
+- NVMe SSD storage
+- 10Gbps сеть (рекомендуется)
+- Redundant Power Supply
+
+### Software
+- Windows 11 Pro или Enterprise
+- WSL2 с Ubuntu 22.04 LTS
+- Docker Desktop с WSL2 интеграцией
+- CUDA Toolkit 12.8
 - Kubernetes 1.25+
 - Helm 3.x
 - Go 1.21+
 
-### Установка CUDA в WSL2
+## Подготовка окружения
+
+### 1. Настройка WSL2
+```bash
+# Включение WSL2
+wsl --install
+wsl --set-default-version 2
+wsl --install -d Ubuntu-22.04
+
+# Настройка лимитов памяти
+cat << EOF > %UserProfile%\.wslconfig
+[wsl2]
+memory=16GB
+processors=4
+swap=8GB
+EOF
+```
+
+### 2. Установка CUDA
 ```bash
 # Добавление CUDA репозитория
 wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
@@ -31,116 +59,194 @@ sudo cp /var/cuda-repo-wsl-ubuntu-12-8-local/cuda-*-keyring.gpg /usr/share/keyri
 # Установка CUDA
 sudo apt-get update
 sudo apt-get -y install cuda-toolkit-12-8
+
+# Проверка установки
+nvidia-smi
+nvcc --version
 ```
 
-## Создание кластера
-
-### Настройка Kind
+### 3. Настройка Docker
 ```bash
-# Создание кластера с поддержкой GPU
+# Установка Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Настройка NVIDIA Container Toolkit
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -s -L https://nvidia.github.io/libnvidia-container/gpgkey | \
+  sudo apt-key add -
+curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
+  sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+
+sudo apt-get update
+sudo apt-get install -y nvidia-container-toolkit
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl restart docker
+```
+
+## Развертывание кластера
+
+### 1. Создание Kind кластера
+```bash
+# Установка Kind
+go install sigs.k8s.io/kind@latest
+
+# Создание кластера с GPU поддержкой
 kind create cluster --config helm-charts/kind-config.yaml
 
 # Проверка статуса
-kubectl get nodes
-kubectl get pods -A
+kubectl cluster-info
+kubectl get nodes -o wide
 ```
 
-### Установка компонентов
+### 2. Установка Core Services
 
-1. Установка cert-manager:
+#### Cert Manager
 ```bash
 helm upgrade --install \
-	cert-manager ./helm-charts/cert-manager \
-	--namespace prod \
-	--create-namespace
+    cert-manager ./helm-charts/cert-manager \
+    --namespace prod \
+    --create-namespace \
+    --set installCRDs=true \
+    --values ./helm-charts/cert-manager/values.yaml
 ```
 
-2. Установка локального CA:
+#### Local CA
 ```bash
 helm upgrade --install \
-	local-ca ./helm-charts/local-ca \
-	--namespace prod
+    local-ca ./helm-charts/local-ca \
+    --namespace prod \
+    --values ./helm-charts/local-ca/values.yaml
 ```
 
-3. Установка Ollama:
+#### Sidecar Injector
 ```bash
 helm upgrade --install \
-	ollama ./helm-charts/ollama \
-	--namespace prod
+    sidecar-injector ./helm-charts/sidecar-injector \
+    --namespace prod \
+    --values ./helm-charts/sidecar-injector/values.yaml
 ```
 
-4. Установка Open WebUI:
+### 3. Установка AI Services
+
+#### Ollama
 ```bash
 helm upgrade --install \
-	open-webui ./helm-charts/open-webui \
-	--namespace prod
+    ollama ./helm-charts/ollama \
+    --namespace prod \
+    --values ./helm-charts/ollama/values.yaml \
+    --set gpu.enabled=true \
+    --set resources.limits.nvidia.com/gpu=1
 ```
 
-## Проверка установки
-
-### Проверка сертификатов
+#### Open WebUI
 ```bash
+helm upgrade --install \
+    open-webui ./helm-charts/open-webui \
+    --namespace prod \
+    --values ./helm-charts/open-webui/values.yaml
+```
+
+## Проверка развертывания
+
+### 1. Проверка Core Services
+```bash
+# Проверка сертификатов
 kubectl get certificates -n prod
+kubectl get certificaterequests -n prod
 kubectl get secrets -n prod
+
+# Проверка сайдкаров
+kubectl get mutatingwebhookconfigurations
+kubectl get pods -n prod -o jsonpath='{.items[*].spec.containers[*].name}'
 ```
 
-### Проверка GPU
+### 2. Проверка AI Services
 ```bash
-# Проверка статуса GPU
+# Проверка Ollama
+kubectl exec -it deployment/ollama -n prod -- nvidia-smi
+kubectl logs -f deployment/ollama -n prod
+
+# Проверка WebUI
+kubectl port-forward svc/open-webui -n prod 8080:8080
+curl http://localhost:8080/health
+```
+
+### 3. Проверка GPU
+```bash
+# Статус GPU
 kubectl exec -it deployment/ollama -n prod -- nvidia-smi
 
+# Мониторинг производительности
+kubectl exec -it deployment/ollama -n prod -- nvidia-smi dmon -s pucvmet
+
 # Проверка CUDA
-kubectl exec -it deployment/ollama -n prod -- nvcc --version
+kubectl exec -it deployment/ollama -n prod -- python3 -c "import torch; print(torch.cuda.is_available())"
 ```
 
-### Проверка доступности сервисов
+## Настройка безопасности
+
+### 1. Network Policies
 ```bash
-# Получение IP адресов
-kubectl get ingress -n prod
+kubectl apply -f ./helm-charts/network-policies/
 
-# Проверка DNS
-nslookup ollama.prod.local
-nslookup webui.prod.local
+# Проверка применения
+kubectl get networkpolicies -n prod
 ```
 
-## Настройка DNS
-
-### Локальное разрешение имен
-Добавьте в `/etc/hosts`:
-```
-127.0.0.1 ollama.prod.local
-127.0.0.1 webui.prod.local
-```
-
-### CoreDNS
-Проверьте применение конфигурации CoreDNS:
+### 2. RBAC
 ```bash
-kubectl get configmap coredns -n kube-system -o yaml
+kubectl apply -f ./helm-charts/rbac/
+
+# Проверка ролей
+kubectl get roles,rolebindings -n prod
+```
+
+### 3. Pod Security
+```bash
+kubectl label namespace prod \
+    pod-security.kubernetes.io/enforce=restricted
+
+# Проверка меток
+kubectl get namespace prod --show-labels
 ```
 
 ## Мониторинг
 
-### Логи
+### 1. Логи
 ```bash
-# Логи Ollama
-kubectl logs -f deployment/ollama -n prod
+# Установка Loki
+helm upgrade --install loki grafana/loki-stack \
+    --namespace monitoring \
+    --create-namespace
 
-# Логи WebUI
-kubectl logs -f deployment/open-webui -n prod
+# Проверка логов
+kubectl logs -f -l app=ollama -n prod
 ```
 
-### Метрики GPU
+### 2. Метрики
 ```bash
-# Использование GPU
-kubectl exec -it deployment/ollama -n prod -- nvidia-smi dmon
+# Установка Prometheus
+helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
+    --namespace monitoring
 
-# Мониторинг памяти
-kubectl exec -it deployment/ollama -n prod -- nvidia-smi --query-gpu=memory.used,memory.total --format=csv
+# Проверка метрик
+kubectl port-forward svc/prometheus-operated -n monitoring 9090:9090
 ```
 
-## Обновление
+### 3. GPU мониторинг
+```bash
+# Установка DCGM экспортера
+helm upgrade --install dcgm nvidia/dcgm-exporter \
+    --namespace monitoring
 
-### Обновление компонентов
+# Проверка метрик GPU
+kubectl exec -it -n monitoring dcgm-exporter-xxx -- curl localhost:9400/metrics
+```
+
+## Обновление и обслуживание
+
+### 1. Обновление компонентов
 ```bash
 # Обновление всех компонентов
 make deploy
@@ -149,50 +255,50 @@ make deploy
 helm upgrade ollama ./helm-charts/ollama -n prod
 ```
 
-### Откат изменений
+### 2. Резервное копирование
 ```bash
-# Просмотр истории релизов
-helm history ollama -n prod
+# Бэкап etcd
+kubectl exec -it -n kube-system etcd-control-plane -- \
+    etcdctl snapshot save snapshot.db
 
-# Откат к предыдущей версии
+# Бэкап конфигурации
+kubectl get all --all-namespaces -o yaml > cluster-backup.yaml
+```
+
+### 3. Восстановление
+```bash
+# Восстановление из бэкапа
+kubectl apply -f cluster-backup.yaml
+
+# Откат релиза
 helm rollback ollama 1 -n prod
 ```
 
 ## Устранение неполадок
 
-### Проблемы с GPU
-1. Проверьте наличие драйверов NVIDIA в WSL2
-2. Убедитесь, что CUDA toolkit установлен и доступен
-3. Проверьте монтирование устройств GPU в kind-config.yaml
+### 1. Проблемы с GPU
+- Проверка драйверов: `nvidia-smi`
+- Проверка CUDA: `nvcc --version`
+- Логи NVIDIA: `journalctl -u nvidia-persistenced`
+- Device Plugin логи: `kubectl logs -n kube-system nvidia-device-plugin`
 
-### Проблемы с сертификатами
-1. Проверьте статус cert-manager
-2. Проверьте логи cert-manager
-3. Проверьте конфигурацию ClusterIssuer
+### 2. Проблемы с сертификатами
+- Проверка cert-manager: `kubectl describe certificate -n prod`
+- Проверка CA: `kubectl get secrets -n prod`
+- Логи cert-manager: `kubectl logs -n cert-manager cert-manager`
 
-### Сетевые проблемы
-1. Проверьте настройки Ingress
-2. Проверьте конфигурацию CoreDNS
-3. Проверьте сетевые политики
-
-## Безопасность
-
-### TLS сертификаты
-- Все сервисы используют TLS
-- Сертификаты автоматически обновляются
-- Используется локальный CA
-
-### Сетевые политики
-- Изоляция подов по namespace
-- Ограничение доступа к GPU
-- Контроль входящего трафика
+### 3. Сетевые проблемы
+- Проверка DNS: `kubectl exec -it busybox -- nslookup kubernetes.default`
+- Проверка сервисов: `kubectl get endpoints -n prod`
+- Проверка политик: `kubectl describe networkpolicy -n prod`
 
 ```plain text
-Copyright (c)  2025 Mikhail Eberil
+Copyright (c) 2025 Mikhail Eberil
 
-This file is part of Zakenak project and is released under the terms of the MIT License. See LICENSE file in the project root for full license information.
+This file is part of Zakenak project and is released under the terms of the MIT License. 
+See LICENSE file in the project root for full license information.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-
-The name "Zakenak" and associated branding are trademarks of @eberil and may not be used without express written permission.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+PURPOSE AND NONINFRINGEMENT.
 ```

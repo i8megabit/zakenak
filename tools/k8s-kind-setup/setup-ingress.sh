@@ -4,11 +4,13 @@
 #  | || '_ \ / _` | '__/ _ \/ __/ __|
 #  | || | | | (_| | | |  __/\__ \__ \
 # |___|_| |_|\__, |_|  \___||___/___/
-#            |___/         by @eberil
+#            |___/
 #
-# Copyright (c)  2025 Mikhail Eberil
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 # This code is free! Share it, spread peace and technology!
 # "Because Ingress should just work!"
+
+set -e
 
 # Определение пути к директории скрипта и корню репозитория
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,10 +20,6 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 source "${SCRIPT_DIR}/env.sh"
 source "${SCRIPT_DIR}/ascii_banners.sh"
 
-# Отображение баннера при старте
-ingress_banner
-echo ""
-
 echo -e "${CYAN}Установка Ingress Controller...${NC}"
 
 # Добавление репозитория ingress-nginx
@@ -29,19 +27,26 @@ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
 check_error "Не удалось добавить репозиторий ingress-nginx"
 
-# Установка Ingress Controller
+# Установка Ingress Controller с правильной конфигурацией для Kind
 helm upgrade --install $RELEASE_INGRESS ingress-nginx/ingress-nginx \
 	--namespace $NAMESPACE_INGRESS \
 	--create-namespace \
 	--set controller.service.type=NodePort \
 	--set controller.hostPort.enabled=true \
-	--set controller.service.nodePorts.http=80 \
-	--set controller.service.nodePorts.https=443 \
+	--set controller.service.ports.http=80 \
+	--set controller.service.ports.https=443 \
+	--set controller.service.nodePorts.http=30080 \
+	--set controller.service.nodePorts.https=30443 \
+	--set controller.watchIngressWithoutClass=true \
 	--wait
 check_error "Не удалось установить Ingress Controller"
 
 # Ожидание готовности подов
-wait_for_pods $NAMESPACE_INGRESS "app.kubernetes.io/component=controller"
+kubectl wait --namespace $NAMESPACE_INGRESS \
+	--for=condition=ready pod \
+	--selector=app.kubernetes.io/component=controller \
+	--timeout=90s
+check_error "Не удалось дождаться готовности Ingress Controller"
 
 echo -e "\n"
 success_banner
