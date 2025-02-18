@@ -239,13 +239,25 @@ install_components() {
     # Ensure KUBECONFIG is set to the correct path
     export KUBECONFIG="${REPO_ROOT}/kubeconfig.yaml"
     
-    # Подготовка монтирования для Docker
+    # Подготовка монтирования для Docker с правильными правами
+    echo -e "${CYAN}Подготовка монтирования для Docker...${NC}"
     MOUNT_FLAGS=(
         -v "${REPO_ROOT}:/workspace"
         -v "${REPO_ROOT}/kubeconfig.yaml:/root/.kube/config:ro"
         -v "${HOME}/.cache/zakenak:/root/.cache/zakenak"
         --network host
+        --user "$(id -u):$(id -g)"
     )
+
+    # Инициализация Git репозитория если необходимо
+    if [ ! -d "${REPO_ROOT}/.git" ]; then
+        echo -e "${CYAN}Инициализация Git репозитория...${NC}"
+        git init "${REPO_ROOT}"
+        git -C "${REPO_ROOT}" config user.email "zakenak@local"
+        git -C "${REPO_ROOT}" config user.name "Zakenak"
+        git -C "${REPO_ROOT}" add .
+        git -C "${REPO_ROOT}" commit -m "Initial commit"
+    fi
 
     # Проверка конфигурационного файла
     if [ ! -f "${REPO_ROOT}/zakenak.yaml" ]; then
@@ -271,6 +283,7 @@ install_components() {
         -e GIT_AUTHOR_EMAIL="zakenak@local" \
         -e GIT_COMMITTER_NAME="Zakenak" \
         -e GIT_COMMITTER_EMAIL="zakenak@local" \
+        -w /workspace \
         ghcr.io/i8megabit/zakenak:latest \
         converge \
         --config /workspace/zakenak.yaml \
