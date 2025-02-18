@@ -4,6 +4,7 @@ import (
     "context"
     "fmt"
     "os/exec"
+    "strings"
     "time"
     "github.com/i8megabit/zakenak/pkg/config"
     "github.com/i8megabit/zakenak/pkg/state"
@@ -61,10 +62,26 @@ func (m *Manager) checkGPUState(ctx context.Context) error {
         return fmt.Errorf("NVIDIA GPU not available: %w", err)
     }
 
-    // Обновление состояния GPU
+    // Обновление состояния GPU с профилем безопасности
     return m.state.Update(func(s *state.State) error {
-        s.GPU.Driver = "535.104.05" // TODO: Получать динамически
+        // Получаем версию драйвера
+        out, err := exec.CommandContext(ctx, "nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader").Output()
+        if err != nil {
+            return fmt.Errorf("failed to get GPU driver version: %w", err)
+        }
+        
+        s.GPU.Driver = strings.TrimSpace(string(out))
         s.GPU.Enabled = true
+        
+        // Устанавливаем профиль безопасности по умолчанию
+        s.GPU.Security = state.GPUSecurity{
+            Isolation:      true,
+            MemoryLimit:    "8Gi",
+            TimeSlice:      1000,
+            AllowedDevices: []string{"all"},
+            Capabilities:   []string{"compute", "utility"},
+        }
+        
         return nil
     })
 }
@@ -91,10 +108,22 @@ func (m *Manager) buildImages(ctx context.Context) error {
         return nil
     }
 
+    // Проверяем состояние безопасности GPU перед сборкой
+    currentState, err := m.state.Load()
+    if err != nil {
+        return fmt.Errorf("failed to load state: %w", err)
+    }
+
+    if !currentState.GPU.Security.Isolation {
+        return fmt.Errorf("GPU security isolation must be enabled")
+    }
+
     buildArgs := []string{
         "build",
         "--build-arg", "CUDA_VERSION=12.8.0",
         "--build-arg", "GPU_ENABLED=true",
+        "--build-arg", fmt.Sprintf("GPU_MEMORY_LIMIT=%s", currentState.GPU.Security.MemoryLimit),
+        "--build-arg", fmt.Sprintf("GPU_TIME_SLICE=%d", currentState.GPU.Security.TimeSlice),
         "-f", m.config.Build.Dockerfile,
         "-t", fmt.Sprintf("%s/%s:%s",
             m.config.Registry.URL,

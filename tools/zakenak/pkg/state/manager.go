@@ -26,21 +26,29 @@ func NewFileStateManager(path string) *FileStateManager {
 func (m *FileStateManager) Load() (*State, error) {
     m.mu.RLock()
     defer m.mu.RUnlock()
+    return m.loadWithoutLock()
+}
+
+// loadWithoutLock загружает состояние без блокировки
+func (m *FileStateManager) loadWithoutLock() (*State, error) {
+    if _, err := os.Stat(m.path); os.IsNotExist(err) {
+        return &State{
+            Version:    "1.0.0",
+            LastUpdate: time.Now(),
+            Components: make(map[string]Component),
+            Status: Status{
+                Phase:          PhaseInitializing,
+                LastTransition: time.Now(),
+            },
+            GPU: GPUState{
+                Enabled: true,
+                Driver:  "auto",
+            },
+        }, nil
+    }
 
     data, err := os.ReadFile(m.path)
     if err != nil {
-        if os.IsNotExist(err) {
-            // Возвращаем новое состояние если файл не существует
-            return &State{
-                Version:    "1.0.0",
-                LastUpdate: time.Now(),
-                Components: make(map[string]Component),
-                Status: Status{
-                    Phase:          PhaseInitializing,
-                    LastTransition: time.Now(),
-                },
-            }, nil
-        }
         return nil, fmt.Errorf("failed to read state file: %w", err)
     }
 
@@ -56,7 +64,11 @@ func (m *FileStateManager) Load() (*State, error) {
 func (m *FileStateManager) Save(state *State) error {
     m.mu.Lock()
     defer m.mu.Unlock()
+    return m.saveWithoutLock(state)
+}
 
+// saveWithoutLock сохраняет состояние без блокировки
+func (m *FileStateManager) saveWithoutLock(state *State) error {
     // Обновляем время последнего обновления
     state.LastUpdate = time.Now()
 
@@ -88,20 +100,25 @@ func (m *FileStateManager) Save(state *State) error {
 
 // Update обновляет состояние атомарно
 func (m *FileStateManager) Update(fn func(*State) error) error {
-    m.mu.Lock()
-    defer m.mu.Unlock()
+    // Create state directory if it doesn't exist
+    if err := os.MkdirAll(filepath.Dir(m.path), 0755); err != nil {
+        return fmt.Errorf("failed to create state directory: %w", err)
+    }
 
-    // Загружаем текущее состояние
-    state, err := m.Load()
+    // First load state without lock
+    state, err := m.loadWithoutLock()
     if err != nil {
         return err
     }
 
-    // Применяем обновление
+    // Apply update
     if err := fn(state); err != nil {
         return err
     }
 
-    // Сохраняем обновленное состояние
-    return m.Save(state)
+    // Now acquire write lock only for save
+    m.mu.Lock()
+    defer m.mu.Unlock()
+    
+    return m.saveWithoutLock(state)
 }

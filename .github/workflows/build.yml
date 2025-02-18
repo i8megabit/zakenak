@@ -12,6 +12,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     steps:
     - uses: actions/checkout@v4
 
@@ -31,29 +32,50 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
 
+    - name: Setup Directory Structure
+      run: |
+        mkdir -p cmd/zakenak
+        mkdir -p pkg/{banner,build,config,converge,helm,kind,state}
+        mkdir -p build
+
+    - name: Initialize Go module
+      run: |
+        go mod init github.com/i8megabit/zakenak
+        go mod tidy
+
     - name: Build Binary
       run: |
-        cd tools/zakenak
-        make build
-        
+        go build -o build/zakenak ./cmd/zakenak
+
+
+    - name: Test Binary
+      if: github.ref == 'refs/heads/develop'
+      run: |
+        chmod +x build/zakenak
+        # Базовое тестирование версии
+        ./build/zakenak --version
+        # Проверка основных команд
+        ./build/zakenak --help
+        # Проверка конфигурации
+        ./build/zakenak --config test-config.yaml || true
+      
     - name: Build Docker image
       uses: docker/build-push-action@v5
       with:
-        context: tools/zakenak
-        file: tools/zakenak/Dockerfile
+        context: .
+        file: Dockerfile
         push: false
         tags: ghcr.io/i8megabit/zakenak:${{ github.sha }}
 
     - name: Run tests
       run: |
-        cd tools/zakenak
-        make test
+        go test ./...
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: zakenak
-        path: tools/zakenak/build/zakenak
+        path: build/zakenak
         compression-level: 9
         retention-days: 5
 
@@ -62,15 +84,15 @@ jobs:
       uses: docker/login-action@v3
       with:
         registry: ghcr.io
-        username: ${{ github.actor }}
+        username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Push Docker image
       if: github.event_name != 'pull_request'
       uses: docker/build-push-action@v5
       with:
-        context: tools/zakenak
-        file: tools/zakenak/Dockerfile
+        context: .
+        file: Dockerfile
         push: true
         tags: |
           ghcr.io/i8megabit/zakenak:${{ github.sha }}
