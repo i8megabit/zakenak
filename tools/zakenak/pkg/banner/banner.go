@@ -5,10 +5,39 @@
 
 package banner
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"sync"
+)
+
+var (
+	// bannerShown отслеживает показ баннера в текущей сессии
+	bannerShown = struct {
+		zakenak bool
+		deploy  bool
+		error   bool
+		success bool
+		sync.Mutex
+	}{}
+)
+
+// shouldShowBanner проверяет, нужно ли отображать баннеры
+func shouldShowBanner() bool {
+	return os.Getenv("ZAKENAK_DISABLE_BANNERS") != "true"
+}
 
 // PrintZakenak prints the main Zakenak banner
 func PrintZakenak() {
+	if !shouldShowBanner() {
+		return
+	}
+	bannerShown.Lock()
+	defer bannerShown.Unlock()
+	if bannerShown.zakenak {
+		return
+	}
+	bannerShown.zakenak = true
 	fmt.Print(`
 	 ______     _                      _    
 	|___  /    | |                    | |   
@@ -24,6 +53,15 @@ func PrintZakenak() {
 
 // PrintError prints the error banner
 func PrintError() {
+	if !shouldShowBanner() {
+		return
+	}
+	bannerShown.Lock()
+	defer bannerShown.Unlock()
+	if bannerShown.error {
+		return
+	}
+	bannerShown.error = true
 	fmt.Print(`
 	 _____                    
 	|  ___|                   
@@ -36,6 +74,15 @@ func PrintError() {
 
 // PrintSuccess prints the success banner
 func PrintSuccess() {
+	if !shouldShowBanner() {
+		return
+	}
+	bannerShown.Lock()
+	defer bannerShown.Unlock()
+	if bannerShown.success {
+		return
+	}
+	bannerShown.success = true
 	fmt.Print(`
 	 _____                             
 	/  ___|                            
@@ -48,6 +95,15 @@ func PrintSuccess() {
 
 // PrintDeploy prints the deployment banner
 func PrintDeploy() {
+	if !shouldShowBanner() {
+		return
+	}
+	bannerShown.Lock()
+	defer bannerShown.Unlock()
+	if bannerShown.deploy {
+		return
+	}
+	bannerShown.deploy = true
 	fmt.Print(`
 	 _____             _           
 	|  __ \           | |          

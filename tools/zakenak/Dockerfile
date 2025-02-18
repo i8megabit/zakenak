@@ -51,20 +51,15 @@ cd /workspace
 if [ ! -d .git ]; then
     echo "Initializing new git repository..."
     git init
+    git checkout -b main
     git add .
     git commit -m "Initial commit by Zakenak"
-elif ! git rev-parse --git-dir > /dev/null 2>&1; then
-    echo "Git repository corrupted, reinitializing..."
-    rm -rf .git
-    git init
-    git add .
-    git commit -m "Reinitialized by Zakenak"
-fi
-
-# Проверка и создание main ветки если она отсутствует
-if ! git rev-parse --verify main >/dev/null 2>&1; then
-    echo "Creating and switching to main branch..."
-    git checkout -b main
+elif ! git rev-parse --verify main >/dev/null 2>&1; then
+    echo "Main branch not found, creating..."
+    current_branch=$(git rev-parse --abbrev-ref HEAD)
+    if [ "$current_branch" != "main" ]; then
+        git branch -m $current_branch main
+    fi
 fi
 
 # Убеждаемся что мы на правильной ветке
@@ -73,6 +68,7 @@ git checkout main
 # Запуск основной команды
 exec /app/zakenak "\$@"
 EOF
+
 
 RUN chmod +x /app/entrypoint.sh
 ENTRYPOINT ["/app/entrypoint.sh"]

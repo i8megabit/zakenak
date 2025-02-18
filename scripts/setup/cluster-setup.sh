@@ -248,19 +248,8 @@ install_components() {
         --network host
     )
 
-    # Инициализация Git репозитория
-    echo -e "${CYAN}Инициализация Git репозитория...${NC}"
-    if [ -d "${REPO_ROOT}/.git" ]; then
-        rm -rf "${REPO_ROOT}/.git"
-    fi
-    git init "${REPO_ROOT}"
-    git -C "${REPO_ROOT}" config user.email "zakenak@local"
-    git -C "${REPO_ROOT}" config user.name "Zakenak"
-    git -C "${REPO_ROOT}" checkout -b develop
-    git -C "${REPO_ROOT}" add .
-    git -C "${REPO_ROOT}" commit -m "Initial commit"
-    
     # Проверка конфигурационного файла
+
     echo -e "${CYAN}Проверка конфигурационного файла zakenak.yaml...${NC}"
     if [ ! -f "${REPO_ROOT}/zakenak.yaml" ]; then
         echo -e "${RED}Ошибка: файл ${REPO_ROOT}/zakenak.yaml не найден${NC}"
