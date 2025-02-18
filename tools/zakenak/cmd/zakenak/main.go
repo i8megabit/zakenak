@@ -16,7 +16,6 @@ import (
 // Version contains the application version, set during build
 var Version = "dev"
 
-
 func main() {
     banner.PrintZakenak()
 
@@ -39,6 +38,7 @@ func main() {
     fmt.Println("Zakenak - Kubernetes Cluster Management Tool")
     fmt.Println("Use --help for usage information")
 }
+
 
 
 func newConvergeCmd() *cobra.Command {
