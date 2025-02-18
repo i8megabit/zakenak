@@ -119,12 +119,17 @@ func runConverge() error {
     banner.PrintDeploy()
     ctx := context.Background()
     
+    // Создаем и настраиваем Git manager в начале
+    gitManager := git.NewManager("/workspace")
+    if err := gitManager.EnsureMainBranch(); err != nil {
+        return fmt.Errorf("failed to ensure main branch: %w", err)
+    }
+    
     // Создаем клиент Kubernetes
     clientset, err := createKubernetesClient(kubeconfig)
     if err != nil {
         return fmt.Errorf("error creating kubernetes client: %w", err)
     }
-
 
     // Загружаем конфигурацию из файла
     cfg, err := config.LoadConfig(configPath)
@@ -141,13 +146,16 @@ func runConverge() error {
     // Запускаем процесс конвергенции
     if err := manager.Converge(ctx); err != nil {
         banner.PrintError()
+        // Восстанавливаем ветку даже при ошибке
+        if restoreErr := gitManager.RestoreOriginalBranch(); restoreErr != nil {
+            log.Printf("Warning: failed to restore original git branch: %v", restoreErr)
+        }
         return fmt.Errorf("convergence failed: %w", err)
     }
 
     banner.PrintSuccess()
 
-    // Восстанавливаем исходную ветку Git после конвергенции
-    gitManager := git.NewManager("/workspace")
+    // Восстанавливаем исходную ветку Git и удаляем main после успешной конвергенции
     if err := gitManager.RestoreOriginalBranch(); err != nil {
         log.Printf("Warning: failed to restore original git branch: %v", err)
     }

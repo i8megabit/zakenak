@@ -35,16 +35,24 @@ func (m *Manager) SaveCurrentBranch() error {
 	return nil
 }
 
-// RestoreOriginalBranch восстанавливает исходную ветку
+// RestoreOriginalBranch восстанавливает исходную ветку и удаляет main
 func (m *Manager) RestoreOriginalBranch() error {
 	if m.originalBranch == "" || m.originalBranch == "main" {
 		return nil
 	}
 
-	// Проверяем существование ветки
+	// Проверяем существование оригинальной ветки
 	if err := m.run("rev-parse", "--verify", m.originalBranch); err == nil {
+		// Переключаемся на оригинальную ветку
 		if err := m.run("checkout", m.originalBranch); err != nil {
 			return fmt.Errorf("failed to restore original branch %s: %w", m.originalBranch, err)
+		}
+
+		// Удаляем ветку main если она существует и мы не на ней
+		if err := m.run("rev-parse", "--verify", "main"); err == nil {
+			if err := m.run("branch", "-D", "main"); err != nil {
+				return fmt.Errorf("failed to delete main branch: %w", err)
+			}
 		}
 	}
 	return nil
