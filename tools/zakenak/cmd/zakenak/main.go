@@ -22,6 +22,7 @@ import (
     "github.com/i8megabit/zakenak/pkg/build"
     "github.com/i8megabit/zakenak/pkg/state"
     "github.com/i8megabit/zakenak/pkg/banner"
+    "github.com/i8megabit/zakenak/pkg/cluster"
 )
 
 var (
@@ -49,6 +50,7 @@ func main() {
         newDeployCmd(),
         newCleanCmd(),
         newStatusCmd(),
+        newSetupCmd(),
     )
 
     if err := rootCmd.Execute(); err != nil {
@@ -224,6 +226,49 @@ func newStatusCmd() *cobra.Command {
             return runStatus()
         },
     }
+    return cmd
+}
+
+func newSetupCmd() *cobra.Command {
+    var (
+        noRemove    bool
+        noGenerate  bool
+        noRecreate  bool
+        workDir     string
+    )
+
+    cmd := &cobra.Command{
+        Use:   "setup",
+        Short: "Настройка кластера Kubernetes",
+        RunE: func(cmd *cobra.Command, args []string) error {
+            if workDir == "" {
+                var err error
+                workDir, err = os.Getwd()
+                if err != nil {
+                    return fmt.Errorf("failed to get working directory: %w", err)
+                }
+            }
+
+            manager := cluster.NewManager(workDir,
+                cluster.WithNoRemove(noRemove),
+                cluster.WithNoGenerate(noGenerate),
+                cluster.WithNoRecreate(noRecreate))
+
+            if err := manager.Setup(cmd.Context()); err != nil {
+                banner.PrintError()
+                return fmt.Errorf("setup failed: %w", err)
+            }
+
+            banner.PrintSuccess()
+            return nil
+        },
+    }
+
+    cmd.Flags().BoolVar(&noRemove, "no-remove", false, "не удалять ресурсы при ошибке")
+    cmd.Flags().BoolVar(&noGenerate, "no-generate", false, "не генерировать конфигурацию")
+    cmd.Flags().BoolVar(&noRecreate, "no-recreate", false, "не пересоздавать существующий кластер")
+    cmd.Flags().StringVar(&workDir, "workdir", "", "рабочая директория")
+
     return cmd
 }
 
