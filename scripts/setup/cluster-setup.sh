@@ -24,10 +24,20 @@ source "${SCRIPT_DIR}/ascii_banners.sh"
 
 # Парсинг аргументов
 NO_REMOVE=false
+NO_GENERATE=false
+NO_RECREATE=false
 for arg in "$@"; do
     case $arg in
         --no-remove)
             NO_REMOVE=true
+            shift
+            ;;
+        --no-generate)
+            NO_GENERATE=true
+            shift
+            ;;
+        --no-recreate)
+            NO_RECREATE=true
             shift
             ;;
     esac
@@ -125,9 +135,21 @@ setup_zakenak() {
 setup_cluster() {
     echo -e "${CYAN}Создание кластера...${NC}"
     
-    # Генерация конфигурации кластера
-    "${SCRIPT_DIR}/generate-kubeconfig.sh"
-    check_error "Ошибка генерации конфигурации кластера"
+    # Генерация конфигурации кластера только если не указан флаг --no-generate
+    if [ "$NO_GENERATE" = false ]; then
+        if [ "$NO_RECREATE" = true ] && [ -f "${REPO_ROOT}/kind-config.yaml" ]; then
+            echo -e "${YELLOW}Пропуск генерации kind-config.yaml (--no-recreate)${NC}"
+        else
+            "${SCRIPT_DIR}/generate-kubeconfig.sh"
+            check_error "Ошибка генерации конфигурации кластера"
+        fi
+    else
+        echo -e "${YELLOW}Пропуск генерации конфигурации (--no-generate)${NC}"
+        if [ ! -f "${REPO_ROOT}/kind-config.yaml" ]; then
+            echo -e "${RED}Ошибка: kind-config.yaml не найден${NC}"
+            exit 1
+        fi
+    fi
     
     # Проверка существующего кластера
     if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
@@ -154,54 +176,28 @@ setup_cluster() {
 generate_zakenak_config() {
     echo -e "${CYAN}Генерация конфигурации zakenak...${NC}"
     
-    # Создание временного массива для хранения конфигурации чартов
-    local charts_config=""
-    
-    # Обход всех директорий в helm-charts
-    for chart_dir in "${REPO_ROOT}"/helm-charts/*/; do
-        if [ -d "$chart_dir" ]; then
-            chart_name=$(basename "$chart_dir")
-            charts_config+="    - name: ${chart_name}\n      path: ./helm-charts/${chart_name}"
-            
-            if [ -f "${chart_dir}/values.yaml" ]; then
-                charts_config+="\n      values:\n        - values.yaml"
-                if [ -f "${chart_dir}/values-prod.yaml" ]; then
-                    charts_config+="\n        - values-prod.yaml"
-                fi
-                if [ -f "${chart_dir}/values-gpu.yaml" ]; then
-                    charts_config+="\n        - values-gpu.yaml"
-                fi
-            fi
-            charts_config+="\n"
-        fi
-    done
-
-    # Генерация файла конфигурации с правильными отступами
     cat > "${REPO_ROOT}/zakenak.yaml" << EOF
 version: "1.0"
 project: zakenak
 environment: prod
 
-# Настройки развертывания
 deploy:
   namespace: prod
   charts:
-${charts_config}
-# Настройки GPU
+    - ./helm-charts/cert-manager
+    - ./helm-charts/local-ca
+    - ./helm-charts/manifests
+    - ./helm-charts/ollama
+    - ./helm-charts/open-webui
+    - ./helm-charts/sidecar-injector
+
 build:
   gpu:
     enabled: true
     runtime: nvidia
-    memory: "${GPU_MEMORY:-8Gi}"
-    devices: "all"
-    capabilities:
-      - compute
-      - utility
-    options:
-      - "device=all"
-      - "require=cuda>=${GPU_DRIVER_VERSION:-12.0}"
+    memory: "8Gi"
+    devices: all
 
-# Настройки безопасности
 security:
   rbac:
     enabled: true
@@ -210,7 +206,7 @@ security:
     enabled: true
   podSecurityContext:
     runAsNonRoot: true
-    runAsUser: ${SECURITY_USER_ID:-1000}
+    runAsUser: 1000
 EOF
 
     check_error "Ошибка генерации конфигурации zakenak"
@@ -223,6 +219,13 @@ EOF
         exit 1
     fi
 }
+
+
+
+
+
+
+
 
 
 # Функция установки компонентов
@@ -328,12 +331,25 @@ main() {
     
     echo -e "${YELLOW}Начинаем установку кластера...${NC}"
     
+    # Проверка наличия необходимых файлов при --no-generate
+    if [ "$NO_GENERATE" = true ]; then
+        if [ ! -f "${REPO_ROOT}/kind-config.yaml" ] || [ ! -f "${REPO_ROOT}/zakenak.yaml" ]; then
+            echo -e "${RED}Ошибка: необходимые конфигурационные файлы отсутствуют${NC}"
+            echo -e "${YELLOW}При использовании --no-generate должны существовать:${NC}"
+            echo "- ${REPO_ROOT}/kind-config.yaml"
+            echo "- ${REPO_ROOT}/zakenak.yaml"
+            exit 1
+        fi
+    fi
+    
     # Выполнение шагов установки
     check_dependencies
     setup_docker_nvidia
     setup_zakenak
     setup_cluster
-    generate_zakenak_config
+    if [ "$NO_GENERATE" = false ]; then
+        generate_zakenak_config
+    fi
     install_components
     verify_installation
     
