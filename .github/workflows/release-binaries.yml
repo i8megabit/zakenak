@@ -12,8 +12,9 @@ jobs:
     name: Build Binaries
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
+      id-token: write
     strategy:
       matrix:
         include:
@@ -30,70 +31,85 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Set version
         id: version
         run: |
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-          echo "RELEASE_TYPE=release" >> $GITHUB_OUTPUT
-          else
-          COMMIT_SHA=$(git rev-parse --short HEAD)
-          echo "VERSION=develop-${COMMIT_SHA}" >> $GITHUB_ENV
-          echo "RELEASE_TYPE=develop" >> $GITHUB_OUTPUT
-          fi
+            if [[ $GITHUB_REF == refs/tags/* ]]; then
+              echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+              echo "RELEASE_TYPE=release" >> $GITHUB_ENV
+            else
+              COMMIT_SHA=$(git rev-parse --short HEAD)
+              echo "VERSION=develop-${COMMIT_SHA}" >> $GITHUB_ENV
+              echo "RELEASE_TYPE=develop" >> $GITHUB_ENV
+            fi
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.21'
 
-      - name: Install CUDA Dependencies
-        if: matrix.os == 'linux'
+      - name: Setup Directory Structure
         run: |
-          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
-          sudo dpkg -i cuda-keyring_1.1-1_all.deb
-          sudo apt-get update
-          sudo apt-get -y install cuda-toolkit-12-8
+          mkdir -p cmd/zakenak
+          mkdir -p pkg/{banner,build,config,converge,helm,kind,state}
+          mkdir -p build
+
+      - name: Initialize Go module
+        run: |
+          go mod init github.com/i8megabit/zakenak
+          go mod tidy
 
       - name: Build Binary
+        working-directory: .
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
         run: |
-          OUTPUT="tools/zakenak/build/zakenak-${{ matrix.os }}-${{ matrix.arch }}"
+          mkdir -p build
+          OUTPUT="build/zakenak-${{ matrix.os }}-${{ matrix.arch }}"
           if [ "${{ matrix.os }}" = "windows" ]; then
           OUTPUT="${OUTPUT}.exe"
           fi
-          mkdir -p tools/zakenak/build
-          cd tools/zakenak
           go build -o "${OUTPUT}" -ldflags="-X main.Version=${VERSION}" ./cmd/zakenak
+
+      - name: Test Binary
+        if: matrix.os == 'linux' && matrix.arch == 'amd64'
+        run: |
+          chmod +x build/zakenak-linux-amd64
+          # Базовое тестирование версии
+          ./build/zakenak-linux-amd64 --version
+          # Проверка основных команд
+          ./build/zakenak-linux-amd64 --help
+          # Проверка конфигурации
+          ./build/zakenak-linux-amd64 --config test-config.yaml || true
 
       - name: Upload Development Artifacts
         uses: actions/upload-artifact@v4
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         with:
-          name: zakenak-${{ steps.version.outputs.RELEASE_TYPE }}-${{ matrix.os }}-${{ matrix.arch }}
-          path: tools/zakenak/build/zakenak-*
+          name: zakenak-develop-${{ matrix.os }}-${{ matrix.arch }}
+          path: build/zakenak-*
           retention-days: 5
+          compression-level: 9
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v4
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         with:
-          name: zakenak-${{ steps.version.outputs.RELEASE_TYPE }}-${{ matrix.os }}-${{ matrix.arch }}
-          path: tools/zakenak/build/zakenak-*
+          name: zakenak-release-${{ matrix.os }}-${{ matrix.arch }}
+          path: build/zakenak-*
           retention-days: 90
-
+          compression-level: 9
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: tools/zakenak/build/zakenak-*
+          files: build/zakenak-*
           draft: false
           prerelease: false
           generate_release_notes: true
@@ -101,19 +117,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push Docker Image
-        env:
-          REGISTRY: ghcr.io
-          IMAGE_NAME: ${{ github.repository }}
+        if: github.event_name != 'pull_request'
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          cd tools/zakenak
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
           docker build \
           --build-arg VERSION=${VERSION} \
           -t ghcr.io/${{ github.repository }}:${VERSION} \
           .
           docker push ghcr.io/${{ github.repository }}:${VERSION}
           
-          if [[ "${{ steps.version.outputs.RELEASE_TYPE }}" == "release" ]]; then
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
           docker tag ghcr.io/${{ github.repository }}:${VERSION} ghcr.io/${{ github.repository }}:latest
           docker push ghcr.io/${{ github.repository }}:latest
           fi
