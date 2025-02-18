@@ -202,18 +202,163 @@ docker run --gpus all \
 
 ## Безопасность
 
-### Лучшие практики
+### Базовая защита контейнеров
 ```bash
-# Безопасный запуск
+# Безопасный запуск с полным набором ограничений
 docker run --gpus all \
     --read-only \
     --security-opt=no-new-privileges \
+    --security-opt seccomp=profiles/gpu-restrict.json \
     --cap-drop ALL \
     --cap-add SYS_ADMIN \
+    --pids-limit 100 \
+    --cpus 2.0 \
+    --memory 8G \
+    --device-read-bps /dev/sda:1mb \
     -v $(pwd):/workspace:ro \
     -v ~/.kube:/root/.kube:ro \
     --network=host \
     ghcr.io/i8megabit/zakenak:1.0.0 converge
+```
+
+### GPU-специфичная безопасность
+```yaml
+# Пример конфигурации Pod Security Context
+spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+  - name: gpu-container
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      readOnlyRootFilesystem: true
+    resources:
+      limits:
+        nvidia.com/gpu: "1"
+        memory: "8Gi"
+        nvidia.com/gpu-memory: "8Gi"
+      requests:
+        nvidia.com/gpu: "1"
+        memory: "4Gi"
+    env:
+    - name: NVIDIA_VISIBLE_DEVICES
+      value: "all"
+    - name: NVIDIA_DRIVER_CAPABILITIES
+      value: "compute,utility"
+    - name: CUDA_CACHE_DISABLE
+      value: "1"
+```
+
+### Мониторинг безопасности GPU
+```bash
+# Мониторинг аномалий GPU
+docker run --gpus all \
+    -v /etc/prometheus:/etc/prometheus \
+    ghcr.io/i8megabit/zakenak:1.0.0 \
+    nvidia-smi dmon -s pucvmet -f /var/log/gpu-metrics.log
+
+# Аудит GPU событий
+docker run --gpus all \
+    -v /var/log/zakenak:/var/log/zakenak \
+    -e AUDIT_LEVEL=RequestResponse \
+    ghcr.io/i8megabit/zakenak:1.0.0 audit
+```
+
+### Защита от криптомайнинга
+1. Ограничение процессов и ресурсов:
+```bash
+docker run --gpus all \
+    --pids-limit 50 \
+    --cpu-shares 512 \
+    --memory-swap 0 \
+    --device-read-bps /dev/sda:1mb \
+    --device-write-bps /dev/sda:1mb \
+    ghcr.io/i8megabit/zakenak:1.0.0
+```
+
+2. Мониторинг подозрительной активности:
+```bash
+# Установка алертов на аномальное использование
+docker run --gpus all \
+    -v $(pwd)/monitoring:/etc/prometheus \
+    -e ALERT_ON_HIGH_USAGE=true \
+    -e GPU_USAGE_THRESHOLD=95 \
+    ghcr.io/i8megabit/zakenak:1.0.0 monitor
+```
+
+### Сетевая изоляция
+```bash
+# Запуск с ограниченным сетевым доступом
+docker run --gpus all \
+    --network=none \
+    --dns 8.8.8.8 \
+    --dns 8.8.4.4 \
+    ghcr.io/i8megabit/zakenak:1.0.0
+
+# Использование пользовательской сети с правилами
+docker network create --driver bridge \
+    --opt com.docker.network.bridge.name=zakenak-net \
+    --opt com.docker.network.bridge.enable_icc=false \
+    zakenak-network
+
+docker run --gpus all \
+    --network=zakenak-network \
+    --network-alias=zakenak \
+    ghcr.io/i8megabit/zakenak:1.0.0
+```
+
+### Аудит и логирование
+```bash
+# Включение расширенного аудита
+docker run --gpus all \
+    -v /var/log/zakenak:/var/log/zakenak \
+    -e AUDIT_LEVEL=RequestResponse \
+    -e AUDIT_LOG_PATH=/var/log/zakenak/audit.log \
+    -e LOG_FORMAT=json \
+    ghcr.io/i8megabit/zakenak:1.0.0
+
+# Мониторинг событий безопасности
+docker run --gpus all \
+    -v /var/log/zakenak:/var/log/zakenak \
+    -e SECURITY_MONITORING=true \
+    -e ALERT_ON_VIOLATION=true \
+    ghcr.io/i8megabit/zakenak:1.0.0 monitor
+```
+
+### Дополнительные меры безопасности
+1. Регулярное обновление образов:
+```bash
+# Проверка и обновление образа
+docker pull ghcr.io/i8megabit/zakenak:1.0.0
+docker image prune -f
+```
+
+2. Сканирование уязвимостей:
+```bash
+# Сканирование образа
+docker scan ghcr.io/i8megabit/zakenak:1.0.0
+
+# Проверка конфигурации на соответствие CIS
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+    aquasec/trivy image ghcr.io/i8megabit/zakenak:1.0.0
+```
+
+3. Проверка целостности:
+```bash
+# Проверка подписи образа
+docker trust inspect ghcr.io/i8megabit/zakenak:1.0.0
+
+# Верификация компонентов
+docker run --gpus all \
+    -e VERIFY_COMPONENTS=true \
+    ghcr.io/i8megabit/zakenak:1.0.0 verify
 ```
 
 ## Устранение неполадок
