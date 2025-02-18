@@ -60,10 +60,10 @@ docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
 ### Получение образа
 ```bash
 # Рекомендуемый способ (фиксированная версия)
-docker pull ghcr.io/i8megabit/zakenak:1.0.0
+docker pull ${ZAKENAK_IMAGE}:${ZAKENAK_VERSION}
 
 # Последняя версия (не рекомендуется для production)
-docker pull ghcr.io/i8megabit/zakenak:latest
+docker pull ${ZAKENAK_IMAGE}:latest
 ```
 
 ### Базовое использование
@@ -72,20 +72,20 @@ docker pull ghcr.io/i8megabit/zakenak:latest
 # Стандартный запуск
 docker run --gpus all \
     -v $(pwd):/workspace \
-    -v ~/.kube:/root/.kube \
-    -v ~/.cache/zakenak:/root/.cache/zakenak \
+    -v ${KUBECONFIG%/*}:/root/.kube \
     --network host \
-    ghcr.io/i8megabit/zakenak:1.0.0 converge
+    ${ZAKENAK_IMAGE}:${ZAKENAK_VERSION} converge
 
 # Запуск с дополнительными параметрами
 docker run --gpus all \
     -v $(pwd):/workspace \
-    -v ~/.kube:/root/.kube \
+    -v ${KUBECONFIG%/*}:/root/.kube \
     -e NVIDIA_VISIBLE_DEVICES=all \
     -e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
-    ghcr.io/i8megabit/zakenak:1.0.0 \
+    ${ZAKENAK_IMAGE}:${ZAKENAK_VERSION} \
     --config /workspace/zakenak.yaml \
     converge
+
 ```
 
 ## Конфигурация
@@ -208,17 +208,17 @@ docker run --gpus all \
 docker run --gpus all \
     --read-only \
     --security-opt=no-new-privileges \
-    --security-opt seccomp=profiles/gpu-restrict.json \
+    --security-opt seccomp=${DEFAULT_SECURITY_PROFILE} \
     --cap-drop ALL \
     --cap-add SYS_ADMIN \
-    --pids-limit 100 \
-    --cpus 2.0 \
-    --memory 8G \
-    --device-read-bps /dev/sda:1mb \
+    --pids-limit ${DEFAULT_PIDS_LIMIT} \
+    --cpus ${DEFAULT_CPU_LIMIT} \
+    --memory ${DEFAULT_MEMORY_LIMIT} \
+    --device-read-bps /dev/sda:${DEFAULT_IO_LIMIT} \
     -v $(pwd):/workspace:ro \
-    -v ~/.kube:/root/.kube:ro \
+    -v ${KUBECONFIG%/*}:/root/.kube:ro \
     --network=host \
-    ghcr.io/i8megabit/zakenak:1.0.0 converge
+    ${ZAKENAK_IMAGE}:${ZAKENAK_VERSION} converge
 ```
 
 ### GPU-специфичная безопасность
@@ -241,9 +241,9 @@ spec:
       readOnlyRootFilesystem: true
     resources:
       limits:
-        nvidia.com/gpu: "1"
-        memory: "8Gi"
-        nvidia.com/gpu-memory: "8Gi"
+        nvidia.com/gpu: "${GPU_COUNT:-1}"
+        memory: "${DEFAULT_GPU_MEMORY_LIMIT}"
+        nvidia.com/gpu-memory: "${DEFAULT_GPU_MEMORY_LIMIT}"
       requests:
         nvidia.com/gpu: "1"
         memory: "4Gi"
@@ -261,14 +261,14 @@ spec:
 # Мониторинг аномалий GPU
 docker run --gpus all \
     -v /etc/prometheus:/etc/prometheus \
-    ghcr.io/i8megabit/zakenak:1.0.0 \
-    nvidia-smi dmon -s pucvmet -f /var/log/gpu-metrics.log
+    ${ZAKENAK_IMAGE}:${ZAKENAK_VERSION} \
+    nvidia-smi dmon -s pucvmet -f ${GPU_METRICS_LOG}
 
 # Аудит GPU событий
 docker run --gpus all \
-    -v /var/log/zakenak:/var/log/zakenak \
-    -e AUDIT_LEVEL=RequestResponse \
-    ghcr.io/i8megabit/zakenak:1.0.0 audit
+    -v ${LOG_DIR}:${LOG_DIR} \
+    -e AUDIT_LEVEL=${DEFAULT_AUDIT_LEVEL} \
+    ${ZAKENAK_IMAGE}:${ZAKENAK_VERSION} audit
 ```
 
 ### Защита от криптомайнинга
@@ -289,8 +289,8 @@ docker run --gpus all \
 docker run --gpus all \
     -v $(pwd)/monitoring:/etc/prometheus \
     -e ALERT_ON_HIGH_USAGE=true \
-    -e GPU_USAGE_THRESHOLD=95 \
-    ghcr.io/i8megabit/zakenak:1.0.0 monitor
+    -e GPU_USAGE_THRESHOLD=${DEFAULT_GPU_USAGE_THRESHOLD} \
+    ${ZAKENAK_IMAGE}:${ZAKENAK_VERSION} monitor
 ```
 
 ### Сетевая изоляция
@@ -298,31 +298,31 @@ docker run --gpus all \
 # Запуск с ограниченным сетевым доступом
 docker run --gpus all \
     --network=none \
-    --dns 8.8.8.8 \
-    --dns 8.8.4.4 \
-    ghcr.io/i8megabit/zakenak:1.0.0
+    --dns ${DEFAULT_DNS_SERVERS} \
+    ${ZAKENAK_IMAGE}:${ZAKENAK_VERSION}
 
 # Использование пользовательской сети с правилами
-docker network create --driver bridge \
-    --opt com.docker.network.bridge.name=zakenak-net \
+docker network create --driver ${DEFAULT_NETWORK_DRIVER} \
+    --opt com.docker.network.bridge.name=${DEFAULT_NETWORK_NAME} \
     --opt com.docker.network.bridge.enable_icc=false \
-    zakenak-network
+    ${DEFAULT_NETWORK_NAME}
 
 docker run --gpus all \
-    --network=zakenak-network \
+    --network=${DEFAULT_NETWORK_NAME} \
     --network-alias=zakenak \
-    ghcr.io/i8megabit/zakenak:1.0.0
+    ${ZAKENAK_IMAGE}:${ZAKENAK_VERSION}
+
 ```
 
 ### Аудит и логирование
 ```bash
 # Включение расширенного аудита
 docker run --gpus all \
-    -v /var/log/zakenak:/var/log/zakenak \
-    -e AUDIT_LEVEL=RequestResponse \
-    -e AUDIT_LOG_PATH=/var/log/zakenak/audit.log \
+    -v ${LOG_DIR}:${LOG_DIR} \
+    -e AUDIT_LEVEL=${DEFAULT_AUDIT_LEVEL} \
+    -e AUDIT_LOG_PATH=${AUDIT_LOG_PATH} \
     -e LOG_FORMAT=json \
-    ghcr.io/i8megabit/zakenak:1.0.0
+    ${ZAKENAK_IMAGE}:${ZAKENAK_VERSION}
 
 # Мониторинг событий безопасности
 docker run --gpus all \

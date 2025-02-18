@@ -15,32 +15,19 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-# Добавляем новые пути для профилей безопасности
-SECURITY_PROFILES_DIR="${REPO_ROOT}/profiles"
-GPU_RESTRICT_PROFILE="${SECURITY_PROFILES_DIR}/gpu-restrict.json"
+# Загрузка переменных окружения и автообнаруженных параметров
+source "${SCRIPT_DIR}/env.sh"
 
-# Цвета для вывода
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+# Значения по умолчанию (если не определены в env.sh)
+SKIP_SETUP=${SKIP_SETUP:-false}
+SKIP_DOCKER=${SKIP_DOCKER:-false}
+SKIP_NVIDIA=${SKIP_NVIDIA:-false}
+SKIP_CONVERGE=${SKIP_CONVERGE:-false}
+SKIP_SECURITY_CHECK=${SKIP_SECURITY_CHECK:-false}
+DEBUG=${DEBUG:-false}
+NAMESPACE=${NAMESPACE:-"prod"}
+ENVIRONMENT=${ENVIRONMENT:-"prod"}
 
-# Docker image configuration
-ZAKENAK_IMAGE="ghcr.io/i8megabit/zakenak:latest"
-
-# Значения по умолчанию
-SKIP_SETUP=false
-SKIP_DOCKER=false
-SKIP_NVIDIA=false
-SKIP_CONVERGE=false
-SKIP_SECURITY_CHECK=false
-DEBUG=false
-NAMESPACE="prod"
-ENVIRONMENT="prod"
-AUDIT_LEVEL="RequestResponse"
-GPU_MEMORY_LIMIT="8Gi"
-GPU_USAGE_THRESHOLD=95
 
 # Функция вывода справки
 show_help() {
@@ -128,6 +115,10 @@ check_security() {
 	if [ "$SKIP_SECURITY_CHECK" = false ]; then
 		echo -e "${CYAN}Проверка конфигурации безопасности...${NC}"
 		
+		if [ "$GPU_AVAILABLE" = "false" ]; then
+			echo -e "${YELLOW}Предупреждение: GPU не обнаружен${NC}"
+		fi
+
 		# Проверка наличия профиля GPU restrict
 		if [ ! -f "$GPU_RESTRICT_PROFILE" ]; then
 			echo -e "${RED}Ошибка: Отсутствует профиль ограничений GPU${NC}"
@@ -140,13 +131,13 @@ check_security() {
 			find "$SECURITY_PROFILES_DIR" -type d -exec chmod 755 {} \;
 		fi
 
-		# Проверка настроек Docker
-		if ! docker info --format '{{.SecurityOptions}}' | grep -q "name=seccomp,profile=default"; then
-			echo -e "${YELLOW}Предупреждение: Seccomp профиль Docker не активирован${NC}"
+		if [ "$DOCKER_VERSION" = "none" ]; then
+			echo -e "${RED}Ошибка: Docker не установлен${NC}"
+			exit 1
 		fi
 
-		# Проверка NVIDIA Container Toolkit
-		if ! command -v nvidia-container-cli &> /dev/null; then
+		# Проверка NVIDIA Container Toolkit если GPU доступен
+		if [ "$GPU_AVAILABLE" = "true" ] && ! command -v nvidia-container-cli &> /dev/null; then
 			echo -e "${RED}Ошибка: NVIDIA Container Toolkit не установлен${NC}"
 			exit 1
 		fi
@@ -200,14 +191,47 @@ setup_cluster() {
 		export ZAKENAK_NAMESPACE=$NAMESPACE
 		export ZAKENAK_ENV=$ENVIRONMENT
 
-		# Запуск setup через Docker
-		docker run --rm --gpus all \
-			-v "${REPO_ROOT}:/workspace" \
-			-v "${REPO_ROOT}/kubeconfig.yaml:/root/.kube/config" \
-			-e ZAKENAK_DEBUG="${DEBUG}" \
-			-e ZAKENAK_NAMESPACE="${NAMESPACE}" \
-			-e ZAKENAK_ENV="${ENVIRONMENT}" \
-			"${ZAKENAK_IMAGE}" setup \
+		# Базовые параметры Docker
+		local docker_args=(
+			--rm
+			--security-opt=no-new-privileges
+			--security-opt seccomp="${GPU_RESTRICT_PROFILE}"
+			--cap-drop ALL
+			--cap-add SYS_ADMIN
+			--pids-limit "${DEFAULT_PIDS_LIMIT}"
+			--cpus "${DEFAULT_CPU_LIMIT}"
+			--memory "${DEFAULT_MEMORY_LIMIT}"
+			--device-read-bps /dev/sda:"${DEFAULT_IO_LIMIT}"
+			--device-write-bps /dev/sda:"${DEFAULT_IO_LIMIT}"
+			-v "${REPO_ROOT}:/workspace:ro"
+			-v "${KUBECONFIG%/*}:/root/.kube:ro"
+			--network=none
+		)
+
+		# Добавление GPU параметров если доступны
+		if [ "$GPU_AVAILABLE" = "true" ]; then
+			docker_args+=(
+				--gpus all
+				-e NVIDIA_VISIBLE_DEVICES=all
+				-e NVIDIA_DRIVER_CAPABILITIES=compute,utility
+				-e CUDA_CACHE_DISABLE=1
+			)
+		fi
+
+		# Добавление переменных окружения
+		docker_args+=(
+			-e ZAKENAK_DEBUG="${DEBUG}"
+			-e ZAKENAK_NAMESPACE="${NAMESPACE}"
+			-e ZAKENAK_ENV="${ENVIRONMENT}"
+			-e AUDIT_LEVEL="${DEFAULT_AUDIT_LEVEL}"
+			-e GPU_USAGE_THRESHOLD="${DEFAULT_GPU_USAGE_THRESHOLD}"
+			-e SECURITY_MONITORING=true
+			-e VERIFY_COMPONENTS=true
+		)
+
+		# Запуск setup
+		docker run "${docker_args[@]}" \
+			"${ZAKENAK_IMAGE}:${ZAKENAK_VERSION}" setup \
 			--workdir /workspace \
 			--namespace "${NAMESPACE}"
 		
@@ -225,29 +249,45 @@ run_converge() {
 		export ZAKENAK_NAMESPACE=$NAMESPACE
 		export ZAKENAK_ENV=$ENVIRONMENT
 		
-		# Запуск конвергенции через Docker с расширенными мерами безопасности
-		docker run --rm --gpus all \
-			--security-opt=no-new-privileges \
-			--security-opt seccomp="$GPU_RESTRICT_PROFILE" \
-			--cap-drop ALL \
-			--cap-add SYS_ADMIN \
-			--pids-limit 100 \
-			--cpus 2.0 \
-			--memory "$GPU_MEMORY_LIMIT" \
-			--device-read-bps /dev/sda:1mb \
-			--device-write-bps /dev/sda:1mb \
-			-v "${REPO_ROOT}:/workspace:ro" \
-			-v "${REPO_ROOT}/kubeconfig.yaml:/root/.kube/config:ro" \
-			-e ZAKENAK_DEBUG="${DEBUG}" \
-			-e ZAKENAK_NAMESPACE="${NAMESPACE}" \
-			-e ZAKENAK_ENV="${ENVIRONMENT}" \
-			-e NVIDIA_VISIBLE_DEVICES=all \
-			-e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
-			-e CUDA_CACHE_DISABLE=1 \
-			-e AUDIT_LEVEL="${AUDIT_LEVEL}" \
-			-e GPU_USAGE_THRESHOLD="${GPU_USAGE_THRESHOLD}" \
+		# Базовые параметры Docker
+		local docker_args=(
+			--rm
+			--security-opt=no-new-privileges
+			--security-opt seccomp="$GPU_RESTRICT_PROFILE"
+			--cap-drop ALL
+			--cap-add SYS_ADMIN
+			--pids-limit "${DEFAULT_PIDS_LIMIT}"
+			--cpus "${DEFAULT_CPU_LIMIT}"
+			--memory "${DEFAULT_MEMORY_LIMIT}"
+			--device-read-bps /dev/sda:"${DEFAULT_IO_LIMIT}"
+			--device-write-bps /dev/sda:"${DEFAULT_IO_LIMIT}"
+			-v "${REPO_ROOT}:/workspace:ro"
+			-v "${KUBECONFIG%/*}:/root/.kube:ro"
+		)
+
+		# Добавление GPU параметров если доступны
+		if [ "$GPU_AVAILABLE" = "true" ]; then
+			docker_args+=(
+				--gpus all
+				-e NVIDIA_VISIBLE_DEVICES=all
+				-e NVIDIA_DRIVER_CAPABILITIES=compute,utility
+				-e CUDA_CACHE_DISABLE=1
+			)
+		fi
+
+		# Добавление переменных окружения
+		docker_args+=(
+			-e ZAKENAK_DEBUG="${DEBUG}"
+			-e ZAKENAK_NAMESPACE="${NAMESPACE}"
+			-e ZAKENAK_ENV="${ENVIRONMENT}"
+			-e AUDIT_LEVEL="${DEFAULT_AUDIT_LEVEL}"
+			-e GPU_USAGE_THRESHOLD="${DEFAULT_GPU_USAGE_THRESHOLD}"
+		)
+
+		# Запуск конвергенции
+		docker run "${docker_args[@]}" \
 			--network=host \
-			"${ZAKENAK_IMAGE}" converge \
+			"${ZAKENAK_IMAGE}:${ZAKENAK_VERSION}" converge \
 			--config /workspace/zakenak.yaml \
 			--namespace "${NAMESPACE}"
 		
