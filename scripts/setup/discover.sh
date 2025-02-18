@@ -10,22 +10,22 @@ discover_kubernetes_version() {
 	echo "${latest_version#v}"
 }
 
-# Функция определения CUDA версии
-discover_cuda_version() {
-	if command -v nvidia-smi &> /dev/null; then
-		nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -n1
-	else
-		echo "12.8" # Fallback version
+# Функция определения GPU параметров
+discover_gpu_config() {
+	local gpu_info
+	if ! gpu_info=$(nvidia-smi --query-gpu=memory.total,driver_version,compute_mode --format=csv,noheader 2>/dev/null); then
+		echo "WARNING: NVIDIA GPU not found, using default values"
+		echo "memory=8Gi driver_version=535 compute_mode=Default"
+		return
 	fi
+	echo "$gpu_info"
 }
 
-# Функция определения NVIDIA драйвера
-discover_nvidia_driver() {
-	if command -v nvidia-smi &> /dev/null; then
-		nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -n1
-	else
-		echo "535.104.05" # Fallback version
-	fi
+# Функция определения параметров безопасности
+discover_security_config() {
+	local user_id=$(id -u)
+	local user_name=$(id -un)
+	echo "user_id=$user_id user_name=$user_name"
 }
 
 # Функция обнаружения GPU устройств и путей
@@ -78,19 +78,55 @@ discover_available_ports() {
 	echo "${http_port} ${https_port}"
 }
 
-# Экспорт обнаруженных значений
+# Функция обнаружения Helm чартов
+discover_helm_charts() {
+	local repo_root="$1"
+	local charts_dir="${repo_root}/helm-charts"
+	local charts=()
+	
+	if [ -d "$charts_dir" ]; then
+		for chart in "$charts_dir"/*; do
+			if [ -d "$chart" ]; then
+				local chart_name=$(basename "$chart")
+				local values=()
+				
+				# Проверка наличия values файлов
+				if [ -f "$chart/values.yaml" ]; then
+					values+=("values.yaml")
+				fi
+				if [ -f "$chart/values-prod.yaml" ]; then
+					values+=("values-prod.yaml")
+				fi
+				if [ -f "$chart/values-gpu.yaml" ]; then
+					values+=("values-gpu.yaml")
+				fi
+				
+				charts+=("$chart_name:${values[*]}")
+			fi
+		done
+	fi
+	echo "${charts[*]}"
+}
+
+# Экспорт всех обнаруженных параметров
 export_discovered_values() {
+	local repo_root="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 	local k8s_version=$(discover_kubernetes_version)
-	local cuda_version=$(discover_cuda_version)
-	local nvidia_driver=$(discover_nvidia_driver)
+	local gpu_config=$(discover_gpu_config)
+	local security_config=$(discover_security_config)
 	local gpu_mounts=($(discover_gpu_mounts))
+	local helm_charts=$(discover_helm_charts "$repo_root")
 	read -r http_port https_port <<< "$(discover_available_ports)"
 	
 	cat << EOF
 # Auto-discovered configuration $(date)
 export KUBERNETES_VERSION="${k8s_version}"
-export CUDA_VERSION="${cuda_version}"
-export NVIDIA_DRIVER_VERSION="${nvidia_driver}"
+export GPU_MEMORY=$(echo "$gpu_config" | cut -d',' -f1 | tr -d ' ')
+export GPU_DRIVER_VERSION=$(echo "$gpu_config" | cut -d',' -f2 | tr -d ' ')
+export GPU_COMPUTE_MODE=$(echo "$gpu_config" | cut -d',' -f3 | tr -d ' ')
+export SECURITY_USER_ID=$(echo "$security_config" | cut -d' ' -f1 | cut -d'=' -f2)
+export SECURITY_USER_NAME=$(echo "$security_config" | cut -d' ' -f2 | cut -d'=' -f2)
+export HELM_CHARTS="$helm_charts"
 export INGRESS_HTTP_PORT=${http_port}
 export INGRESS_HTTPS_PORT=${https_port}
 
@@ -105,7 +141,9 @@ $(for mount in "${gpu_mounts[@]}"; do echo "    \"${mount}\""; done)
 EOF
 }
 
-# Если скрипт запущен напрямую, выводим конфигурацию
+# Если скрипт запущен напрямую
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-	export_discovered_values
+	SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+	REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+	export_discovered_values "$REPO_ROOT"
 fi

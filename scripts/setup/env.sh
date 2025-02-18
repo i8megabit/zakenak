@@ -10,6 +10,9 @@ export NC='\033[0m'
 # Определение пути к директории скрипта
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Установка прав на исполнение для discover.sh
+chmod +x "${SCRIPT_DIR}/discover.sh"
+
 # Загрузка автообнаруженных параметров
 if [ -f "${SCRIPT_DIR}/discover.sh" ]; then
 	eval "$(${SCRIPT_DIR}/discover.sh)"
@@ -24,4 +27,4 @@ export KUBECONFIG="${HOME}/.kube/config"
 # Kubernetes конфигурация
 export CLUSTER_NAME="kind-zakenak"
 
-# Остальные переменные загружаются динамически из discover.sh
+# Автообнаруженные переменные уже загружены из discover.sh

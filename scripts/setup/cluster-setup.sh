@@ -13,6 +13,11 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
+# Установка прав на исполнение для всех скриптов
+for script in "${SCRIPT_DIR}"/*.sh; do
+    chmod +x "$script"
+done
+
 # Загрузка общих переменных и баннеров
 source "${SCRIPT_DIR}/env.sh"
 source "${SCRIPT_DIR}/ascii_banners.sh"
@@ -146,46 +151,28 @@ setup_cluster() {
     check_error "Ошибка обновления kubeconfig"
 }
 
-# Функция генерации конфигурации zakenak
 generate_zakenak_config() {
     echo -e "${CYAN}Генерация конфигурации zakenak...${NC}"
     
-    # Проверка наличия директории helm-charts
-    if [ ! -d "${REPO_ROOT}/helm-charts" ]; then
-        echo -e "${RED}Ошибка: директория helm-charts не найдена${NC}"
-        exit 1
-    }
-
-    # Создание временного массива для хранения конфигурации чартов
-    declare -a chart_configs
-
-    # Обход всех директорий в helm-charts
-    for chart_dir in "${REPO_ROOT}"/helm-charts/*/; do
-        if [ -d "$chart_dir" ]; then
-            # Получение имени чарта из пути
-            chart_name=$(basename "$chart_dir")
-            
-            # Формирование конфигурации для чарта
-            chart_config="    - name: $chart_name\n      path: ./helm-charts/$chart_name"
-            
-            # Проверка наличия values файлов
-            if [ -f "${chart_dir}/values.yaml" ]; then
-                chart_config+="\n      values:\n        - values.yaml"
-                
-                # Проверка дополнительных values файлов
-                if [ -f "${chart_dir}/values-prod.yaml" ]; then
-                    chart_config+="\n        - values-prod.yaml"
-                fi
-                if [ -f "${chart_dir}/values-gpu.yaml" ]; then
-                    chart_config+="\n        - values-gpu.yaml"
-                fi
-            fi
-            
-            chart_configs+=("$chart_config")
+    # Загрузка автообнаруженных параметров
+    eval "$(${SCRIPT_DIR}/discover.sh)"
+    
+    # Формирование списка чартов
+    local charts_config=""
+    IFS=' ' read -ra CHART_LIST <<< "$HELM_CHARTS"
+    for chart_info in "${CHART_LIST[@]}"; do
+        IFS=':' read -r name values <<< "$chart_info"
+        charts_config+="    - name: $name\n      path: ./helm-charts/$name\n"
+        if [ ! -z "$values" ]; then
+            charts_config+="      values:\n"
+            IFS=' ' read -ra VALUE_FILES <<< "$values"
+            for value in "${VALUE_FILES[@]}"; do
+                charts_config+="        - $value\n"
+            done
         fi
     done
 
-    # Генерация файла конфигурации
+    # Генерация конфигурационного файла
     cat > "${REPO_ROOT}/zakenak.yaml" << EOF
 version: "1.0"
 project: zakenak
@@ -195,21 +182,21 @@ environment: prod
 deploy:
   namespace: prod
   charts:
-$(printf '%s\n' "${chart_configs[@]}")
+$charts_config
 
 # Настройки GPU
 build:
   gpu:
     enabled: true
     runtime: nvidia
-    memory: "8Gi"
+    memory: "${GPU_MEMORY:-8Gi}"
     devices: "all"
     capabilities:
       - compute
       - utility
     options:
       - "device=all"
-      - "require=cuda>=12.0"
+      - "require=cuda>=${GPU_DRIVER_VERSION:-12.0}"
 
 # Настройки безопасности
 security:
@@ -220,15 +207,12 @@ security:
     enabled: true
   podSecurityContext:
     runAsNonRoot: true
-    runAsUser: 1000
+    runAsUser: ${SECURITY_USER_ID:-1000}
 EOF
 
     check_error "Ошибка генерации конфигурации zakenak"
     echo -e "${GREEN}Конфигурация zakenak.yaml успешно создана${NC}"
-    
-    # Вывод сгенерированной конфигурации для отладки
-    echo -e "${CYAN}Сгенерированная конфигурация:${NC}"
-    cat "${REPO_ROOT}/zakenak.yaml"
+
 }
 
 # Функция установки компонентов
