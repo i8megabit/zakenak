@@ -7,7 +7,7 @@
 #  \_____|_| |_|\__,_|_|   \__|___/
 #                         by @eberil
 #
-# Copyright (c)  2025 Mikhail Eberil
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 # Helm Charts Management Tool
 # Version: 1.2.0
 #

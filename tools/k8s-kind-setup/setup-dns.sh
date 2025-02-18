@@ -6,7 +6,7 @@
 # |____/|_| \_|____/ 
 #            by @eberil
 #
-# Copyright (c)  2025 Mikhail Eberil
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 # This code is free! Share it, spread peace and technology!
 # "Because DNS should just work!"
 

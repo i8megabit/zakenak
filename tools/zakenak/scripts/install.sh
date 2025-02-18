@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (c)  2025 Mikhail Eberil
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 # Installation script for Zakenak
 
 set -e

@@ -1,4 +1,4 @@
-# Copyright (c)  2025 Mikhail Eberil
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 # Dockerfile for Zakenak
 
 # Build stage

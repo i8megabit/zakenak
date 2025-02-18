@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2025 Mikhail Eberil
+ * Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
  * 
  * This file is part of Ƶakenak, a GitOps deployment tool.
  * 

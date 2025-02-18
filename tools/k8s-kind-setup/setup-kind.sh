@@ -6,7 +6,7 @@
 # |_|\_\___/_____|
 #            by @eberil
 #
-# Copyright (c)  2025 Mikhail Eberil
+# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 # This code is free! Share it, spread peace and technology!
 # "Because clusters should be fun!"
 
