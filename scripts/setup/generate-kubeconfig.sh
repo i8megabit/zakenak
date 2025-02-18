@@ -9,6 +9,9 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
+# Загрузка переменных окружения
+source "${SCRIPT_DIR}/env.sh"
+
 # Функция проверки ошибок
 check_error() {
 	if [ $? -ne 0 ]; then
@@ -17,8 +20,24 @@ check_error() {
 	fi
 }
 
+# Определение окружения
+is_wsl() {
+	grep -q "microsoft" /proc/version 2>/dev/null
+	return $?
+}
+
 # Создание базовой конфигурации кластера
 generate_kind_config() {
+	local mounts=()
+	
+	if is_wsl; then
+		echo "Generating WSL2 configuration..."
+		mounts=("${WSL_MOUNTS[@]}")
+	else
+		echo "Generating Linux configuration..."
+		mounts=("${LINUX_MOUNTS[@]}")
+	fi
+	
 	cat > "${REPO_ROOT}/kind-config.yaml" << EOF
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -41,31 +60,15 @@ nodes:
   # Путь к общим манифестам
   - hostPath: ./helm-charts/manifests
 	containerPath: /etc/kubernetes/manifests
-  # WSL2 specific NVIDIA paths
-  - hostPath: /usr/lib/wsl/lib
-	containerPath: /usr/lib/wsl/lib
-  # CUDA toolkit
-  - hostPath: /usr/local/cuda-12.8
-	containerPath: /usr/local/cuda-12.8
-  - hostPath: /usr/local/cuda
-	containerPath: /usr/local/cuda
-  # NVIDIA драйверы и библиотеки для WSL2
-  - hostPath: /usr/lib/wsl/lib/libcuda.so.1
-	containerPath: /usr/lib/wsl/lib/libcuda.so.1
-  - hostPath: /usr/lib/wsl/lib/libnvidia-ml.so.1
-	containerPath: /usr/lib/wsl/lib/libnvidia-ml.so.1
-  # NVIDIA устройства
-  - hostPath: /dev/nvidia0
-	containerPath: /dev/nvidia0
-  - hostPath: /dev/nvidiactl
-	containerPath: /dev/nvidiactl
-  - hostPath: /dev/nvidia-uvm
-	containerPath: /dev/nvidia-uvm
-  - hostPath: /dev/nvidia-uvm-tools
-	containerPath: /dev/nvidia-uvm-tools
-  - hostPath: /dev/nvidia-modeset
-	containerPath: /dev/nvidia-modeset
 EOF
+
+	# Добавление специфичных монтирований
+	for mount in "${mounts[@]}"; do
+		IFS=':' read -r host_path container_path <<< "$mount"
+		echo "  - hostPath: $host_path" >> "${REPO_ROOT}/kind-config.yaml"
+		echo "    containerPath: $container_path" >> "${REPO_ROOT}/kind-config.yaml"
+	done
+
 	check_error "Failed to generate kind config"
 }
 
@@ -74,7 +77,6 @@ get_cluster_data() {
 	CURRENT_CONTEXT=$(kubectl config current-context)
 	check_error "Failed to get current context"
 	
-	CLUSTER_NAME="kind-zakenak"
 	CLUSTER_SERVER=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')
 	check_error "Failed to get cluster server"
 	
@@ -87,6 +89,7 @@ get_cluster_data() {
 	CLIENT_KEY_DATA=$(kubectl config view --minify --flatten -o jsonpath='{.users[0].user.client-key-data}')
 	check_error "Failed to get client key data"
 }
+
 
 # Создание kubeconfig
 generate_kubeconfig() {
