@@ -149,8 +149,14 @@ setup_docker_nvidia() {
 	if [ "$SKIP_DOCKER" = false ]; then
 		echo -e "${CYAN}Настройка Docker с расширенной безопасностью...${NC}"
 		
-		# Создаем директорию для профилей безопасности
-		mkdir -p "$SECURITY_PROFILES_DIR"
+		# Проверяем и создаем директории если они не существуют
+		if [ -n "$SECURITY_PROFILES_DIR" ]; then
+			mkdir -p "$SECURITY_PROFILES_DIR"
+			check_error "Не удалось создать директорию для профилей безопасности"
+		else
+			echo -e "${RED}Ошибка: SECURITY_PROFILES_DIR не определен${NC}"
+			exit 1
+		fi
 		
 		# Проверяем и устанавливаем базовые настройки безопасности Docker
 		sudo "${SCRIPT_DIR}/docker-setup.sh"
@@ -195,7 +201,7 @@ setup_cluster() {
 		local docker_args=(
 			--rm
 			--security-opt=no-new-privileges
-			--security-opt seccomp="${GPU_RESTRICT_PROFILE}"
+			--security-opt seccomp="${REPO_ROOT}/config/gpu/seccomp-profile.json"
 			--cap-drop ALL
 			--cap-add SYS_ADMIN
 			--pids-limit "${DEFAULT_PIDS_LIMIT}"
@@ -253,7 +259,7 @@ run_converge() {
 		local docker_args=(
 			--rm
 			--security-opt=no-new-privileges
-			--security-opt seccomp="$GPU_RESTRICT_PROFILE"
+			--security-opt seccomp="${REPO_ROOT}/config/gpu/seccomp-profile.json"
 			--cap-drop ALL
 			--cap-add SYS_ADMIN
 			--pids-limit "${DEFAULT_PIDS_LIMIT}"

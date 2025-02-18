@@ -25,7 +25,9 @@ fi
 
 # Пути
 export KUBECONFIG="${HOME}/.kube/config"
-export GPU_RESTRICT_PROFILE="${REPO_ROOT}/config/gpu/gpu-security-profile.yaml"
+export GPU_RESTRICT_PROFILE="${REPO_ROOT}/config/gpu/seccomp-profile.json"
+export SECURITY_PROFILES_DIR="${REPO_ROOT}/config/security"
+
 
 
 # Kubernetes конфигурация

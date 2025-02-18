@@ -189,7 +189,7 @@ export GPU_METRICS_LOG=/var/log/zakenak/gpu-metrics.log
 
 # Image Configuration
 export ZAKENAK_IMAGE=ghcr.io/i8megabit/zakenak
-export ZAKENAK_VERSION=1.0.0
+export ZAKENAK_VERSION=latest
 
 # Other Configuration
 export HELM_CHARTS="$helm_charts"
