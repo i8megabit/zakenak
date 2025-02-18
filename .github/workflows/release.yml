@@ -11,7 +11,6 @@ jobs:
   build:
     name: Build Release
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -21,11 +20,11 @@ jobs:
           go-version: '1.21'
       - name: Build
         run: |
-          mkdir -p bin
-          go build -o bin/zakenak ./tools/zakenak/cmd/zakenak
+          export PATH=/usr/local/cuda-12.8/bin:$PATH
+          export LD_LIBRARY_PATH=/usr/local/cuda-12.8/lib64:$LD_LIBRARY_PATH
+          make build			
       - name: Run tests
-        run: go test ./...
-
+        run: make test
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
