@@ -54,21 +54,26 @@ if [ ! -d .git ]; then
     git commit -m "Initial commit by Zakenak"
     git branch -M main
 else
-    echo "Git repository exists, ensuring correct branch..."
+    echo "Git repository exists, ensuring clean state..."
+    # Сохраняем текущие изменения
+    if ! git diff --quiet || ! git diff --staged --quiet; then
+        echo "Stashing changes..."
+        git stash || true
+    fi
+    
     # Проверяем существование ветки main
     if git rev-parse --verify main >/dev/null 2>&1; then
         echo "Main branch exists, checking out..."
-        git checkout main || {
-            echo "Failed to checkout main, attempting to fix..."
-            # Сохраняем текущие изменения
-            git stash || true
-            git checkout -B main
-            git stash pop || true
-        }
+        git checkout main
     else
-        echo "Main branch does not exist, creating..."
-        current_branch=\$(git rev-parse --abbrev-ref HEAD || echo "unknown")
-        git checkout -B main
+        echo "Main branch not found, creating..."
+        git checkout -b main
+    fi
+    
+    # Восстанавливаем изменения если они были
+    if git stash list | grep -q 'stash@{0}'; then
+        echo "Restoring changes..."
+        git stash pop || true
     fi
 fi
 

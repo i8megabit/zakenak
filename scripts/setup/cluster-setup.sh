@@ -96,16 +96,16 @@ read_config() {
     if [ ! -f "$config_file" ]; then
         echo -e "${RED}Ошибка: файл $config_file не найден${NC}"
         exit 1
-    }
+    fi
 
     # Чтение основных параметров из конфигурации
-    ZAKENAK_PROJECT=$(python3 -c "import yaml; print(yaml.safe_load(open('$config_file'))['project'])")
-    ZAKENAK_ENV=$(python3 -c "import yaml; print(yaml.safe_load(open('$config_file'))['environment'])")
-    ZAKENAK_NAMESPACE=$(python3 -c "import yaml; print(yaml.safe_load(open('$config_file'))['deploy']['namespace'])")
+    ZAKENAK_PROJECT=$(python3 -c "import yaml; print(yaml.safe_load(open('$config_file'))['project'])" | tr -d "'")
+    ZAKENAK_ENV=$(python3 -c "import yaml; print(yaml.safe_load(open('$config_file'))['environment'])" | tr -d "'")
+    ZAKENAK_NAMESPACE=$(python3 -c "import yaml; print(yaml.safe_load(open('$config_file'))['deploy']['namespace'])" | tr -d "'")
     
     # Установка значений по умолчанию, если не найдены
-    ZAKENAK_NAMESPACE=${ZAKENAK_NAMESPACE:-"prod"}
-    ZAKENAK_ENV=${ZAKENAK_ENV:-"prod"}
+    ZAKENAK_NAMESPACE=${ZAKENAK_NAMESPACE:-prod}
+    ZAKENAK_ENV=${ZAKENAK_ENV:-prod}
 }
 
 # Функция проверки зависимостей
@@ -196,11 +196,11 @@ generate_zakenak_config() {
     
     cat > "${REPO_ROOT}/zakenak.yaml" << EOF
 version: "1.0"
-project: ${ZAKENAK_PROJECT:-"zakenak"}
-environment: ${ZAKENAK_ENV:-"prod"}
+project: zakenak
+environment: prod
 
 deploy:
-  namespace: ${ZAKENAK_NAMESPACE:-"prod"}
+  namespace: prod
   charts:
     - ./helm-charts/cert-manager
     - ./helm-charts/local-ca
@@ -219,7 +219,7 @@ build:
 security:
   rbac:
     enabled: true
-    serviceAccount: ${ZAKENAK_PROJECT:-"zakenak"}
+    serviceAccount: zakenak
   networkPolicies:
     enabled: true
   podSecurityContext:
@@ -237,14 +237,6 @@ EOF
         exit 1
     fi
 }
-
-
-
-
-
-
-
-
 
 # Функция установки компонентов
 install_components() {
