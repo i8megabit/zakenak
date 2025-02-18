@@ -15,13 +15,13 @@ import (
 
     "github.com/spf13/cobra"
     "github.com/i8megabit/zakenak/pkg/git"
+    "github.com/i8megabit/zakenak/pkg/banner"
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/tools/clientcmd"
     "github.com/i8megabit/zakenak/pkg/config"
     "github.com/i8megabit/zakenak/pkg/converge"
     "github.com/i8megabit/zakenak/pkg/build"
     "github.com/i8megabit/zakenak/pkg/state"
-    "github.com/i8megabit/zakenak/pkg/banner"
     "github.com/i8megabit/zakenak/pkg/cluster"
 )
 
@@ -271,6 +271,22 @@ func newSetupCmd() *cobra.Command {
     cmd.Flags().StringVar(&workDir, "workdir", "", "рабочая директория")
 
     return cmd
+}
+
+func newClusterCmd() *cobra.Command {
+    cmd := &cobra.Command{
+        Use:   "cluster",
+        Short: "Управление кластером Kubernetes",
+        RunE: func(cmd *cobra.Command, args []string) error {
+            return runCluster()
+        },
+    }
+    return cmd
+}
+
+func runCluster() error {
+    // TODO: Implement cluster management functionality
+    return nil
 }
 
 func runStatus() error {
