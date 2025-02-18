@@ -41,7 +41,7 @@ Should Harbour?	No.
 
 ## Защита GPU ресурсов
 
-### Изоляция GPU
+### Базовая изоляция GPU
 ```yaml
 # Пример Pod Security Context для GPU workload
 apiVersion: v1
@@ -62,11 +62,212 @@ spec:
             capabilities:
                 drop:
                 - ALL
+            readOnlyRootFilesystem: true
         resources:
             limits:
                 nvidia.com/gpu: "1"
+                memory: "8Gi"
+                cpu: "2"
+                nvidia.com/gpu-memory: "8Gi"
             requests:
                 nvidia.com/gpu: "1"
+                memory: "4Gi"
+                cpu: "1"
+        env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "all"
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "compute,utility"
+        - name: CUDA_CACHE_DISABLE
+          value: "1"
+```
+
+### Защита от криптомайнинга
+1. Ограничение процессов:
+```yaml
+spec:
+  containers:
+  - name: gpu-container
+    securityContext:
+      procMount: Default
+      seccompProfile:
+        type: Localhost
+        localhostProfile: "profiles/gpu-restrict.json"
+```
+
+2. Профиль Seccomp для GPU (profiles/gpu-restrict.json):
+```json
+{
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "architectures": ["SCMP_ARCH_X86_64"],
+    "syscalls": [
+        {
+            "names": [
+                "read",
+                "write",
+                "openat",
+                "close",
+                "fstat",
+                "mmap",
+                "mprotect",
+                "munmap",
+                "rt_sigaction",
+                "rt_sigprocmask",
+                "ioctl",
+                "nanosleep"
+            ],
+            "action": "SCMP_ACT_ALLOW"
+        }
+    ]
+}
+```
+
+3. NetworkPolicy для GPU подов:
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gpu-pods-policy
+spec:
+  podSelector:
+    matchLabels:
+      gpu: "true"
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: prod
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: prod
+    ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+```
+
+### Мониторинг аномалий GPU
+1. Prometheus правила для обнаружения аномалий:
+```yaml
+groups:
+- name: gpu.rules
+  rules:
+  - alert: GPUHighUtilization
+    expr: nvidia_gpu_duty_cycle > 95
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      description: "GPU {{$labels.gpu}} utilization > 95% for 15m"
+
+  - alert: GPUAnomalousMemoryUsage
+    expr: nvidia_gpu_memory_used_bytes / nvidia_gpu_memory_total_bytes * 100 > 90
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      description: "GPU {{$labels.gpu}} memory usage > 90% for 10m"
+
+  - alert: GPUProcessCount
+    expr: count(nvidia_gpu_processes) by (gpu) > 3
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      description: "Unusual number of processes on GPU {{$labels.gpu}}"
+```
+
+2. Автоматическое ограничение подозрительных подов:
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gpu-pods-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      gpu: "true"
+```
+
+### Аудит использования GPU
+1. Включение расширенного аудита в Kubernetes:
+```yaml
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+- level: RequestResponse
+  resources:
+  - group: ""
+    resources: ["pods"]
+    namespaces: ["prod"]
+    verbs: ["create", "update", "patch", "delete"]
+  - group: "nvidia.com"
+    resources: ["gpus"]
+    verbs: ["*"]
+```
+
+2. Логирование GPU событий:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    seccomp.security.alpha.kubernetes.io/pod: "docker/default"
+    container.seccomp.security.alpha.kubernetes.io/gpu-container: "profiles/gpu-restrict"
+    audit.k8s.io/gpu-monitor: "enabled"
+```
+
+### Дополнительные меры безопасности
+1. Ограничение времени выполнения GPU задач:
+```yaml
+spec:
+  activeDeadlineSeconds: 3600
+  containers:
+  - name: gpu-container
+    resources:
+      limits:
+        nvidia.com/gpu-time: "3600s"
+```
+
+2. Квоты на использование GPU:
+```yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: gpu-quota
+spec:
+  hard:
+    requests.nvidia.com/gpu: "4"
+    limits.nvidia.com/gpu: "4"
+    requests.nvidia.com/gpu-memory: "32Gi"
+    limits.nvidia.com/gpu-memory: "32Gi"
+```
+
+3. LimitRange для GPU подов:
+```yaml
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: gpu-limits
+spec:
+  limits:
+  - type: Container
+    defaultRequest:
+      nvidia.com/gpu: "1"
+      memory: "4Gi"
+    default:
+      nvidia.com/gpu: "1"
+      memory: "8Gi"
+    max:
+      nvidia.com/gpu: "2"
+      memory: "16Gi"
 ```
 
 ### NVIDIA Security
