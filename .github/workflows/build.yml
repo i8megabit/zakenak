@@ -31,8 +31,10 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
 
-
-
+    - name: Initialize Go module
+      run: |
+        go mod init github.com/i8megabit/zakenak
+        go mod tidy
 
     - name: Build Binary
       run: |
