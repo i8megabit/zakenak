@@ -9,6 +9,7 @@ GOFLAGS := -v
 BINARY_NAME := zakenak
 VERSION := $(shell git describe --tags --always --dirty)
 BUILD_TIME := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
+BUILD_DIR := build
 
 # Docker configuration
 REGISTRY ?= ghcr.io
@@ -37,15 +38,16 @@ vendor:
 	$(GO) mod vendor
 
 build: deps
+	mkdir -p $(BUILD_DIR)
 	$(GO) build $(GOFLAGS) \
 		-ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)" \
-		-o ../../bin/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
+		-o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
 
 test: deps
 	$(GO) test -v ./...
 
 clean:
-	rm -rf bin/
+	rm -rf $(BUILD_DIR)
 	rm -f $(BINARY_NAME)
 	rm -rf vendor/
 
