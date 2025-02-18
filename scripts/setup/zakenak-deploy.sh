@@ -11,6 +11,41 @@
 
 set -e
 
+# Функция логирования с временными метками
+log() {
+	local level=$1
+	shift
+	local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+	echo -e "${timestamp} [${level}] $*"
+}
+
+# Функция логирования с отладочной информацией
+debug_log() {
+	if [ "$DEBUG" = "true" ]; then
+		log "DEBUG" "$@"
+	fi
+}
+
+# Функция логирования информации
+info_log() {
+	log "INFO" "$@"
+}
+
+# Функция логирования ошибок
+error_log() {
+	log "ERROR" "$@" >&2
+}
+
+# Функция логирования состояния системы
+log_system_state() {
+	debug_log "=== System State ==="
+	debug_log "Memory Usage: $(free -h)"
+	debug_log "Disk Space: $(df -h /)"
+	debug_log "GPU Status: $(nvidia-smi --query-gpu=gpu_name,memory.total,memory.used --format=csv,noheader 2>/dev/null || echo 'No GPU detected')"
+	debug_log "Docker Info: $(docker info 2>/dev/null | grep -E 'Server Version|Storage Driver|Logging Driver|Cgroup Driver' || echo 'Docker not running')"
+	debug_log "=================="
+}
+
 # Определение путей
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -105,7 +140,9 @@ done
 # Функция проверки ошибок
 check_error() {
 	if [ $? -ne 0 ]; then
-		echo -e "${RED}Ошибка: $1${NC}"
+		error_log "$1"
+		debug_log "Last command: $BASH_COMMAND"
+		debug_log "Exit code: $?"
 		exit 1
 	fi
 }
@@ -147,15 +184,21 @@ check_security() {
 # Функция настройки Docker и NVIDIA
 setup_docker_nvidia() {
 	if [ "$SKIP_DOCKER" = false ]; then
-		echo -e "${CYAN}Настройка Docker с расширенной безопасностью...${NC}"
+		info_log "Начало настройки Docker с расширенной безопасностью"
+		log_system_state
 		
+		# Check Docker installation
+		if ! command -v docker &> /dev/null; then
+			error_log "Docker не установлен"
+			exit 1
+		fi
+		info_log "Docker версия: $(docker --version)"
+
 		# Проверяем и создаем директории если они не существуют
 		if [ -n "$SECURITY_PROFILES_DIR" ]; then
+			debug_log "Создание директории профилей безопасности: $SECURITY_PROFILES_DIR"
 			mkdir -p "$SECURITY_PROFILES_DIR"
 			check_error "Не удалось создать директорию для профилей безопасности"
-		else
-			echo -e "${RED}Ошибка: SECURITY_PROFILES_DIR не определен${NC}"
-			exit 1
 		fi
 		
 		# Проверяем и устанавливаем базовые настройки безопасности Docker
@@ -239,13 +282,21 @@ EOF
 # Функция настройки кластера
 setup_cluster() {
 	if [ "$SKIP_SETUP" = false ]; then
-		echo -e "${CYAN}Настройка кластера...${NC}"
+		info_log "Начало настройки кластера"
+		
+		# Create log directory if it doesn't exist
+		local log_dir="/var/log/zakenak"
+		sudo mkdir -p "${log_dir}"
+		local setup_log="${log_dir}/cluster_setup_$(date +%Y%m%d_%H%M%S).log"
+		
+		info_log "Логи настройки кластера будут сохранены в: ${setup_log}"
 		
 		# Подготовка переменных окружения
 		export ZAKENAK_DEBUG=$DEBUG
 		export ZAKENAK_NAMESPACE=$NAMESPACE
 		export ZAKENAK_ENV=$ENVIRONMENT
 
+		debug_log "Подготовка параметров Docker для настройки кластера"
 		# Базовые параметры Docker
 		local docker_args=(
 			--rm
@@ -260,11 +311,12 @@ setup_cluster() {
 			--device-write-bps /dev/sda:"${DEFAULT_IO_LIMIT}"
 			-v "${REPO_ROOT}:/workspace:ro"
 			-v "${KUBECONFIG%/*}:/root/.kube:ro"
-			--network=host  # Changed from --network=none to allow cluster setup
+			-v "${log_dir}:${log_dir}"
+			--network=host
 		)
 
-		# Добавление GPU параметров если доступны
 		if [ "$GPU_AVAILABLE" = "true" ]; then
+			info_log "Настройка GPU параметров для кластера"
 			docker_args+=(
 				--gpus all
 				-e NVIDIA_VISIBLE_DEVICES=all
@@ -273,7 +325,7 @@ setup_cluster() {
 			)
 		fi
 
-		# Добавление переменных окружения
+		debug_log "Настройка переменных окружения для кластера"
 		docker_args+=(
 			-e ZAKENAK_DEBUG="${DEBUG}"
 			-e ZAKENAK_NAMESPACE="${NAMESPACE}"
@@ -282,28 +334,55 @@ setup_cluster() {
 			-e GPU_USAGE_THRESHOLD="${DEFAULT_GPU_USAGE_THRESHOLD}"
 			-e SECURITY_MONITORING=true
 			-e VERIFY_COMPONENTS=true
+			-e LOG_FILE="${setup_log}"
 		)
 
-		echo -e "${CYAN}Запуск настройки кластера...${NC}"
+		info_log "Запуск процесса настройки кластера"
 		
-		# Запуск setup с таймаутом и отслеживанием прогресса
-		timeout 300 docker run "${docker_args[@]}" \
-			"${ZAKENAK_IMAGE}:${ZAKENAK_VERSION}" setup \
-			--workdir /workspace \
-			--namespace "${NAMESPACE}" \
-			--progress \
-			--verbose
+		# Create a named pipe for real-time logging
+		local pipe="/tmp/zakenak_setup_pipe_$$"
+		mkfifo "${pipe}"
+		
+		# Start background process to handle logging
+		tee -a "${setup_log}" < "${pipe}" &
+		local tee_pid=$!
 
-		local setup_status=$?
-		if [ $setup_status -eq 124 ]; then
-			echo -e "${RED}Ошибка: Превышено время ожидания настройки кластера${NC}"
-			exit 1
-		elif [ $setup_status -ne 0 ]; then
-			echo -e "${RED}Ошибка: Настройка кластера завершилась с ошибкой (код $setup_status)${NC}"
+		# Run setup with timeout and progress monitoring
+		(
+			timeout 300 docker run "${docker_args[@]}" \
+				"${ZAKENAK_IMAGE}:${ZAKENAK_VERSION}" setup \
+				--workdir /workspace \
+				--namespace "${NAMESPACE}" \
+				--progress \
+				--verbose 2>&1 || echo "Docker exit code: $?"
+		) > "${pipe}"
+
+		# Clean up the pipe and wait for tee to finish
+		exec 3>&-
+		rm "${pipe}"
+		wait ${tee_pid}
+
+		# Check the log file for errors
+		if grep -q "error\|Error\|ERROR" "${setup_log}"; then
+			error_log "Обнаружены ошибки при настройке кластера:"
+			grep -i "error" "${setup_log}" | tail -n 5 | while read -r line; do
+				error_log "  $line"
+			done
 			exit 1
 		fi
-		
-		echo -e "${GREEN}Настройка кластера успешно завершена${NC}"
+
+		# Check if setup completed successfully
+		if ! grep -q "Setup completed successfully" "${setup_log}"; then
+			error_log "Настройка кластера не была успешно завершена"
+			error_log "Последние строки лога:"
+			tail -n 10 "${setup_log}" | while read -r line; do
+				error_log "  $line"
+			done
+			exit 1
+		fi
+
+		info_log "Настройка кластера успешно завершена"
+		debug_log "Полные логи доступны в: ${setup_log}"
 	fi
 }
 
