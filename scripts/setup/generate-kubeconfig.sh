@@ -20,8 +20,24 @@ check_error() {
 	fi
 }
 
+# Определение окружения
+is_wsl() {
+	grep -q "microsoft" /proc/version 2>/dev/null
+	return $?
+}
+
 # Создание базовой конфигурации кластера
 generate_kind_config() {
+	local mounts=()
+	
+	if is_wsl; then
+		echo "Generating WSL2 configuration..."
+		mounts=("${WSL_MOUNTS[@]}")
+	else
+		echo "Generating Linux configuration..."
+		mounts=("${LINUX_MOUNTS[@]}")
+	fi
+	
 	cat > "${REPO_ROOT}/kind-config.yaml" << EOF
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
