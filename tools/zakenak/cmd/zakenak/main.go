@@ -1,67 +1,45 @@
-// Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
-//
-// This file is part of Zakenak project and is released under the terms of the
-// MIT License. See LICENSE file in the project root for full license information.
+/* 
+Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
+This code is part of Zakenak project and is released under MIT License.
+See LICENSE file in the project root for full license information.
+*/
 
 package main
 
 import (
-    "context"
     "fmt"
-    "log"
     "os"
-    "os/exec"
-    "path/filepath"
-
-    "github.com/spf13/cobra"
-    "k8s.io/client-go/kubernetes"
-    "k8s.io/client-go/tools/clientcmd"
 
     "github.com/i8megabit/zakenak/pkg/banner"
-    "github.com/i8megabit/zakenak/pkg/build"
-    "github.com/i8megabit/zakenak/pkg/cluster"
-    "github.com/i8megabit/zakenak/pkg/config"
-    "github.com/i8megabit/zakenak/pkg/converge"
-    "github.com/i8megabit/zakenak/pkg/git"
-    "github.com/i8megabit/zakenak/pkg/state"
 )
 
-var (
-    // Version содержит версию приложения, устанавливается при сборке
-    Version = "dev"
+// Version contains the application version, set during build
+var Version = "dev"
 
-    kubeconfig string
-    namespace  string
-    configPath string
-)
 
 func main() {
     banner.PrintZakenak()
-    
-    rootCmd := &cobra.Command{
-        Use:   "zakenak",
-        Short: "Zakenak - элегантный инструмент для GitOps и деплоя",
+
+    if len(os.Args) > 1 {
+        switch os.Args[1] {
+        case "--version":
+            fmt.Printf("zakenak version %s\n", Version)
+            return
+        case "--help":
+            fmt.Println("Usage: zakenak [command] [options]")
+            fmt.Println("\nCommands:")
+            fmt.Println("  --version     Show version information")
+            fmt.Println("  --help        Show this help message")
+            fmt.Println("  --config      Specify configuration file")
+            return
+        }
     }
 
-    rootCmd.PersistentFlags().StringVar(&kubeconfig, "kubeconfig", "", "путь к kubeconfig")
-    rootCmd.PersistentFlags().StringVar(&namespace, "namespace", "", "целевой namespace")
-    rootCmd.PersistentFlags().StringVar(&configPath, "config", "zakenak.yaml", "путь к конфигурации")
-
-    rootCmd.AddCommand(
-        newConvergeCmd(),
-        newBuildCmd(),
-        newDeployCmd(),
-        newCleanCmd(),
-        newStatusCmd(),
-        newSetupCmd(),
-        newClusterCmd(),
-    )
-
-    if err := rootCmd.Execute(); err != nil {
-        os.Exit(1)
-    }
-
+    // Default behavior when no arguments are provided
+    fmt.Println("Zakenak - Kubernetes Cluster Management Tool")
+    fmt.Println("Use --help for usage information")
 }
+
 
 func newConvergeCmd() *cobra.Command {
     cmd := &cobra.Command{
