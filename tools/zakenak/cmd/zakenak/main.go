@@ -51,6 +51,7 @@ func main() {
         newCleanCmd(),
         newStatusCmd(),
         newSetupCmd(),
+        newClusterCmd(),
     )
 
     if err := rootCmd.Execute(); err != nil {
@@ -273,21 +274,8 @@ func newSetupCmd() *cobra.Command {
     return cmd
 }
 
-func newClusterCmd() *cobra.Command {
-    cmd := &cobra.Command{
-        Use:   "cluster",
-        Short: "Управление кластером Kubernetes",
-        RunE: func(cmd *cobra.Command, args []string) error {
-            return runCluster()
-        },
-    }
-    return cmd
-}
 
-func runCluster() error {
-    // TODO: Implement cluster management functionality
-    return nil
-}
+
 
 func runStatus() error {
     banner.PrintZakenak()
