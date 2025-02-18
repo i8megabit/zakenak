@@ -284,6 +284,7 @@ install_components() {
         -e GIT_COMMITTER_NAME="Zakenak" \
         -e GIT_COMMITTER_EMAIL="zakenak@local" \
         -w /workspace \
+        --user root \
         ghcr.io/i8megabit/zakenak:latest \
         converge \
         --config /workspace/zakenak.yaml \
