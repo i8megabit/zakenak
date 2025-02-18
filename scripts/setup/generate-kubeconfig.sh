@@ -45,21 +45,21 @@ nodes:
 - role: control-plane
   kubeadmConfigPatches:
   - |
-	kind: InitConfiguration
-	nodeRegistration:
-	  kubeletExtraArgs:
-		node-labels: "ingress-ready=true,nvidia.com/gpu=present"
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "ingress-ready=true,nvidia.com/gpu=present"
   extraPortMappings:
   - containerPort: ${INGRESS_HTTP_PORT}
-	hostPort: ${INGRESS_HTTP_PORT}
-	protocol: TCP
+    hostPort: ${INGRESS_HTTP_PORT}
+    protocol: TCP
   - containerPort: ${INGRESS_HTTPS_PORT}
-	hostPort: ${INGRESS_HTTPS_PORT}
-	protocol: TCP
+    hostPort: ${INGRESS_HTTPS_PORT}
+    protocol: TCP
   extraMounts:
   # Путь к общим манифестам
   - hostPath: ./helm-charts/manifests
-	containerPath: /etc/kubernetes/manifests
+    containerPath: /etc/kubernetes/manifests
 EOF
 
 	# Добавление специфичных монтирований
@@ -103,21 +103,21 @@ apiVersion: v1
 kind: Config
 clusters:
 - cluster:
-	server: ${CLUSTER_SERVER}
-	certificate-authority-data: ${CA_DATA}
+    server: ${CLUSTER_SERVER}
+    certificate-authority-data: ${CA_DATA}
   name: ${CLUSTER_NAME}
 contexts:
 - context:
-	cluster: ${CLUSTER_NAME}
-	user: ${CLUSTER_NAME}
+    cluster: ${CLUSTER_NAME}
+    user: ${CLUSTER_NAME}
   name: ${CLUSTER_NAME}
 current-context: ${CLUSTER_NAME}
 preferences: {}
 users:
 - name: ${CLUSTER_NAME}
   user:
-	client-certificate-data: ${CLIENT_CERT_DATA}
-	client-key-data: ${CLIENT_KEY_DATA}
+    client-certificate-data: ${CLIENT_CERT_DATA}
+    client-key-data: ${CLIENT_KEY_DATA}
 EOF
 	check_error "Failed to generate kubeconfig"
 }

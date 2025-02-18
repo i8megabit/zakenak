@@ -17,11 +17,43 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 source "${SCRIPT_DIR}/env.sh"
 source "${SCRIPT_DIR}/ascii_banners.sh"
 
+# Функция очистки при ошибках
+cleanup() {
+    echo -e "${RED}Произошла ошибка, выполняем очистку...${NC}"
+    
+    # Удаление манифестов
+    rm -f "${REPO_ROOT}/helm-charts/manifests/etcd.yaml" \
+          "${REPO_ROOT}/helm-charts/manifests/kube-apiserver.yaml" \
+          "${REPO_ROOT}/helm-charts/manifests/kube-controller-manager.yaml" \
+          "${REPO_ROOT}/helm-charts/manifests/kube-scheduler.yaml"
+    
+    # Удаление конфигурационных файлов
+    rm -f "${REPO_ROOT}/kind-config.yaml" \
+          "${REPO_ROOT}/kubeconfig.yaml"
+    
+    # Удаление кластера если он был создан
+    if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
+        echo -e "${YELLOW}Удаляем кластер ${CLUSTER_NAME}...${NC}"
+        kind delete cluster --name "${CLUSTER_NAME}"
+    fi
+    
+    # Очистка Docker
+    echo -e "${YELLOW}Очистка Docker ресурсов...${NC}"
+    docker system prune -f
+    
+    error_banner
+    echo -e "${RED}Установка прервана. Проверьте логи для деталей.${NC}"
+    exit 1
+}
+
+# Установка trap для перехвата ошибок
+trap cleanup ERR
+
 # Функция проверки ошибок
 check_error() {
     if [ $? -ne 0 ]; then
         echo -e "${RED}Ошибка: $1${NC}"
-        exit 1
+        cleanup
     fi
 }
 
@@ -98,6 +130,11 @@ install_components() {
     
     # Создание namespace
     kubectl create namespace prod --dry-run=client -o yaml | kubectl apply -f -
+    
+    # Сборка зависимостей Helm чартов
+    echo -e "${CYAN}Сборка зависимостей Helm чартов...${NC}"
+    helm dependency build "${REPO_ROOT}/helm-charts/cert-manager"
+    check_error "Ошибка сборки зависимостей cert-manager"
     
     # Установка компонентов через Helm
     local components=(
