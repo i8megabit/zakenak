@@ -7,36 +7,57 @@ See LICENSE file in the project root for full license information.
 package main
 
 import (
+    "context"
     "fmt"
+    "log"
     "os"
+    "path/filepath"
+    "os/exec"
 
+    "github.com/spf13/cobra"
+    "k8s.io/client-go/kubernetes"
+    "k8s.io/client-go/tools/clientcmd"
+    
     "github.com/i8megabit/zakenak/pkg/banner"
+    "github.com/i8megabit/zakenak/pkg/build"
+    "github.com/i8megabit/zakenak/pkg/cluster"
+    "github.com/i8megabit/zakenak/pkg/config"
+    "github.com/i8megabit/zakenak/pkg/converge"
+    "github.com/i8megabit/zakenak/pkg/git"
+    "github.com/i8megabit/zakenak/pkg/state"
 )
 
-// Version contains the application version, set during build
-var Version = "dev"
+var (
+    Version = "dev"
+    configPath string
+    kubeconfig string
+)
 
 func main() {
     banner.PrintZakenak()
 
-    if len(os.Args) > 1 {
-        switch os.Args[1] {
-        case "--version":
-            fmt.Printf("zakenak version %s\n", Version)
-            return
-        case "--help":
-            fmt.Println("Usage: zakenak [command] [options]")
-            fmt.Println("\nCommands:")
-            fmt.Println("  --version     Show version information")
-            fmt.Println("  --help        Show this help message")
-            fmt.Println("  --config      Specify configuration file")
-            return
-        }
+    rootCmd := &cobra.Command{
+        Use:   "zakenak",
+        Short: "Zakenak - Kubernetes Cluster Management Tool",
+        Long:  `A professional GitOps tool for efficient Kubernetes cluster orchestration with GPU support through Helm.`,
     }
 
-    // Default behavior when no arguments are provided
-    fmt.Println("Zakenak - Kubernetes Cluster Management Tool")
-    fmt.Println("Use --help for usage information")
+    rootCmd.PersistentFlags().StringVar(&configPath, "config", "zakenak.yaml", "path to config file")
+    rootCmd.PersistentFlags().StringVar(&kubeconfig, "kubeconfig", filepath.Join(os.Getenv("HOME"), ".kube", "config"), "path to kubeconfig file")
+
+    rootCmd.AddCommand(
+        newConvergeCmd(),
+        newBuildCmd(),
+        newDeployCmd(),
+        newCleanCmd(),
+        newStatusCmd(),
+        newSetupCmd(),
+    )
+
+    if err := rootCmd.Execute(); err != nil {
+        banner.PrintError()
+        os.Exit(1)
+    }
 }
 
 
