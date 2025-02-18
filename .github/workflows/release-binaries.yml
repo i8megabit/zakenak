@@ -11,6 +11,9 @@ jobs:
   build:
     name: Build Binaries
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         include:
@@ -98,8 +101,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push Docker Image
+        env:
+          REGISTRY: ghcr.io
+          IMAGE_NAME: ${{ github.repository }}
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           cd tools/zakenak
           docker build \
           --build-arg VERSION=${VERSION} \
@@ -107,7 +113,7 @@ jobs:
           .
           docker push ghcr.io/${{ github.repository }}:${VERSION}
           
-                if [[ "${{ steps.version.outputs.RELEASE_TYPE }}" == "release" ]]; then
-              docker tag ghcr.io/${{ github.repository }}:${VERSION} ghcr.io/${{ github.repository }}:latest
-              docker push ghcr.io/${{ github.repository }}:latest
-              fi
+          if [[ "${{ steps.version.outputs.RELEASE_TYPE }}" == "release" ]]; then
+          docker tag ghcr.io/${{ github.repository }}:${VERSION} ghcr.io/${{ github.repository }}:latest
+          docker push ghcr.io/${{ github.repository }}:latest
+          fi
