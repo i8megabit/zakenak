@@ -267,7 +267,10 @@ install_components() {
         -e NVIDIA_DRIVER_CAPABILITIES=compute,utility \
         -e KUBECONFIG=/root/.kube/config \
         -e ZAKENAK_DEBUG=true \
-        -e ZAKENAK_QUIET=true \
+        -e GIT_AUTHOR_NAME="Zakenak" \
+        -e GIT_AUTHOR_EMAIL="zakenak@local" \
+        -e GIT_COMMITTER_NAME="Zakenak" \
+        -e GIT_COMMITTER_EMAIL="zakenak@local" \
         ghcr.io/i8megabit/zakenak:latest \
         converge \
         --config /workspace/zakenak.yaml \

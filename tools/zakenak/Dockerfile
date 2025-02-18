@@ -33,4 +33,8 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV PATH="/usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}"
 ENV LD_LIBRARY_PATH="/usr/lib/wsl/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH}"
 
-ENTRYPOINT ["/app/zakenak"]
+# Создаем скрипт инициализации
+RUN echo '#!/bin/bash\ncd /workspace\nif [ ! -d .git ]; then\n    git init\n    git config --global user.email "zakenak@local"\n    git config --global user.name "Zakenak"\n    git add .\n    git commit -m "Initial commit"\nfi\nexec /app/zakenak "$@"' > /app/entrypoint.sh && \
+    chmod +x /app/entrypoint.sh
+
+ENTRYPOINT ["/app/entrypoint.sh"]
