@@ -28,49 +28,40 @@ jobs:
             arch: arm64
 
     steps:
-        - name: Checkout code
-          uses: actions/checkout@v4
-          with:
-            fetch-depth: 0
-            persist-credentials: true
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      - name: Setup Go workspace
+        working-directory: ./tools/zakenak
+        run: |
+          go mod tidy
+          mkdir -p build
+      - name: Build Binary
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+        working-directory: ./tools/zakenak
+        run: |
+          OUTPUT="build/zakenak-${{ matrix.os }}-${{ matrix.arch }}"
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            OUTPUT="${OUTPUT}.exe"
+          fi
+          go build -o "${OUTPUT}" -ldflags="-X main.Version=${GITHUB_REF#refs/tags/}" ./cmd/zakenak
 
-        - name: Setup GPU Security Profile
-          if: matrix.os == 'linux'
-          run: |
-            if [ ! -d "./config/gpu" ]; then
-              mkdir -p ./config/gpu
-            fi
-            kubectl apply -f ./config/gpu/gpu-security-profile.yaml
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ./tools/zakenak/build/zakenak-*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: Set up Go
-          uses: actions/setup-go@v5
-          with:
-            go-version: '1.21'
-        - name: Setup Go workspace
-          working-directory: ./tools/zakenak
-          run: |
-            go mod tidy
-            mkdir -p build
-        - name: Build Binary
-          env:
-            GOOS: ${{ matrix.os }}
-            GOARCH: ${{ matrix.arch }}
-          working-directory: ./tools/zakenak
-          run: |
-            OUTPUT="build/zakenak-${{ matrix.os }}-${{ matrix.arch }}"
-            if [ "${{ matrix.os }}" = "windows" ]; then
-              OUTPUT="${OUTPUT}.exe"
-            fi
-            go build -o "${OUTPUT}" -ldflags="-X main.Version=${GITHUB_REF#refs/tags/}" ./cmd/zakenak
-
-
-        - name: Create Release
-          uses: softprops/action-gh-release@v1
-          if: startsWith(github.ref, 'refs/tags/')
-          with:
-            files: ./tools/zakenak/build/zakenak-*
-            draft: false
-            prerelease: false
-            generate_release_notes: true
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
