@@ -3,7 +3,6 @@ package main
 import (
     "context"
     "fmt"
-    "path/filepath"
     "github.com/i8megabit/zakenak/pkg/config"
     "github.com/i8megabit/zakenak/pkg/helm"
     "k8s.io/client-go/kubernetes"

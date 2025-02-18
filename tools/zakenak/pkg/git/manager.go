@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-
 	"github.com/i8megabit/zakenak/pkg/logger"
 )
 
