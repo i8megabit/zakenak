@@ -61,10 +61,15 @@ check_prerequisites() {
 deploy_component() {
 	local component=$1
 	local description=$2
+	local namespace=${3:-""}
 	
 	echo -e "\n${CYAN}[$component] Установка $description...${NC}"
 	if [[ -x "${SCRIPT_DIR}/$component" ]]; then
-		"${SCRIPT_DIR}/$component"
+		if [[ -n "$namespace" ]]; then
+			"${SCRIPT_DIR}/$component" --namespace "$namespace"
+		else
+			"${SCRIPT_DIR}/$component"
+		fi
 		check_error "Ошибка при установке $description"
 		echo -e "${GREEN}[$component] Установка $description завершена${NC}"
 	else
@@ -94,15 +99,17 @@ deploy_banner
 echo -e "\n${YELLOW}Начинаем развертывание компонентов...${NC}"
 
 # Последовательный запуск всех компонентов
+echo -e "\n${YELLOW}Начинаем развертывание компонентов...${NC}"
+
+# Подготовка окружения
 deploy_component "setup-wsl/src/setup-wsl.sh" "WSL окружения"
 deploy_component "setup-bins/src/setup-bins.sh" "бинарных компонентов"
 deploy_component "setup-kind/src/setup-kind.sh" "кластера Kind"
-deploy_component "setup-ingress/src/setup-ingress.sh" "Ingress Controller"
-deploy_component "setup-cert-manager/src/setup-cert-manager.sh" "Cert Manager"
-deploy_component "setup-dns/src/setup-dns.sh" "DNS"
 
-# Установка приложений через charts
-echo -e "\n${CYAN}Установка приложений...${NC}"
+# Настройка кластера
+deploy_component "setup-ingress/src/setup-ingress.sh" "Ingress Controller" "$NAMESPACE_INGRESS"
+deploy_component "setup-cert-manager/src/setup-cert-manager.sh" "Cert Manager" "$NAMESPACE_CERT_MANAGER"
+deploy_component "setup-dns/src/setup-dns.sh" "DNS" "$NAMESPACE_DNS"
 
 # Установка Kubernetes Dashboard
 echo -e "\n${CYAN}Установка Kubernetes Dashboard...${NC}"
