@@ -6,14 +6,8 @@
 # |_|\_\___/_____|
 #            by @eberil
 
-# Определение пути к директории скрипта и корню репозитория
-export BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
-export TOOLS_DIR="${BASE_DIR}/tools/k8s-kind-setup"
-export SCRIPTS_ENV_PATH="${TOOLS_DIR}/env/src/env.sh"
-export CLUSTER_NAME="kind"
-
 # Загрузка общих переменных и баннеров
-source "${SCRIPTS_ENV_PATH}"
+source "$(dirname "${BASH_SOURCE[0]}")/../../../env/src/env.sh"
 source "${SCRIPTS_ASCII_BANNERS_PATH}"
 
 # Отображение баннера при старте
@@ -21,6 +15,7 @@ k8s_banner
 echo ""
 
 echo -e "${YELLOW}Начинаем установку кластера Kind...${NC}"
+
 
 # Определение WSL2 окружения и наличия NVIDIA GPU
 check_wsl_gpu() {
@@ -113,33 +108,57 @@ EOF
 
 # Создание кластера
 setup_kind_cluster() {
-	# Проверяем существование кластера
-	if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
-		if [ "$REINSTALL_CLUSTER" = true ]; then
-			echo -e "${YELLOW}Удаление существующего кластера ${CLUSTER_NAME}...${NC}"
-			kind delete cluster --name "${CLUSTER_NAME}"
-			check_error "Не удалось удалить существующий кластер"
-		else
-			echo -e "${GREEN}Кластер ${CLUSTER_NAME} уже существует, пропускаем установку${NC}"
-			return 0
-		fi
+	# Подготовка системы к созданию кластера
+	if ! prepare_system_for_cluster; then
+		echo -e "${RED}Ошибка при подготовке системы${NC}"
+		exit 1
+	fi
+
+	# Удаление существующего кластера
+	if ! delete_cluster "${CLUSTER_NAME}"; then
+		echo -e "${RED}Ошибка при попытке удаления существующего кластера${NC}"
+		exit 1
 	fi
 
 	# Генерация конфигурации перед созданием кластера
 	generate_kind_config
 	
 	echo -e "${CYAN}Создание нового кластера ${CLUSTER_NAME}...${NC}"
-	kind create cluster --name "${CLUSTER_NAME}" --config "${SCRIPT_DIR}/kind-config.yaml"
-	check_error "Ошибка при создании кластера"
+	if ! KIND_EXPERIMENTAL_PROVIDER=podman kind create cluster \
+		--name "${CLUSTER_NAME}" \
+		--config "${SCRIPT_DIR}/kind-config.yaml" \
+		--wait 5m; then
+		echo -e "${RED}Ошибка при создании кластера${NC}"
+		exit 1
+	fi
 	
-	# Настройка контекста kubectl
-	kubectl cluster-info --context "kind-${CLUSTER_NAME}"
-	check_error "Ошибка при настройке контекста kubectl"
+	# Ожидание готовности API сервера с увеличенным таймаутом
+	echo -e "${CYAN}Ожидание готовности API сервера...${NC}"
+	timeout=300
+	while ! kubectl cluster-info &>/dev/null; do
+		if [ $timeout -le 0 ]; then
+			echo -e "${RED}Превышено время ожидания готовности API сервера${NC}"
+			exit 1
+		fi
+		echo -e "${YELLOW}Ожидание запуска кластера... (осталось ${timeout}с)${NC}"
+		sleep 5
+		timeout=$((timeout - 5))
+	done
 	
-	# Ожидание готовности узлов
-	echo -e "${CYAN}Ожидание готовности узлов кластера...${NC}"
-	kubectl wait --for=condition=Ready nodes --all --timeout=300s
-	check_error "Узлы кластера не готовы"
+	# Проверка статуса узлов кластера
+	echo -e "${CYAN}Проверка статуса узлов кластера...${NC}"
+	if ! kubectl wait --for=condition=ready nodes --all --timeout=5m; then
+		echo -e "${RED}Не все узлы кластера готовы${NC}"
+		exit 1
+	fi
+	
+	# Создание необходимых namespace
+	echo -e "${CYAN}Создание namespace...${NC}"
+	for ns in "${NAMESPACE_PROD}" "${NAMESPACE_INGRESS}" "${NAMESPACE_CERT_MANAGER}"; do
+		if ! kubectl create namespace "$ns" 2>/dev/null; then
+			echo -e "${YELLOW}Namespace $ns уже существует${NC}"
+		fi
+	done
 	
 	echo -e "${GREEN}Кластер ${CLUSTER_NAME} успешно создан${NC}"
 }
