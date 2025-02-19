@@ -132,13 +132,13 @@ subjects:
 EOF
 check_error "Ошибка при создании ServiceAccount для Dashboard"
 
-"${SCRIPT_DIR}/charts/src/charts.sh" install ollama
-check_error "Ошибка при установке Ollama"
-
-"${SCRIPT_DIR}/charts/src/charts.sh" install open-webui
-check_error "Ошибка при установке Open WebUI"
+# Установка всех чартов
+echo -e "\n${CYAN}Установка Helm чартов...${NC}"
+"${SCRIPT_DIR}/charts/src/charts.sh" install all
+check_error "Ошибка при установке Helm чартов"
 
 # Проверка работоспособности сервисов
+
 echo -e "\n${CYAN}Проверка работоспособности сервисов...${NC}"
 "${REPO_ROOT}/tools/connectivity-check/check-services.sh"
 check_error "Ошибка при проверке сервисов"
