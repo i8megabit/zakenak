@@ -12,7 +12,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
 # Загрузка общих переменных и баннеров
 source "${REPO_ROOT}/tools/k8s-kind-setup/env.sh"
-source "${REPO_ROOT}/tools/k8s-kind-setup/ascii_banners.sh"
+source "${REPO_ROOT}/tools/k8s-kind-setup/ascii-banners/src/ascii_banners.sh"
 
 # Отображение баннера при старте
 k8s_banner

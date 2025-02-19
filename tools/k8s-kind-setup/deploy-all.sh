@@ -17,7 +17,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Загрузка общих переменных и баннеров
 source "${SCRIPT_DIR}/env.sh"
-source "${SCRIPT_DIR}/ascii_banners.sh"
+source "${SCRIPT_DIR}/ascii-banners/src/ascii_banners.sh"
 
 # Отображение баннера при старте
 production_banner
