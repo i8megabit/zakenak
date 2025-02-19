@@ -27,7 +27,7 @@ required_files=(
 	"${SCRIPT_DIR}/setup-dns/src/setup-dns.sh"
 	"${SCRIPT_DIR}/dashboard-token/src/dashboard-token.sh"
 	"${SCRIPT_DIR}/charts/src/charts.sh"
-	"${REPO_ROOT}/tools/connectivity-check/check-services.sh"
+	"${SCRIPT_DIR}/connectivity-check/src/check-services.sh"
 )
 
 # Проверка существования всех необходимых файлов
@@ -87,6 +87,6 @@ source "${SCRIPT_DIR}/charts/src/charts.sh"
 
 # Проверка доступности сервисов
 log "Проверка доступности сервисов..."
-source "${REPO_ROOT}/tools/connectivity-check/check-services.sh"
+source "${SCRIPT_DIR}/connectivity-check/src/check-services.sh"
 
 log "Развертывание успешно завершено!"
