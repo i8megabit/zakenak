@@ -127,27 +127,62 @@ install_chart() {
 		exit 1
 	fi
 
+	# Удаляем существующий релиз только при install
+	if [ "$action" = "install" ]; then
+		echo -e "${CYAN}Проверка существующего релиза ${chart}...${NC}"
+		helm uninstall ${chart} -n ${namespace} 2>/dev/null || true
+		# Ждем удаления релиза
+		sleep 5
+	fi
+
+	# Специальная обработка для local-ca
+	if [ "$chart" = "local-ca" ] && [ "$action" = "install" ]; then
+		echo -e "${CYAN}Подготовка к установке local-ca...${NC}"
+		
+		# Удаляем существующий релиз если он есть
+		helm uninstall local-ca -n ${namespace} 2>/dev/null || true
+		
+		# Ждем удаления релиза
+		sleep 5
+		
+		# Удаляем существующие сертификаты и их секреты
+		kubectl delete certificate -n ${namespace} --all 2>/dev/null || true
+		kubectl delete secret -n ${namespace} ollama-tls 2>/dev/null || true
+		
+		# Ждем полного удаления ресурсов
+		sleep 5
+	fi
+
 	# Специальная обработка для cert-manager
 	if [ "$chart" = "cert-manager" ]; then
 		echo -e "${CYAN}Подготовка к установке cert-manager...${NC}"
 		
-		# Удаляем существующий релиз cert-manager если он есть
-		helm uninstall cert-manager -n cert-manager 2>/dev/null || true
+		# Проверяем существование релиза перед upgrade
+		if [ "$action" = "upgrade" ] && ! helm status cert-manager -n cert-manager >/dev/null 2>&1; then
+			echo -e "${YELLOW}Релиз cert-manager не найден, выполняем установку...${NC}"
+			action="install"
+		fi
 		
-		# Ждем удаления релиза
-		sleep 10
-		
-		# Удаляем namespace если он существует
-		kubectl delete namespace cert-manager --timeout=60s 2>/dev/null || true
-		
-		# Принудительно удаляем все CRD cert-manager
-		for crd in $(kubectl get crd -o name | grep cert-manager 2>/dev/null || true); do
-			kubectl patch $crd -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null || true
-			kubectl delete $crd --timeout=60s --force --grace-period=0 2>/dev/null || true
-		done
-		
-		# Ждем полного удаления ресурсов
-		sleep 10
+		# Если это установка, выполняем полную очистку
+		if [ "$action" = "install" ]; then
+			# Удаляем существующий релиз cert-manager если он есть
+			helm uninstall cert-manager -n cert-manager 2>/dev/null || true
+			
+			# Ждем удаления релиза
+			sleep 10
+			
+			# Удаляем namespace если он существует
+			kubectl delete namespace cert-manager --timeout=60s 2>/dev/null || true
+			
+			# Принудительно удаляем все CRD cert-manager
+			for crd in $(kubectl get crd -o name | grep cert-manager 2>/dev/null || true); do
+				kubectl patch $crd -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null || true
+				kubectl delete $crd --timeout=60s --force --grace-period=0 2>/dev/null || true
+			done
+			
+			# Ждем полного удаления ресурсов
+			sleep 10
+		fi
 		
 		# Проверяем наличие репозитория jetstack
 		if ! helm repo list | grep -q "jetstack"; then
@@ -165,6 +200,22 @@ install_chart() {
 			echo -e "${RED}Ошибка при установке CRD для cert-manager${NC}"
 			exit 1
 		}
+
+		# Добавляем метки и аннотации Helm для CRD
+		for crd in $(kubectl get crd -o name | grep cert-manager 2>/dev/null || true); do
+			echo -e "${CYAN}Настройка меток и аннотаций для ${crd}...${NC}"
+			kubectl patch $crd -p '{
+				"metadata": {
+					"labels": {
+						"app.kubernetes.io/managed-by": "Helm"
+					},
+					"annotations": {
+						"meta.helm.sh/release-name": "cert-manager",
+						"meta.helm.sh/release-namespace": "cert-manager"
+					}
+				}
+			}' --type=merge || true
+		done
 
 		# Ждем готовности CRD с проверкой их наличия
 		echo -e "${CYAN}Ожидание готовности CRD cert-manager...${NC}"
@@ -273,12 +324,18 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
-if [ $# -lt 2 ]; then
+if [ $# -lt 1 ]; then
 	usage
 fi
 
 action=$1
 chart=$2
+
+# Проверяем количество аргументов для команд, требующих указания чарта
+if [ "$action" != "list" ] && [ "$action" != "restart-dns" ] && [ $# -lt 2 ]; then
+	echo -e "${RED}Ошибка: Не указан чарт для действия ${action}${NC}"
+	usage
+fi
 
 case $action in
 	install|upgrade|uninstall)
@@ -287,23 +344,19 @@ case $action in
 			for c in "${charts[@]}"; do
 				install_chart $action $c "$namespace" "$version" "$values_file"
 			done
-			if [ "$action" = "install" ] || [ "$action" = "upgrade" ]; then
-				echo -e "\n${CYAN}Проверка работоспособности сервисов...${NC}"
-				"${TOOLS_DIR}/connectivity-check/check-services.sh"
-			fi
 		else
 			install_chart $action $chart "$namespace" "$version" "$values_file"
-			if [ "$action" = "install" ] || [ "$action" = "upgrade" ]; then
-				if [ "$chart" = "ollama" ] || [ "$chart" = "open-webui" ]; then
-					echo -e "\n${CYAN}Проверка работоспособности сервиса $chart...${NC}"
-					"${TOOLS_DIR}/connectivity-check/check-services.sh"
-				fi
-			fi
 		fi
 		;;
 	list)
-		echo -e "${CYAN}Установленные чарты в namespace ${namespace:-$NAMESPACE_PROD}:${NC}"
-		helm list -n ${namespace:-$NAMESPACE_PROD}
+		if [ -n "$namespace" ]; then
+			echo -e "${CYAN}Установленные чарты в namespace ${namespace}:${NC}"
+			helm list -n "$namespace"
+		else
+			echo -e "${CYAN}Установленные чарты во всех namespace:${NC}"
+			helm list -A
+		fi
+		exit 0
 		;;
 	restart-dns)
 		restart_coredns
