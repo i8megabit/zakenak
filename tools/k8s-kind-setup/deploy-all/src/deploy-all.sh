@@ -15,10 +15,8 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-# Загрузка переменных окружения
+# Загрузка переменных окружения и баннеров
 source "${SCRIPT_DIR}/env/src/env.sh"
-
-# Вывод баннера
 source "${SCRIPT_DIR}/ascii-banners/src/ascii_banners.sh"
 show_deploy_banner
 
@@ -32,6 +30,7 @@ log "Установка необходимых компонентов..."
 source "${SCRIPT_DIR}/setup-bins/src/setup-bins.sh"
 
 # Проверка наличия необходимых утилит
+
 check_dependencies() {
 	local required_tools=("docker" "kind" "kubectl" "helm" "curl" "nc" "getent")
 	for tool in "${required_tools[@]}"; do
@@ -68,17 +67,8 @@ for file in "${required_files[@]}"; do
 	fi
 done
 
-# Загрузка переменных окружения
-source "${SCRIPT_DIR}/env/src/env.sh"
 
-# Вывод баннера
-source "${SCRIPT_DIR}/ascii-banners/src/ascii_banners.sh"
-show_deploy_banner
 
-# Функция для логирования
-log() {
-	echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
-}
 
 # Последовательное выполнение всех этапов установки
 log "Начало полного развертывания кластера..."

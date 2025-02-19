@@ -119,4 +119,19 @@ k8s_banner() {
  |_|\_\   \___/|____/ 
                 by @eberil
 EOF
-    echo -e "${NC}"
+	echo -e "${NC}"
+
+# Deploy Banner
+show_deploy_banner() {
+	echo -e "${BLUE}"
+	cat << "EOF"
+  ____            _             
+ |  _ \  ___ _ __| | ___  _   _ 
+ | | | |/ _ \ '_ \| |/ _ \| | | |
+ | |_| |  __/ |_) | | (_) | |_| |
+ |____/ \___| .__/|_|\___/ \__, |
+			|_|            |___/ 
+						 by @eberil
+EOF
+	echo -e "${NC}"
+}
