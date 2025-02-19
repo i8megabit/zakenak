@@ -1,22 +1,11 @@
 #!/usr/bin/bash
-#  ____             _             
-# |  _ \  ___ _ __ | | ___  _   _ 
-# | | | |/ _ \ '_ \| |/ _ \| | | |
-# | |_| |  __/ |_) | | (_) | |_| |
-# |____/ \___| .__/|_|\___/ \__, |
-#            |_|            |___/ 
-#                         by @eberil
-#
-# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
-# This code is free! Share it, spread peace and technology!
-# "Time to ship some containers!"
-
 # Определение пути к директории скрипта и корню проекта
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # Загрузка переменных окружения и баннеров
 source "${SCRIPT_DIR}/env/src/env.sh"
-source "${SCRIPT_DIR}/ascii-banners/src/ascii_banners.sh"
+source "$SCRIPTS_ASCII_BANNERS_PATH"
+
 show_deploy_banner
 
 # Функция для логирования
@@ -27,17 +16,17 @@ log() {
 # Функция для установки прав выполнения
 setup_executable_permissions() {
 	local scripts=(
-		"${SCRIPT_DIR}/env/src/env.sh"
-		"${SCRIPT_DIR}/ascii-banners/src/ascii_banners.sh"
-		"${SCRIPT_DIR}/setup-wsl/src/setup-wsl.sh"
-		"${SCRIPT_DIR}/setup-bins/src/setup-bins.sh"
-		"${SCRIPT_DIR}/setup-kind/src/setup-kind.sh"
-		"${SCRIPT_DIR}/setup-ingress/src/setup-ingress.sh"
-		"${SCRIPT_DIR}/setup-cert-manager/src/setup-cert-manager.sh"
-		"${SCRIPT_DIR}/setup-dns/src/setup-dns.sh"
-		"${SCRIPT_DIR}/dashboard-token/src/dashboard-token.sh"
-		"${SCRIPT_DIR}/charts/src/charts.sh"
-		"${SCRIPT_DIR}/connectivity-check/src/check-services.sh"
+		"$SCRIPTS_ENV_PATH"
+		"$SCRIPTS_ASCII_BANNERS_PATH"
+		"$SCRIPTS_SETUP_WSL_PATH"
+		"$SCRIPTS_SETUP_BINS_PATH"
+		"$SCRIPTS_SETUP_KIND_PATH"
+		"$SCRIPTS_SETUP_INGRESS_PATH"
+		"$SCRIPTS_SETUP_CERT_MANAGER_PATH"
+		"$SCRIPTS_SETUP_DNS_PATH"
+		"$SCRIPTS_DASHBOARD_TOKEN_PATH"
+		"$SCRIPTS_CHARTS_PATH"
+		"$SCRIPTS_CONNECTIVITY_CHECK_PATH"
 	)
 
 	echo "Установка прав выполнения для скриптов..."
@@ -74,17 +63,17 @@ check_dependencies
 
 # Проверка наличия необходимых файлов конфигурации
 required_files=(
-	"${SCRIPT_DIR}/env/src/env.sh"
-	"${SCRIPT_DIR}/ascii-banners/src/ascii_banners.sh"
-	"${SCRIPT_DIR}/setup-wsl/src/setup-wsl.sh"
-	"${SCRIPT_DIR}/setup-bins/src/setup-bins.sh"
-	"${SCRIPT_DIR}/setup-kind/src/setup-kind.sh"
-	"${SCRIPT_DIR}/setup-ingress/src/setup-ingress.sh"
-	"${SCRIPT_DIR}/setup-cert-manager/src/setup-cert-manager.sh"
-	"${SCRIPT_DIR}/setup-dns/src/setup-dns.sh"
-	"${SCRIPT_DIR}/dashboard-token/src/dashboard-token.sh"
-	"${SCRIPT_DIR}/charts/src/charts.sh"
-	"${SCRIPT_DIR}/connectivity-check/src/check-services.sh"
+	"$SCRIPTS_ENV_PATH"
+	"$SCRIPTS_ASCII_BANNERS_PATH"
+	"$SCRIPTS_SETUP_WSL_PATH"
+	"$SCRIPTS_SETUP_BINS_PATH"
+	"$SCRIPTS_SETUP_KIND_PATH"
+	"$SCRIPTS_SETUP_INGRESS_PATH"
+	"$SCRIPTS_SETUP_CERT_MANAGER_PATH"
+	"$SCRIPTS_SETUP_DNS_PATH"
+	"$SCRIPTS_DASHBOARD_TOKEN_PATH"
+	"$SCRIPTS_CHARTS_PATH"
+	"$SCRIPTS_CONNECTIVITY_CHECK_PATH"
 )
 
 # Проверка существования всех необходимых файлов
@@ -103,38 +92,38 @@ log "Начало полного развертывания кластера..."
 
 # Настройка WSL
 log "Настройка WSL окружения..."
-source "${SCRIPT_DIR}/setup-wsl/src/setup-wsl.sh"
+source "$SCRIPTS_SETUP_WSL_PATH"
 
 # Установка бинарных компонентов
 log "Установка необходимых компонентов..."
-source "${SCRIPT_DIR}/setup-bins/src/setup-bins.sh"
+source "$SCRIPTS_SETUP_BINS_PATH"
 
 # Развертывание Kind кластера
 log "Развертывание Kind кластера..."
-source "${SCRIPT_DIR}/setup-kind/src/setup-kind.sh"
+source "$SCRIPTS_SETUP_KIND_PATH"
 
 # Настройка Ingress Controller
 log "Настройка Ingress Controller..."
-source "${SCRIPT_DIR}/setup-ingress/src/setup-ingress.sh"
+source "$SCRIPTS_SETUP_INGRESS_PATH"
 
 # Установка Cert Manager
 log "Установка Cert Manager..."
-source "${SCRIPT_DIR}/setup-cert-manager/src/setup-cert-manager.sh"
+source "$SCRIPTS_SETUP_CERT_MANAGER_PATH"
 
 # Настройка DNS
 log "Настройка DNS..."
-source "${SCRIPT_DIR}/setup-dns/src/setup-dns.sh"
+source "$SCRIPTS_SETUP_DNS_PATH"
 
 # Получение токена для Dashboard
 log "Генерация токена для Dashboard..."
-source "${SCRIPT_DIR}/dashboard-token/src/dashboard-token.sh"
+source "$SCRIPTS_DASHBOARD_TOKEN_PATH"
 
 # Установка Helm чартов
 log "Установка Helm чартов..."
-source "${SCRIPT_DIR}/charts/src/charts.sh"
+source "$SCRIPTS_CHARTS_PATH"
 
 # Проверка доступности сервисов
 log "Проверка доступности сервисов..."
-source "${SCRIPT_DIR}/connectivity-check/src/check-services.sh"
+source "$SCRIPTS_CONNECTIVITY_CHECK_PATH"
 
 log "Развертывание успешно завершено!"

@@ -18,6 +18,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TOOLS_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 K8S_KIND_SETUP_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
+# Экспорт путей к скриптам
+export SCRIPTS_ENV_PATH="${K8S_KIND_SETUP_DIR}/env/src/env.sh"
+export SCRIPTS_ASCII_BANNERS_PATH="${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
+export SCRIPTS_SETUP_WSL_PATH="${K8S_KIND_SETUP_DIR}/setup-wsl/src/setup-wsl.sh"
+export SCRIPTS_SETUP_BINS_PATH="${K8S_KIND_SETUP_DIR}/setup-bins/src/setup-bins.sh"
+export SCRIPTS_SETUP_KIND_PATH="${K8S_KIND_SETUP_DIR}/setup-kind/src/setup-kind.sh"
+export SCRIPTS_SETUP_INGRESS_PATH="${K8S_KIND_SETUP_DIR}/setup-ingress/src/setup-ingress.sh"
+export SCRIPTS_SETUP_CERT_MANAGER_PATH="${K8S_KIND_SETUP_DIR}/setup-cert-manager/src/setup-cert-manager.sh"
+export SCRIPTS_SETUP_DNS_PATH="${K8S_KIND_SETUP_DIR}/setup-dns/src/setup-dns.sh"
+export SCRIPTS_DASHBOARD_TOKEN_PATH="${K8S_KIND_SETUP_DIR}/dashboard-token/src/dashboard-token.sh"
+export SCRIPTS_CHARTS_PATH="${K8S_KIND_SETUP_DIR}/charts/src/charts.sh"
+export SCRIPTS_CONNECTIVITY_CHECK_PATH="${K8S_KIND_SETUP_DIR}/connectivity-check/src/check-services.sh"
+
 # Цветовые коды для вывода
 export RED='\033[0;31m'
 export GREEN='\033[0;32m'
