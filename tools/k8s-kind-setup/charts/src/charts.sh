@@ -24,10 +24,29 @@ CHARTS_DIR="${TOOLS_DIR}/../helm-charts"
 source "${K8S_KIND_SETUP_DIR}/env/src/env.sh"
 if [ -f "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh" ]; then
 	source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
+fi
+
+# Проверяем аргументы до показа баннера
+if [ $# -lt 1 ]; then
 	if declare -F charts_banner >/dev/null; then
 		charts_banner
 		echo ""
 	fi
+	usage
+fi
+
+action=$1
+chart=$2
+
+# Проверяем действие до показа баннера
+if ! check_action "$action" 2>/dev/null; then
+	exit 1
+fi
+
+# Показываем баннер только если действие корректно
+if declare -F charts_banner >/dev/null; then
+	charts_banner
+	echo ""
 fi
 
 # Функция перезапуска CoreDNS
@@ -296,6 +315,39 @@ install_chart() {
 	fi
 }
 
+# Функция проверки корректности команды
+check_action() {
+	local action=$1
+	local valid_actions=("install" "upgrade" "uninstall" "list" "restart-dns")
+	
+	# Проверяем совпадение с известными командами
+	for valid_action in "${valid_actions[@]}"; do
+		if [ "$action" = "$valid_action" ]; then
+			return 0
+		fi
+	done
+	
+	# Если команда похожа на известную, предлагаем правильный вариант
+	for valid_action in "${valid_actions[@]}"; do
+		if [[ "$valid_action" == *"${action}"* ]] || [[ "${action}" == *"${valid_action}"* ]]; then
+			if declare -F error_banner >/dev/null; then
+				error_banner
+			fi
+			echo -e "${RED}Ошибка: Неизвестное действие '${action}'${NC}"
+			echo -e "${YELLOW}Возможно, вы имели в виду: ${GREEN}${valid_action}${NC}"
+			usage
+		fi
+	done
+	
+	# Если команда совсем не похожа на известные
+	if declare -F error_banner >/dev/null; then
+		error_banner
+	fi
+	echo -e "${RED}Ошибка: Неизвестное действие '${action}'${NC}"
+	echo -e "${YELLOW}Доступные действия: install, upgrade, uninstall, list, restart-dns${NC}"
+	usage
+}
+
 # Обработка параметров командной строки
 namespace=""
 version=""
@@ -331,6 +383,9 @@ fi
 action=$1
 chart=$2
 
+# Проверяем корректность команды
+check_action "$action"
+
 # Проверяем количество аргументов для команд, требующих указания чарта
 if [ "$action" != "list" ] && [ "$action" != "restart-dns" ] && [ $# -lt 2 ]; then
 	echo -e "${RED}Ошибка: Не указан чарт для действия ${action}${NC}"
@@ -360,9 +415,5 @@ case $action in
 		;;
 	restart-dns)
 		restart_coredns
-		;;
-	*)
-		echo -e "${RED}Ошибка: Неизвестное действие ${action}${NC}"
-		usage
 		;;
 esac
