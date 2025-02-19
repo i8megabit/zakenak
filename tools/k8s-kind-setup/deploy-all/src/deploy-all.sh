@@ -11,13 +11,13 @@
 # This code is free! Share it, spread peace and technology!
 # "Time to ship some containers!"
 
-# Определение пути к директории скрипта и корню репозитория
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+# Определение пути к директории скрипта и корню проекта
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # Загрузка переменных окружения и баннеров
-source "${SCRIPT_DIR}/env/src/env.sh"
-source "${SCRIPT_DIR}/ascii-banners/src/ascii_banners.sh"
+source "${ROOT_DIR}/env/src/env.sh"
+source "${ROOT_DIR}/ascii-banners/src/ascii_banners.sh"
 show_deploy_banner
 
 # Функция для логирования
@@ -27,7 +27,7 @@ log() {
 
 # Установка бинарных компонентов
 log "Установка необходимых компонентов..."
-source "${SCRIPT_DIR}/setup-bins/src/setup-bins.sh"
+source "${ROOT_DIR}/setup-bins/src/setup-bins.sh"
 
 # Проверка наличия необходимых утилит
 
@@ -46,17 +46,17 @@ check_dependencies
 
 # Проверка наличия необходимых файлов конфигурации
 required_files=(
-	"${SCRIPT_DIR}/env/src/env.sh"
-	"${SCRIPT_DIR}/ascii-banners/src/ascii_banners.sh"
-	"${SCRIPT_DIR}/setup-wsl/src/setup-wsl.sh"
-	"${SCRIPT_DIR}/setup-bins/src/setup-bins.sh"
-	"${SCRIPT_DIR}/setup-kind/src/setup-kind.sh"
-	"${SCRIPT_DIR}/setup-ingress/src/setup-ingress.sh"
-	"${SCRIPT_DIR}/setup-cert-manager/src/setup-cert-manager.sh"
-	"${SCRIPT_DIR}/setup-dns/src/setup-dns.sh"
-	"${SCRIPT_DIR}/dashboard-token/src/dashboard-token.sh"
-	"${SCRIPT_DIR}/charts/src/charts.sh"
-	"${SCRIPT_DIR}/connectivity-check/src/check-services.sh"
+	"${ROOT_DIR}/env/src/env.sh"
+	"${ROOT_DIR}/ascii-banners/src/ascii_banners.sh"
+	"${ROOT_DIR}/setup-wsl/src/setup-wsl.sh"
+	"${ROOT_DIR}/setup-bins/src/setup-bins.sh"
+	"${ROOT_DIR}/setup-kind/src/setup-kind.sh"
+	"${ROOT_DIR}/setup-ingress/src/setup-ingress.sh"
+	"${ROOT_DIR}/setup-cert-manager/src/setup-cert-manager.sh"
+	"${ROOT_DIR}/setup-dns/src/setup-dns.sh"
+	"${ROOT_DIR}/dashboard-token/src/dashboard-token.sh"
+	"${ROOT_DIR}/charts/src/charts.sh"
+	"${ROOT_DIR}/connectivity-check/src/check-services.sh"
 )
 
 # Проверка существования всех необходимых файлов
@@ -75,38 +75,38 @@ log "Начало полного развертывания кластера..."
 
 # Настройка WSL
 log "Настройка WSL окружения..."
-source "${SCRIPT_DIR}/setup-wsl/src/setup-wsl.sh"
+source "${ROOT_DIR}/setup-wsl/src/setup-wsl.sh"
 
 # Установка бинарных компонентов
 log "Установка необходимых компонентов..."
-source "${SCRIPT_DIR}/setup-bins/src/setup-bins.sh"
+source "${ROOT_DIR}/setup-bins/src/setup-bins.sh"
 
 # Развертывание Kind кластера
 log "Развертывание Kind кластера..."
-source "${SCRIPT_DIR}/setup-kind/src/setup-kind.sh"
+source "${ROOT_DIR}/setup-kind/src/setup-kind.sh"
 
 # Настройка Ingress Controller
 log "Настройка Ingress Controller..."
-source "${SCRIPT_DIR}/setup-ingress/src/setup-ingress.sh"
+source "${ROOT_DIR}/setup-ingress/src/setup-ingress.sh"
 
 # Установка Cert Manager
 log "Установка Cert Manager..."
-source "${SCRIPT_DIR}/setup-cert-manager/src/setup-cert-manager.sh"
+source "${ROOT_DIR}/setup-cert-manager/src/setup-cert-manager.sh"
 
 # Настройка DNS
 log "Настройка DNS..."
-source "${SCRIPT_DIR}/setup-dns/src/setup-dns.sh"
+source "${ROOT_DIR}/setup-dns/src/setup-dns.sh"
 
 # Получение токена для Dashboard
 log "Генерация токена для Dashboard..."
-source "${SCRIPT_DIR}/dashboard-token/src/dashboard-token.sh"
+source "${ROOT_DIR}/dashboard-token/src/dashboard-token.sh"
 
 # Установка Helm чартов
 log "Установка Helm чартов..."
-source "${SCRIPT_DIR}/charts/src/charts.sh"
+source "${ROOT_DIR}/charts/src/charts.sh"
 
 # Проверка доступности сервисов
 log "Проверка доступности сервисов..."
-source "${SCRIPT_DIR}/connectivity-check/src/check-services.sh"
+source "${ROOT_DIR}/connectivity-check/src/check-services.sh"
 
 log "Развертывание успешно завершено!"

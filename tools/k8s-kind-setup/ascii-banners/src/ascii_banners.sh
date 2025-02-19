@@ -110,16 +110,17 @@ EOF
 
 # K8s Banner
 k8s_banner() {
-    echo -e "${BLUE}"
-    cat << "EOF"
-  _  __    ___  ____  
- | |/ /   ( _ )/ ___| 
- | ' /    / _ \\___ \ 
- | . \   | (_) |___) |
- |_|\_\   \___/|____/ 
-                by @eberil
+	echo -e "${BLUE}"
+	cat << "EOF"
+  _  __ ___  ____  
+ | |/ /( _ )/ ___| 
+ | ' / / _ \\___ \ 
+ | . \| (_) |___) |
+ |_|\_\\___/|____/ 
+			by @eberil
 EOF
 	echo -e "${NC}"
+}
 
 # Deploy Banner
 show_deploy_banner() {
