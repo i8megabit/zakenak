@@ -26,7 +26,7 @@ required_files=(
 	"${SCRIPT_DIR}/setup-cert-manager/src/setup-cert-manager.sh"
 	"${SCRIPT_DIR}/setup-dns/src/setup-dns.sh"
 	"${SCRIPT_DIR}/dashboard-token/src/dashboard-token.sh"
-	"${SCRIPT_DIR}/charts"
+	"${SCRIPT_DIR}/charts/src/charts.sh"
 	"${REPO_ROOT}/tools/connectivity-check/check-services.sh"
 )
 
@@ -132,10 +132,10 @@ subjects:
 EOF
 check_error "Ошибка при создании ServiceAccount для Dashboard"
 
-"${SCRIPT_DIR}/charts" install ollama
+"${SCRIPT_DIR}/charts/src/charts.sh" install ollama
 check_error "Ошибка при установке Ollama"
 
-"${SCRIPT_DIR}/charts" install open-webui
+"${SCRIPT_DIR}/charts/src/charts.sh" install open-webui
 check_error "Ошибка при установке Open WebUI"
 
 # Проверка работоспособности сервисов
