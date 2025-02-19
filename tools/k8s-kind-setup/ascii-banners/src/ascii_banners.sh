@@ -113,6 +113,11 @@ check_color_support() {
 # Инициализация
 check_color_support
 
+# Запуск основной логики только если не установлен флаг пропуска
+if [ -z "$SKIP_BANNER_MAIN" ]; then
+	main "$@"
+fi
+
 # Ingress Banner
 ingress_banner() {
 	echo -e "${BLUE}"
