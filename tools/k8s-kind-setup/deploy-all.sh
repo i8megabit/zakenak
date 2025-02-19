@@ -25,6 +25,7 @@ required_files=(
 	"${SCRIPT_DIR}/setup-ingress/src/setup-ingress.sh"
 	"${SCRIPT_DIR}/setup-cert-manager/src/setup-cert-manager.sh"
 	"${SCRIPT_DIR}/setup-dns/src/setup-dns.sh"
+	"${SCRIPT_DIR}/dashboard-token/src/dashboard-token.sh"
 	"${SCRIPT_DIR}/charts"
 	"${REPO_ROOT}/tools/connectivity-check/check-services.sh"
 )
@@ -101,8 +102,36 @@ deploy_component "setup-cert-manager/src/setup-cert-manager.sh" "Cert Manager"
 deploy_component "setup-dns/src/setup-dns.sh" "DNS"
 
 # Установка приложений через charts
-
 echo -e "\n${CYAN}Установка приложений...${NC}"
+
+# Установка Kubernetes Dashboard
+echo -e "\n${CYAN}Установка Kubernetes Dashboard...${NC}"
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+check_error "Ошибка при установке Kubernetes Dashboard"
+
+# Создание ServiceAccount и ClusterRoleBinding для Dashboard
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+	name: admin-user
+	namespace: kubernetes-dashboard
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+	name: admin-user
+roleRef:
+	apiGroup: rbac.authorization.k8s.io
+	kind: ClusterRole
+	name: cluster-admin
+subjects:
+- kind: ServiceAccount
+	name: admin-user
+	namespace: kubernetes-dashboard
+EOF
+check_error "Ошибка при создании ServiceAccount для Dashboard"
+
 "${SCRIPT_DIR}/charts" install ollama
 check_error "Ошибка при установке Ollama"
 
@@ -123,3 +152,7 @@ echo -e "\n${GREEN}Развертывание успешно завершено!
 echo -e "${YELLOW}Для проверки доступности сервисов:${NC}"
 echo -e "1. Ollama API: https://$OLLAMA_HOST"
 echo -e "2. Open WebUI: https://$WEBUI_HOST"
+
+# Получение токена для Kubernetes Dashboard
+echo -e "\n${CYAN}Получение токена для Kubernetes Dashboard...${NC}"
+"${SCRIPT_DIR}/dashboard-token/src/dashboard-token.sh"
