@@ -46,38 +46,38 @@ get_pods() {
 
 # Функция принудительного удаления подов
 kill_pods() {
-    local namespace=$1
-    local deployment=$2
-    
-    if [ -z "$namespace" ] || [ -z "$deployment" ]; then
-        echo -e "${RED}Ошибка: Требуется указать namespace и deployment${NC}"
-        echo -e "${YELLOW}Использование: $0 kill-pods -n <namespace> <deployment>${NC}"
-        return 1
-    }
-    
-    echo -e "${CYAN}Получение списка подов для deployment ${deployment} в namespace ${namespace}...${NC}"
-    local pods
-    pods=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/name=$deployment" -o name)
-    
-    if [ -z "$pods" ]; then
-        echo -e "${RED}Ошибка: Поды не найдены для deployment ${deployment} в namespace ${namespace}${NC}"
-        return 1
-    }
-    
-    echo -e "${YELLOW}Найдены следующие поды:${NC}"
-    echo "$pods"
-    
-    echo -e "${RED}Выполняется принудительное удаление подов...${NC}"
-    echo "$pods" | while read -r pod; do
-        echo -e "${CYAN}Удаление пода ${pod}...${NC}"
-        kubectl delete "$pod" -n "$namespace" --force --grace-period=0
-    done
-    
-    echo -e "${CYAN}Ожидание создания новых подов...${NC}"
-    kubectl rollout status deployment/"$deployment" -n "$namespace" --timeout=300s
-    
-    echo -e "${GREEN}Все поды успешно пересозданы${NC}"
-    kubectl get pods -n "$namespace" -l "app.kubernetes.io/name=$deployment"
+	local namespace=$1
+	local deployment=$2
+	
+	if [ -z "$namespace" ] || [ -z "$deployment" ]; then
+		echo -e "${RED}Ошибка: Требуется указать namespace и deployment${NC}"
+		echo -e "${YELLOW}Использование: $0 kill-pods -n <namespace> <deployment>${NC}"
+		return 1
+	}
+	
+	echo -e "${CYAN}Получение списка подов для deployment ${deployment} в namespace ${namespace}...${NC}"
+	local pods
+	pods=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/name=$deployment" -o name)
+	
+	if [ -z "$pods" ]; then
+		echo -e "${RED}Ошибка: Поды не найдены для deployment ${deployment} в namespace ${namespace}${NC}"
+		return 1
+	}
+	
+	echo -e "${YELLOW}Найдены следующие поды:${NC}"
+	echo "$pods"
+	
+	echo -e "${RED}Выполняется принудительное удаление подов...${NC}"
+	echo "$pods" | while read -r pod; do
+		echo -e "${CYAN}Удаление пода ${pod}...${NC}"
+		kubectl delete "$pod" -n "$namespace" --force --grace-period=0
+	done
+	
+	echo -e "${CYAN}Ожидание создания новых подов...${NC}"
+	kubectl rollout status deployment/"$deployment" -n "$namespace" --timeout=300s
+	
+	echo -e "${GREEN}Все поды успешно пересозданы${NC}"
+	kubectl get pods -n "$namespace" -l "app.kubernetes.io/name=$deployment"
 }
 
 
@@ -109,16 +109,7 @@ usage() {
 	exit 1
 }
 
-# Функция получения списка чартов
-get_charts() {
-	local charts=()
-	for chart_dir in "${CHARTS_DIR}"/*; do
-		if [ -f "${chart_dir}/Chart.yaml" ]; then
-			charts+=("$(basename "${chart_dir}")")
-		fi
-	done
-	echo "${charts[@]}"
-}
+
 
 # Функция генерации цветного меню чартов
 generate_charts_menu() {
@@ -552,95 +543,20 @@ check_action() {
 	usage
 }
 
-# Определение пути к директории скрипта и корню репозитория
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
-K8S_KIND_SETUP_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-CHARTS_DIR="${TOOLS_DIR}/../helm-charts"
-
-# Загрузка общих переменных
-source "${K8S_KIND_SETUP_DIR}/env/src/env.sh"
-
-# Загрузка баннеров с предотвращением автозапуска
-if [ -f "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh" ]; then
-	export SKIP_BANNER_MAIN=1
-	source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
-fi
-
-# Показываем баннер charts только если нет аргументов
-if [ $# -eq 0 ]; then
-	if declare -F charts_banner >/dev/null; then
-		charts_banner
-		echo ""
-	fi
-	usage
-	exit 1
-fi
 
 
 
 
-# Функция перезапуска CoreDNS
-
-restart_coredns() {
-	echo -e "${CYAN}Перезапуск CoreDNS...${NC}"
-
-	# Проверка текущего состояния
-	echo -e "${CYAN}Текущее состояние CoreDNS:${NC}"
-	kubectl get pods -n kube-system -l k8s-app=kube-dns -o wide
-	kubectl describe deployment coredns -n kube-system
-
-	# Применение обновленной конфигурации
-	echo -e "${CYAN}Применение конфигурации CoreDNS...${NC}"
-	kubectl apply -f "${K8S_KIND_SETUP_DIR}/setup-dns/src/coredns-custom.yaml"
-
-	# Перезапуск CoreDNS
-	kubectl rollout restart deployment/coredns -n kube-system
-	sleep 10
-
-	echo -e "${CYAN}Ожидание готовности CoreDNS...${NC}"
-	if ! kubectl rollout status deployment/coredns -n kube-system --timeout=300s; then
-		echo -e "${RED}Ошибка при ожидании готовности CoreDNS${NC}"
-		echo -e "${YELLOW}Проверка логов новых подов...${NC}"
-		kubectl logs -n kube-system -l k8s-app=kube-dns --tail=50 || true
-		echo -e "${YELLOW}Описание подов...${NC}"
-		kubectl describe pods -n kube-system -l k8s-app=kube-dns
-		exit 1
-	fi
-
-	# Финальная проверка
-	echo -e "${CYAN}Финальное состояние CoreDNS:${NC}"
-	kubectl get pods -n kube-system -l k8s-app=kube-dns -o wide
-
-	echo -e "${GREEN}CoreDNS успешно перезапущен${NC}"
-}
 
 
-# Функция получения списка чартов
-get_charts() {
-	local charts=()
-	for chart_dir in "${CHARTS_DIR}"/*; do
-		if [ -f "${chart_dir}/Chart.yaml" ]; then
-			charts+=("$(basename "${chart_dir}")")
-		fi
-	done
-	echo "${charts[@]}"
-}
 
 
-# Функция генерации цветного меню чартов
-generate_charts_menu() {
-	local charts=($1)
-	echo -e "${CYAN}Доступные чарты:${NC}"
-	echo -e "${GREEN}  all          ${YELLOW}-${NC} Все чарты"
-	for chart in "${charts[@]}"; do
-		local description=""
-		if [ -f "${CHARTS_DIR}/${chart}/Chart.yaml" ]; then
-			description=$(grep "description:" "${CHARTS_DIR}/${chart}/Chart.yaml" | cut -d'"' -f2 || echo "")
-		fi
-		printf "${GREEN}  %-12s ${YELLOW}-${NC} %s\n" "$chart" "${description:-$chart}"
-	done
-}
+
+
+
+
+
+
 
 
 
