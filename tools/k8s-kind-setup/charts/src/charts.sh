@@ -228,6 +228,53 @@ install_chart() {
 		done
 	fi
 
+	# Специальная обработка для kubernetes-dashboard
+	if [ "$chart" = "kubernetes-dashboard" ]; then
+		echo -e "${CYAN}Подготовка к установке kubernetes-dashboard...${NC}"
+		
+		# Проверяем существование релиза перед upgrade
+		if [ "$action" = "upgrade" ] && ! helm status kubernetes-dashboard -n kubernetes-dashboard >/dev/null 2>&1; then
+			echo -e "${YELLOW}Релиз kubernetes-dashboard не найден, выполняем установку...${NC}"
+			action="install"
+		fi
+		
+		# Если это установка, выполняем полную очистку
+		if [ "$action" = "install" ]; then
+			# Удаляем существующий релиз если он есть
+			helm uninstall kubernetes-dashboard -n kubernetes-dashboard 2>/dev/null || true
+			
+			# Ждем удаления релиза
+			sleep 10
+			
+			# Удаляем namespace если он существует
+			kubectl delete namespace kubernetes-dashboard --timeout=60s 2>/dev/null || true
+			
+			# Ждем полного удаления ресурсов
+			sleep 10
+		fi
+		
+		# Проверяем наличие репозитория kubernetes-dashboard
+		if ! helm repo list | grep -q "kubernetes-dashboard"; then
+			echo -e "${CYAN}Добавление репозитория kubernetes-dashboard...${NC}"
+			helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
+			helm repo update
+		fi
+
+		# Устанавливаем в правильный namespace
+		namespace="kubernetes-dashboard"
+		
+		# Создаем ServiceAccount и ClusterRoleBinding для доступа к дашборду
+		if [ "$action" = "install" ]; then
+			echo -e "${CYAN}Создание ServiceAccount для доступа к dashboard...${NC}"
+			kubectl create serviceaccount -n kubernetes-dashboard admin-user 2>/dev/null || true
+			
+			echo -e "${CYAN}Создание ClusterRoleBinding для admin-user...${NC}"
+			kubectl create clusterrolebinding admin-user \
+				--clusterrole=cluster-admin \
+				--serviceaccount=kubernetes-dashboard:admin-user 2>/dev/null || true
+		fi
+	fi
+
 	# Добавляем сборку зависимостей перед установкой
 	echo -e "${CYAN}Проверка и сборка зависимостей чарта ${chart}...${NC}"
 	helm dependency build "${CHARTS_DIR}/${chart}" || {
@@ -279,7 +326,7 @@ install_chart() {
 # Функция проверки корректности команды
 check_action() {
 	local action=$1
-	local valid_actions=("install" "upgrade" "uninstall" "list" "restart-dns")
+	local valid_actions=("install" "upgrade" "uninstall" "list" "restart-dns" "dashboard-token")
 	
 	# Проверяем совпадение с известными командами
 	for valid_action in "${valid_actions[@]}"; do
@@ -338,21 +385,8 @@ if [ $# -lt 1 ]; then
 	exit 1
 fi
 
-# Загрузка баннеров после проверки аргументов
-if [ -f "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh" ]; then
-	# Предотвращаем автоматический запуск main из ascii_banners.sh
-	export SKIP_BANNER_MAIN=1
-	source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
-fi
-
-# Показываем баннер charts
-if declare -F charts_banner >/dev/null; then
-	charts_banner
-	echo ""
-fi
-
-
 # Функция перезапуска CoreDNS
+
 restart_coredns() {
 	echo -e "${CYAN}Перезапуск CoreDNS...${NC}"
 
@@ -631,6 +665,35 @@ check_action() {
 	usage
 }
 
+# Функция получения токена для доступа к dashboard
+get_dashboard_token() {
+	local namespace="kubernetes-dashboard"
+	local account="admin-user"
+	
+	echo -e "${CYAN}Получение токена для доступа к dashboard...${NC}"
+	
+	# Проверяем существование ServiceAccount
+	if ! kubectl get serviceaccount $account -n $namespace >/dev/null 2>&1; then
+		echo -e "${RED}ServiceAccount $account не найден в namespace $namespace${NC}"
+		return 1
+	fi
+	
+	# Получаем токен
+	local token=""
+	if kubectl -n $namespace get secret >/dev/null 2>&1; then
+		token=$(kubectl -n $namespace create token admin-user)
+	fi
+	
+	if [ -n "$token" ]; then
+		echo -e "${GREEN}Токен для доступа к dashboard:${NC}"
+		echo -e "${YELLOW}$token${NC}"
+		echo -e "\n${CYAN}Доступ к dashboard: ${GREEN}https://dashboard.local${NC}"
+	else
+		echo -e "${RED}Не удалось получить токен${NC}"
+		return 1
+	fi
+}
+
 # Обработка параметров командной строки
 namespace=""
 version=""
@@ -698,5 +761,8 @@ case $action in
 		;;
 	restart-dns)
 		restart_coredns
+		;;
+	dashboard-token)
+		get_dashboard_token
 		;;
 esac

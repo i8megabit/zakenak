@@ -1,0 +1,18 @@
+kubernetes-dashboard:
+  extraArgs:
+    - --token-ttl=43200
+  protocolHttp: true
+  service:
+    type: ClusterIP
+  rbac:
+    clusterReadOnlyRole: true
+  ingress:
+    enabled: true
+    hosts:
+      - dashboard.local
+    annotations:
+      cert-manager.io/cluster-issuer: selfsigned-issuer
+    tls:
+      - secretName: kubernetes-dashboard-tls
+        hosts:
+          - dashboard.local

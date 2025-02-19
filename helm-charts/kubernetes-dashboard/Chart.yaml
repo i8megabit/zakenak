@@ -1,0 +1,9 @@
+apiVersion: v2
+name: kubernetes-dashboard
+description: Web-based Kubernetes user interface
+version: 1.0.0
+appVersion: "2.7.0"
+dependencies:
+  - name: kubernetes-dashboard
+    version: 6.0.8
+    repository: "https://kubernetes.github.io/dashboard/"
