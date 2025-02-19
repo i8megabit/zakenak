@@ -228,6 +228,13 @@ install_chart() {
 		done
 	fi
 
+	# Проверяем наличие репозитория kubernetes-dashboard для чарта kubernetes-dashboard
+	if [ "$chart" = "kubernetes-dashboard" ] && ! helm repo list | grep -q "kubernetes-dashboard"; then
+		echo -e "${CYAN}Добавление репозитория kubernetes-dashboard...${NC}"
+		helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
+		helm repo update
+	fi
+
 	# Специальная обработка для kubernetes-dashboard
 	if [ "$chart" = "kubernetes-dashboard" ]; then
 		echo -e "${CYAN}Подготовка к установке kubernetes-dashboard...${NC}"
@@ -251,13 +258,6 @@ install_chart() {
 			
 			# Ждем полного удаления ресурсов
 			sleep 10
-		fi
-		
-		# Проверяем наличие репозитория kubernetes-dashboard
-		if ! helm repo list | grep -q "kubernetes-dashboard"; then
-			echo -e "${CYAN}Добавление репозитория kubernetes-dashboard...${NC}"
-			helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
-			helm repo update
 		fi
 
 		# Устанавливаем в правильный namespace
@@ -582,6 +582,53 @@ install_chart() {
 				exit 1
 			fi
 		done
+	fi
+
+	# Проверяем наличие репозитория kubernetes-dashboard для чарта kubernetes-dashboard
+	if [ "$chart" = "kubernetes-dashboard" ] && ! helm repo list | grep -q "kubernetes-dashboard"; then
+		echo -e "${CYAN}Добавление репозитория kubernetes-dashboard...${NC}"
+		helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
+		helm repo update
+	fi
+
+	# Специальная обработка для kubernetes-dashboard
+	if [ "$chart" = "kubernetes-dashboard" ]; then
+		echo -e "${CYAN}Подготовка к установке kubernetes-dashboard...${NC}"
+		
+		# Проверяем существование релиза перед upgrade
+		if [ "$action" = "upgrade" ] && ! helm status kubernetes-dashboard -n kubernetes-dashboard >/dev/null 2>&1; then
+			echo -e "${YELLOW}Релиз kubernetes-dashboard не найден, выполняем установку...${NC}"
+			action="install"
+		fi
+		
+		# Если это установка, выполняем полную очистку
+		if [ "$action" = "install" ]; then
+			# Удаляем существующий релиз если он есть
+			helm uninstall kubernetes-dashboard -n kubernetes-dashboard 2>/dev/null || true
+			
+			# Ждем удаления релиза
+			sleep 10
+			
+			# Удаляем namespace если он существует
+			kubectl delete namespace kubernetes-dashboard --timeout=60s 2>/dev/null || true
+			
+			# Ждем полного удаления ресурсов
+			sleep 10
+		fi
+
+		# Устанавливаем в правильный namespace
+		namespace="kubernetes-dashboard"
+		
+		# Создаем ServiceAccount и ClusterRoleBinding для доступа к дашборду
+		if [ "$action" = "install" ]; then
+			echo -e "${CYAN}Создание ServiceAccount для доступа к dashboard...${NC}"
+			kubectl create serviceaccount -n kubernetes-dashboard admin-user 2>/dev/null || true
+			
+			echo -e "${CYAN}Создание ClusterRoleBinding для admin-user...${NC}"
+			kubectl create clusterrolebinding admin-user \
+				--clusterrole=cluster-admin \
+				--serviceaccount=kubernetes-dashboard:admin-user 2>/dev/null || true
+		fi
 	fi
 
 	# Добавляем сборку зависимостей перед установкой
