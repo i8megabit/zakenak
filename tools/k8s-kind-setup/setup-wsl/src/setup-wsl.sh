@@ -9,36 +9,6 @@ WSL_DISTRO="Ubuntu-22.04"
 
 echo "Starting WSL2 setup for Zakenak..."
 
-# Функция проверки системных требований
-check_requirements() {
-	echo "Checking system requirements..."
-	
-	# Проверка WSL2
-	if ! grep -q microsoft /proc/version; then
-		echo "Error: This script must be run in WSL2"
-		exit 1
-	}
-
-	# Проверка памяти
-	total_mem=$(free -g | awk '/^Mem:/{print $2}')
-	if [ "${total_mem}" -lt "${REQUIRED_MEMORY}" ]; then
-		echo "Error: Minimum ${REQUIRED_MEMORY}GB RAM required"
-		exit 1
-	}
-
-	# Проверка GPU
-	if ! command -v nvidia-smi &> /dev/null; then
-		echo "Error: NVIDIA GPU driver not found"
-		exit 1
-	}
-
-	driver_version=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader)
-	if ! awk -v ver="$driver_version" -v req="$NVIDIA_DRIVER_MIN_VERSION" 'BEGIN{exit!(ver>=req)}'; then
-		echo "Error: NVIDIA driver version $NVIDIA_DRIVER_MIN_VERSION+ required"
-		exit 1
-	}
-}
-
 # Функция настройки WSL
 configure_wsl() {
 	echo "Configuring WSL2..."
@@ -88,8 +58,10 @@ install_docker() {
 setup_nvidia_container_toolkit() {
 	echo "Setting up NVIDIA Container Toolkit..."
 	distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-	curl -s -L https://nvidia.github.io/libnvidia-container/gpgkey | sudo apt-key add -
-	curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
+	
+	curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+	
+	echo "deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/$distribution/stable /" | \
 		sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
 
 	sudo apt-get update
@@ -100,7 +72,6 @@ setup_nvidia_container_toolkit() {
 
 # Основная функция
 main() {
-	check_requirements
 	configure_wsl
 	install_dependencies
 	install_cuda
@@ -110,5 +81,6 @@ main() {
 	echo "WSL2 setup completed successfully!"
 	echo "Please restart your WSL instance for changes to take effect."
 }
+
 
 main "$@"

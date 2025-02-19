@@ -13,23 +13,19 @@
 # HUJAK-HUJAK PRODUCTION PRESENTS...
 # "Because environment variables should be fun"
 
-# Определение пути к директории скрипта и корню репозитория
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
-K8S_KIND_SETUP_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+# Экспорт путей к скриптам (статические пути)
+export SCRIPTS_ENV_PATH="/home/eberil/zakenak-1/tools/k8s-kind-setup/env/src/env.sh"
+export SCRIPTS_ASCII_BANNERS_PATH="/home/eberil/zakenak-1/tools/k8s-kind-setup/ascii-banners/src/ascii_banners.sh"
+export SCRIPTS_SETUP_WSL_PATH="/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-wsl/src/setup-wsl.sh"
+export SCRIPTS_SETUP_BINS_PATH="/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-bins/src/setup-bins.sh"
+export SCRIPTS_SETUP_KIND_PATH="/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-kind/src/setup-kind.sh"
+export SCRIPTS_SETUP_INGRESS_PATH="/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-ingress/src/setup-ingress.sh"
+export SCRIPTS_SETUP_CERT_MANAGER_PATH="/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-cert-manager/src/setup-cert-manager.sh"
+export SCRIPTS_SETUP_DNS_PATH="/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-dns/src/setup-dns.sh"
+export SCRIPTS_DASHBOARD_TOKEN_PATH="/home/eberil/zakenak-1/tools/k8s-kind-setup/dashboard-token/src/dashboard-token.sh"
+export SCRIPTS_CHARTS_PATH="/home/eberil/zakenak-1/tools/k8s-kind-setup/charts/src/charts.sh"
+export SCRIPTS_CONNECTIVITY_CHECK_PATH="/home/eberil/zakenak-1/tools/k8s-kind-setup/connectivity-check/src/check-services.sh"
 
-# Экспорт путей к скриптам
-export SCRIPTS_ENV_PATH="${K8S_KIND_SETUP_DIR}/env/src/env.sh"
-export SCRIPTS_ASCII_BANNERS_PATH="${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
-export SCRIPTS_SETUP_WSL_PATH="${K8S_KIND_SETUP_DIR}/setup-wsl/src/setup-wsl.sh"
-export SCRIPTS_SETUP_BINS_PATH="${K8S_KIND_SETUP_DIR}/setup-bins/src/setup-bins.sh"
-export SCRIPTS_SETUP_KIND_PATH="${K8S_KIND_SETUP_DIR}/setup-kind/src/setup-kind.sh"
-export SCRIPTS_SETUP_INGRESS_PATH="${K8S_KIND_SETUP_DIR}/setup-ingress/src/setup-ingress.sh"
-export SCRIPTS_SETUP_CERT_MANAGER_PATH="${K8S_KIND_SETUP_DIR}/setup-cert-manager/src/setup-cert-manager.sh"
-export SCRIPTS_SETUP_DNS_PATH="${K8S_KIND_SETUP_DIR}/setup-dns/src/setup-dns.sh"
-export SCRIPTS_DASHBOARD_TOKEN_PATH="${K8S_KIND_SETUP_DIR}/dashboard-token/src/dashboard-token.sh"
-export SCRIPTS_CHARTS_PATH="${K8S_KIND_SETUP_DIR}/charts/src/charts.sh"
-export SCRIPTS_CONNECTIVITY_CHECK_PATH="${K8S_KIND_SETUP_DIR}/connectivity-check/src/check-services.sh"
 
 # Цветовые коды для вывода
 export RED='\033[0;31m'

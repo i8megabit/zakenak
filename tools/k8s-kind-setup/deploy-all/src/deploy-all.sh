@@ -1,10 +1,7 @@
 #!/usr/bin/bash
-# Определение пути к директории скрипта и корню проекта
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-
 # Загрузка переменных окружения и баннеров
-source "${SCRIPT_DIR}/env/src/env.sh"
-source "$SCRIPTS_ASCII_BANNERS_PATH"
+source "/home/eberil/zakenak-1/tools/k8s-kind-setup/env/src/env.sh"
+source "/home/eberil/zakenak-1/tools/k8s-kind-setup/ascii-banners/src/ascii_banners.sh"
 
 show_deploy_banner
 
@@ -16,17 +13,17 @@ log() {
 # Функция для установки прав выполнения
 setup_executable_permissions() {
 	local scripts=(
-		"$SCRIPTS_ENV_PATH"
-		"$SCRIPTS_ASCII_BANNERS_PATH"
-		"$SCRIPTS_SETUP_WSL_PATH"
-		"$SCRIPTS_SETUP_BINS_PATH"
-		"$SCRIPTS_SETUP_KIND_PATH"
-		"$SCRIPTS_SETUP_INGRESS_PATH"
-		"$SCRIPTS_SETUP_CERT_MANAGER_PATH"
-		"$SCRIPTS_SETUP_DNS_PATH"
-		"$SCRIPTS_DASHBOARD_TOKEN_PATH"
-		"$SCRIPTS_CHARTS_PATH"
-		"$SCRIPTS_CONNECTIVITY_CHECK_PATH"
+		"/home/eberil/zakenak-1/tools/k8s-kind-setup/env/src/env.sh"
+		"/home/eberil/zakenak-1/tools/k8s-kind-setup/ascii-banners/src/ascii_banners.sh"
+		"/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-wsl/src/setup-wsl.sh"
+		"/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-bins/src/setup-bins.sh"
+		"/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-kind/src/setup-kind.sh"
+		"/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-ingress/src/setup-ingress.sh"
+		"/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-cert-manager/src/setup-cert-manager.sh"
+		"/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-dns/src/setup-dns.sh"
+		"/home/eberil/zakenak-1/tools/k8s-kind-setup/dashboard-token/src/dashboard-token.sh"
+		"/home/eberil/zakenak-1/tools/k8s-kind-setup/charts/src/charts.sh"
+		"/home/eberil/zakenak-1/tools/k8s-kind-setup/connectivity-check/src/check-services.sh"
 	)
 
 	echo "Установка прав выполнения для скриптов..."
@@ -39,14 +36,11 @@ setup_executable_permissions() {
 	done
 }
 
+
 # Установка прав выполнения
 setup_executable_permissions
 
-# Установка бинарных компонентов
-log "Установка необходимых компонентов..."
-source "${SCRIPT_DIR}/setup-bins/src/setup-bins.sh"
-
-# Проверка наличия необходимых утилит после установки
+# Функция проверки наличия необходимых утилит
 check_dependencies() {
 	local required_tools=("docker" "kind" "kubectl" "helm" "curl" "nc" "getent")
 	for tool in "${required_tools[@]}"; do
@@ -57,23 +51,20 @@ check_dependencies() {
 	done
 }
 
-# Выполняем проверку зависимостей после установки
-check_dependencies
-
-
 # Проверка наличия необходимых файлов конфигурации
+
 required_files=(
-	"$SCRIPTS_ENV_PATH"
-	"$SCRIPTS_ASCII_BANNERS_PATH"
-	"$SCRIPTS_SETUP_WSL_PATH"
-	"$SCRIPTS_SETUP_BINS_PATH"
-	"$SCRIPTS_SETUP_KIND_PATH"
-	"$SCRIPTS_SETUP_INGRESS_PATH"
-	"$SCRIPTS_SETUP_CERT_MANAGER_PATH"
-	"$SCRIPTS_SETUP_DNS_PATH"
-	"$SCRIPTS_DASHBOARD_TOKEN_PATH"
-	"$SCRIPTS_CHARTS_PATH"
-	"$SCRIPTS_CONNECTIVITY_CHECK_PATH"
+	"/home/eberil/zakenak-1/tools/k8s-kind-setup/env/src/env.sh"
+	"/home/eberil/zakenak-1/tools/k8s-kind-setup/ascii-banners/src/ascii_banners.sh"
+	"/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-wsl/src/setup-wsl.sh"
+	"/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-bins/src/setup-bins.sh"
+	"/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-kind/src/setup-kind.sh"
+	"/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-ingress/src/setup-ingress.sh"
+	"/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-cert-manager/src/setup-cert-manager.sh"
+	"/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-dns/src/setup-dns.sh"
+	"/home/eberil/zakenak-1/tools/k8s-kind-setup/dashboard-token/src/dashboard-token.sh"
+	"/home/eberil/zakenak-1/tools/k8s-kind-setup/charts/src/charts.sh"
+	"/home/eberil/zakenak-1/tools/k8s-kind-setup/connectivity-check/src/check-services.sh"
 )
 
 # Проверка существования всех необходимых файлов
@@ -92,38 +83,42 @@ log "Начало полного развертывания кластера..."
 
 # Настройка WSL
 log "Настройка WSL окружения..."
-source "$SCRIPTS_SETUP_WSL_PATH"
+source "/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-wsl/src/setup-wsl.sh"
 
 # Установка бинарных компонентов
 log "Установка необходимых компонентов..."
-source "$SCRIPTS_SETUP_BINS_PATH"
+source "/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-bins/src/setup-bins.sh"
+
+# Проверка зависимостей после установки компонентов
+log "Проверка установленных компонентов..."
+check_dependencies
 
 # Развертывание Kind кластера
 log "Развертывание Kind кластера..."
-source "$SCRIPTS_SETUP_KIND_PATH"
+source "/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-kind/src/setup-kind.sh"
 
 # Настройка Ingress Controller
 log "Настройка Ingress Controller..."
-source "$SCRIPTS_SETUP_INGRESS_PATH"
+source "/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-ingress/src/setup-ingress.sh"
 
 # Установка Cert Manager
 log "Установка Cert Manager..."
-source "$SCRIPTS_SETUP_CERT_MANAGER_PATH"
+source "/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-cert-manager/src/setup-cert-manager.sh"
 
 # Настройка DNS
 log "Настройка DNS..."
-source "$SCRIPTS_SETUP_DNS_PATH"
+source "/home/eberil/zakenak-1/tools/k8s-kind-setup/setup-dns/src/setup-dns.sh"
 
 # Получение токена для Dashboard
 log "Генерация токена для Dashboard..."
-source "$SCRIPTS_DASHBOARD_TOKEN_PATH"
+source "/home/eberil/zakenak-1/tools/k8s-kind-setup/dashboard-token/src/dashboard-token.sh"
 
 # Установка Helm чартов
 log "Установка Helm чартов..."
-source "$SCRIPTS_CHARTS_PATH"
+source "/home/eberil/zakenak-1/tools/k8s-kind-setup/charts/src/charts.sh"
 
 # Проверка доступности сервисов
 log "Проверка доступности сервисов..."
-source "$SCRIPTS_CONNECTIVITY_CHECK_PATH"
+source "/home/eberil/zakenak-1/tools/k8s-kind-setup/connectivity-check/src/check-services.sh"
 
 log "Развертывание успешно завершено!"
