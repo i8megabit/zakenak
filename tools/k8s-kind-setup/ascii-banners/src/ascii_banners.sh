@@ -11,7 +11,7 @@
 # This code is free! Share it, spread peace and technology!
 
 # Функция для вывода справки по использованию
-usage() {
+show_banner_usage() {
 	echo "Usage: $0 [banner_type]"
 	echo "Available banner types:"
 	echo "  devops     - Show DevOps banner"
@@ -29,7 +29,7 @@ usage() {
 # Основная логика обработки аргументов
 main() {
 	if [ $# -eq 0 ]; then
-		usage
+		show_banner_usage
 		exit 1
 	fi
 
@@ -66,7 +66,7 @@ main() {
 			;;
 		*)
 			echo -e "${RED}Error: Unknown banner type '$1'${NC}"
-			usage
+			show_banner_usage
 			exit 1
 			;;
 	esac
@@ -127,8 +127,10 @@ EOF
 	echo -e "${NC}"
 }
 
-# Запуск основной логики
-main "$@"
+# Запуск основной логики только если не установлен флаг пропуска
+if [ -z "$SKIP_BANNER_MAIN" ]; then
+	main "$@"
+fi
 
 # DNS Banner
 dns_banner() {

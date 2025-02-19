@@ -20,34 +20,52 @@ TOOLS_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 K8S_KIND_SETUP_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 CHARTS_DIR="${TOOLS_DIR}/../helm-charts"
 
-# Загрузка общих переменных и баннеров
+# Загрузка общих переменных
 source "${K8S_KIND_SETUP_DIR}/env/src/env.sh"
-if [ -f "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh" ]; then
-	source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
-fi
 
-# Проверяем аргументы до показа баннера
+# Функция вывода справки (перемещена выше загрузки баннеров)
+
+usage() {
+	local charts=($(get_charts))
+	
+	echo -e "${CYAN}Использование:${NC} $0 ${YELLOW}[опции]${NC} ${GREEN}<действие>${NC} ${GREEN}<чарт>${NC}"
+	echo ""
+	echo -e "${CYAN}Действия:${NC}"
+	echo -e "${GREEN}  install        ${YELLOW}-${NC} Установить чарт"
+	echo -e "${GREEN}  upgrade        ${YELLOW}-${NC} Обновить чарт"
+	echo -e "${GREEN}  uninstall      ${YELLOW}-${NC} Удалить чарт"
+	echo -e "${GREEN}  list           ${YELLOW}-${NC} Показать список установленных чартов"
+	echo -e "${GREEN}  restart-dns    ${YELLOW}-${NC} Перезапустить CoreDNS"
+	echo ""
+	generate_charts_menu "$(get_charts)"
+	echo ""
+	echo -e "${CYAN}Опции:${NC}"
+	echo -e "${GREEN}  -n, --namespace ${YELLOW}<namespace>${NC}  - Использовать указанный namespace"
+	echo -e "${GREEN}  -v, --version ${YELLOW}<version>${NC}      - Использовать указанную версию"
+	echo -e "${GREEN}  -f, --values ${YELLOW}<file>${NC}          - Использовать дополнительный values файл"
+	echo -e "${GREEN}  -h, --help${NC}                   - Показать эту справку"
+	exit 1
+}
+
+# Проверяем наличие аргументов до загрузки баннеров
 if [ $# -lt 1 ]; then
-	if declare -F charts_banner >/dev/null; then
-		charts_banner
-		echo ""
-	fi
 	usage
-fi
-
-action=$1
-chart=$2
-
-# Проверяем действие до показа баннера
-if ! check_action "$action" 2>/dev/null; then
 	exit 1
 fi
 
-# Показываем баннер только если действие корректно
+# Загрузка баннеров после проверки аргументов
+if [ -f "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh" ]; then
+	# Предотвращаем автоматический запуск main из ascii_banners.sh
+	export SKIP_BANNER_MAIN=1
+	source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
+fi
+
+# Показываем баннер charts
 if declare -F charts_banner >/dev/null; then
 	charts_banner
 	echo ""
 fi
+
 
 # Функция перезапуска CoreDNS
 restart_coredns() {
@@ -110,28 +128,8 @@ generate_charts_menu() {
 	done
 }
 
-# Функция вывода справки
-usage() {
-	local charts=($(get_charts))
-	
-	echo -e "${CYAN}Использование:${NC} $0 ${YELLOW}[опции]${NC} ${GREEN}<действие>${NC} ${GREEN}<чарт>${NC}"
-	echo ""
-	echo -e "${CYAN}Действия:${NC}"
-	echo -e "${GREEN}  install        ${YELLOW}-${NC} Установить чарт"
-	echo -e "${GREEN}  upgrade        ${YELLOW}-${NC} Обновить чарт"
-	echo -e "${GREEN}  uninstall      ${YELLOW}-${NC} Удалить чарт"
-	echo -e "${GREEN}  list           ${YELLOW}-${NC} Показать список установленных чартов"
-	echo -e "${GREEN}  restart-dns    ${YELLOW}-${NC} Перезапустить CoreDNS"
-	echo ""
-	generate_charts_menu "$(get_charts)"
-	echo ""
-	echo -e "${CYAN}Опции:${NC}"
-	echo -e "${GREEN}  -n, --namespace ${YELLOW}<namespace>${NC}  - Использовать указанный namespace"
-	echo -e "${GREEN}  -v, --version ${YELLOW}<version>${NC}      - Использовать указанную версию"
-	echo -e "${GREEN}  -f, --values ${YELLOW}<file>${NC}          - Использовать дополнительный values файл"
-	echo -e "${GREEN}  -h, --help${NC}                   - Показать эту справку"
-	exit 1
-}
+
+
 
 # Функция установки/обновления чарта
 install_chart() {
