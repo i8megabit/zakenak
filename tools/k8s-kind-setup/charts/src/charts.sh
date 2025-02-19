@@ -323,6 +323,35 @@ install_chart() {
 	fi
 }
 
+# Функция получения токена для доступа к dashboard
+get_dashboard_token() {
+	local namespace="kubernetes-dashboard"
+	local account="admin-user"
+	
+	echo -e "${CYAN}Получение токена для доступа к dashboard...${NC}"
+	
+	# Проверяем существование ServiceAccount
+	if ! kubectl get serviceaccount $account -n $namespace >/dev/null 2>&1; then
+		echo -e "${RED}ServiceAccount $account не найден в namespace $namespace${NC}"
+		return 1
+	fi
+	
+	# Получаем токен
+	local token=""
+	if kubectl -n $namespace get secret >/dev/null 2>&1; then
+		token=$(kubectl -n $namespace create token admin-user)
+	fi
+	
+	if [ -n "$token" ]; then
+		echo -e "${GREEN}Токен для доступа к dashboard:${NC}"
+		echo -e "${YELLOW}$token${NC}"
+		echo -e "\n${CYAN}Доступ к dashboard: ${GREEN}https://dashboard.local${NC}"
+	else
+		echo -e "${RED}Не удалось получить токен${NC}"
+		return 1
+	fi
+}
+
 # Функция проверки корректности команды
 check_action() {
 	local action=$1
@@ -368,6 +397,7 @@ usage() {
 	echo -e "${GREEN}  uninstall      ${YELLOW}-${NC} Удалить чарт"
 	echo -e "${GREEN}  list           ${YELLOW}-${NC} Показать список установленных чартов"
 	echo -e "${GREEN}  restart-dns    ${YELLOW}-${NC} Перезапустить CoreDNS"
+	echo -e "${GREEN}  dashboard-token ${YELLOW}-${NC} Получить токен для доступа к dashboard"
 	echo ""
 	generate_charts_menu "$(get_charts)"
 	echo ""
@@ -682,7 +712,7 @@ install_chart() {
 # Функция проверки корректности команды
 check_action() {
 	local action=$1
-	local valid_actions=("install" "upgrade" "uninstall" "list" "restart-dns")
+	local valid_actions=("install" "upgrade" "uninstall" "list" "restart-dns" "dashboard-token")
 	
 	# Проверяем совпадение с известными командами
 	for valid_action in "${valid_actions[@]}"; do
