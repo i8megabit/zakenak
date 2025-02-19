@@ -87,6 +87,64 @@ wait_for_pods() {
 	return 1
 }
 
+# Функция ожидания готовности deployment с повторными попытками
+wait_for_deployment() {
+	local namespace=$1
+	local deployment=$2
+	local timeout=${3:-300}
+	local max_attempts=${4:-3}
+	local attempt=1
+	local interval=30
+
+	while [ $attempt -le $max_attempts ]; do
+		echo -e "${CYAN}Попытка $attempt из $max_attempts: Ожидание готовности deployment $deployment в namespace $namespace...${NC}"
+		
+		# Получение правильного селектора из deployment
+		local selector=$(kubectl get deployment $deployment -n $namespace -o jsonpath='{.spec.selector.matchLabels}' 2>/dev/null | tr -d '{}' | sed 's/:/=/g')
+		if [ -z "$selector" ]; then
+			echo -e "${YELLOW}Не удалось получить селектор для deployment${NC}"
+			selector="k8s-app=kube-dns"  # Фоллбэк для CoreDNS
+		fi
+		
+		echo -e "${CYAN}Используется селектор: $selector${NC}"
+		
+		# Проверка статуса подов
+		echo -e "${CYAN}Текущие поды:${NC}"
+		kubectl get pods -n $namespace -l "$selector" -o wide
+		
+		# Проверка событий в namespace
+		echo -e "${CYAN}Последние события в namespace $namespace:${NC}"
+		kubectl get events -n $namespace --sort-by='.lastTimestamp' | tail -n 5
+		
+		# Ожидание готовности deployment
+		if kubectl rollout status deployment/$deployment -n $namespace --timeout=${timeout}s; then
+			# Дополнительная проверка готовности подов
+			if kubectl wait --for=condition=Ready pods -l "$selector" -n $namespace --timeout=60s; then
+				echo -e "${GREEN}Deployment $deployment успешно развернут!${NC}"
+				return 0
+			fi
+		fi
+
+		if [ $attempt -lt $max_attempts ]; then
+			echo -e "${YELLOW}Попытка $attempt не удалась. Очистка и перезапуск...${NC}"
+			
+			# Удаление проблемных подов
+			kubectl delete pods -n $namespace -l "$selector" --force --grace-period=0
+			sleep 20
+			
+			# Перезапуск deployment
+			kubectl rollout restart deployment/$deployment -n $namespace
+			sleep $interval
+		fi
+
+		attempt=$((attempt + 1))
+	done
+
+	echo -e "${RED}Превышено количество попыток ожидания готовности deployment${NC}"
+	return 1
+}
+
+
 # Функция ожидания готовности CRDs
 wait_for_crds() {
 	local timeout=60
@@ -129,6 +187,25 @@ check_docker_status() {
 		return 1
 	fi
 	return 0
+}
+
+# Функция проверки наличия необходимых инструментов
+check_required_tools() {
+    echo -e "${CYAN}Проверка наличия необходимых инструментов...${NC}"
+    
+    # Проверка Docker
+    if ! command -v docker &>/dev/null; then
+        echo -e "${RED}Docker не установлен. Установите Docker перед продолжением.${NC}"
+        return 1
+    fi
+    
+    # Проверка KIND
+    if ! command -v kind &>/dev/null; then
+        echo -e "${RED}KIND не установлен. Установите KIND перед продолжением.${NC}"
+        return 1
+    fi
+    
+    return 0
 }
 
 # Функция очистки Docker ресурсов
@@ -261,6 +338,11 @@ setup_docker_for_kind() {
 # Обновленная функция подготовки системы к созданию кластера
 prepare_system_for_cluster() {
 	echo -e "${CYAN}Подготовка системы к созданию кластера...${NC}"
+	
+	# Проверка наличия необходимых инструментов
+	if ! check_required_tools; then
+		return 1
+	fi
 	
 	# Проверка и настройка cgroup
 	if ! setup_cgroup_requirements; then

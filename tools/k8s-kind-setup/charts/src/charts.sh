@@ -22,48 +22,49 @@ CHARTS_DIR="${TOOLS_DIR}/../helm-charts"
 
 # Загрузка общих переменных и баннеров
 source "${K8S_KIND_SETUP_DIR}/env/src/env.sh"
-source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
-
-# Отображение баннера при старте
-charts_banner
-echo ""
-
-# Установка NVIDIA Device Plugin
-if check_gpu_available; then
-	echo -e "${CYAN}Установка NVIDIA Device Plugin...${NC}"
-	
-	# Всегда удаляем существующий DaemonSet, если он есть
-	if kubectl get daemonset nvidia-device-plugin-daemonset &>/dev/null; then
-		echo -e "${YELLOW}Удаление существующего NVIDIA Device Plugin...${NC}"
-		kubectl delete -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/v0.14.1/nvidia-device-plugin.yml
-		echo -e "${CYAN}Ожидание полного удаления NVIDIA Device Plugin...${NC}"
-		sleep 10  # Ожидание полного удаления
-		while kubectl get daemonset nvidia-device-plugin-daemonset &>/dev/null; do
-			echo -e "${YELLOW}Ожидание удаления DaemonSet...${NC}"
-			sleep 2
-		done
+if [ -f "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh" ]; then
+	source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
+	# Отображение баннера при старте только если функция существует
+	if declare -F charts_banner >/dev/null; then
+		charts_banner
+		echo ""
 	fi
-	
-	echo -e "${CYAN}Применение манифеста NVIDIA Device Plugin...${NC}"
-	if ! kubectl apply -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/v0.14.1/nvidia-device-plugin.yml; then
-		echo -e "${RED}Ошибка установки NVIDIA Device Plugin${NC}"
-		exit 1
-	fi
-	
-	# Ожидание готовности DaemonSet
-	echo -e "${CYAN}Ожидание готовности NVIDIA Device Plugin...${NC}"
-	if ! kubectl rollout status daemonset/nvidia-device-plugin-daemonset --timeout=120s; then
-		echo -e "${RED}Ошибка при ожидании готовности NVIDIA Device Plugin${NC}"
-		exit 1
-	fi
-	
-	echo -e "${GREEN}NVIDIA Device Plugin успешно установлен${NC}"
-else
-	echo -e "${YELLOW}Пропуск установки NVIDIA Device Plugin (GPU не обнаружен)${NC}"
 fi
 
 
 
+
+# Перезапуск и проверка CoreDNS
+echo -e "${CYAN}Перезапуск CoreDNS...${NC}"
+
+# Проверка текущего состояния
+echo -e "${CYAN}Текущее состояние CoreDNS:${NC}"
+kubectl get pods -n kube-system -l k8s-app=kube-dns -o wide
+kubectl describe deployment coredns -n kube-system
+
+# Применение обновленной конфигурации
+echo -e "${CYAN}Применение конфигурации CoreDNS...${NC}"
+kubectl apply -f "${K8S_KIND_SETUP_DIR}/setup-dns/src/coredns-custom.yaml"
+
+# Перезапуск CoreDNS
+kubectl rollout restart deployment/coredns -n kube-system
+sleep 10
+
+echo -e "${CYAN}Ожидание готовности CoreDNS...${NC}"
+if ! kubectl rollout status deployment/coredns -n kube-system --timeout=300s; then
+	echo -e "${RED}Ошибка при ожидании готовности CoreDNS${NC}"
+	echo -e "${YELLOW}Проверка логов новых подов...${NC}"
+	kubectl logs -n kube-system -l k8s-app=kube-dns --tail=50 || true
+	echo -e "${YELLOW}Описание подов...${NC}"
+	kubectl describe pods -n kube-system -l k8s-app=kube-dns
+	exit 1
+fi
+
+# Финальная проверка
+echo -e "${CYAN}Финальное состояние CoreDNS:${NC}"
+kubectl get pods -n kube-system -l k8s-app=kube-dns -o wide
+
+echo -e "${GREEN}CoreDNS успешно перезапущен${NC}"
 
 
 
