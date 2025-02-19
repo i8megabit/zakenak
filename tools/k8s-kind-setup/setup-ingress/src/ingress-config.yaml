@@ -1,0 +1,12 @@
+controller:
+  hostPort:
+    enabled: true
+  service:
+    type: NodePort
+  watchIngressWithoutClass: true
+  nodeSelector:
+    ingress-ready: "true"
+  publishService:
+    enabled: false
+  extraArgs:
+    publish-status-address: localhost

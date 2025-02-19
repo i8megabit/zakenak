@@ -4,6 +4,21 @@ export BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 export TOOLS_DIR="${BASE_DIR}/tools/k8s-kind-setup"
 export SCRIPTS_ENV_PATH="${TOOLS_DIR}/env/src/env.sh"
 
+# Парсинг аргументов командной строки
+SKIP_WSL=false
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --no-wsl)
+            SKIP_WSL=true
+            shift
+            ;;
+        *)
+            echo "Неизвестный параметр: $1"
+            exit 1
+            ;;
+    esac
+done
+
 source "${SCRIPTS_ENV_PATH}"
 source "${SCRIPTS_ASCII_BANNERS_PATH}"
 
@@ -81,8 +96,12 @@ done
 log "Начало полного развертывания кластера..."
 
 # Настройка WSL
-log "Настройка WSL окружения..."
-source "${SCRIPTS_SETUP_WSL_PATH}"
+if [ "$SKIP_WSL" = false ]; then
+    log "Настройка WSL окружения..."
+    source "${SCRIPTS_SETUP_WSL_PATH}"
+else
+    log "Пропуск настройки WSL (--no-wsl)"
+fi
 
 # Установка бинарных компонентов
 log "Установка необходимых компонентов..."
