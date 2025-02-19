@@ -25,7 +25,7 @@ echo ""
 
 # Функция для проверки наличия необходимых утилит
 check_prerequisites() {
-	local required_tools=("kubectl" "helm" "docker")
+	local required_tools=("curl" "wget" "gpg")
 	for tool in "${required_tools[@]}"; do
 		if ! command -v "$tool" &> /dev/null; then
 			echo -e "${RED}Ошибка: $tool не установлен${NC}"
@@ -66,7 +66,9 @@ deploy_banner
 echo -e "\n${YELLOW}Начинаем развертывание компонентов...${NC}"
 
 # Последовательный запуск всех компонентов
-deploy_component "setup-kind.sh" "кластера Kind"
+deploy_component "setup-wsl/src/setup-wsl.sh" "WSL окружения"
+deploy_component "setup-bins/src/setup-bins.sh" "бинарных компонентов"
+deploy_component "setup-kind/src/setup-kind.sh" "кластера Kind"
 deploy_component "setup-ingress.sh" "Ingress Controller"
 deploy_component "setup-cert-manager.sh" "Cert Manager"
 deploy_component "setup-dns.sh" "DNS"
