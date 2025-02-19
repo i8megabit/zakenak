@@ -140,36 +140,61 @@ install_chart() {
 		# Удаляем namespace если он существует
 		kubectl delete namespace cert-manager --timeout=60s 2>/dev/null || true
 		
-		# Удаляем CRDs
-		kubectl delete crd -l app.kubernetes.io/instance=cert-manager 2>/dev/null || true
-		kubectl delete crd -l app.kubernetes.io/name=cert-manager 2>/dev/null || true
-		
-		# Принудительно удаляем оставшиеся CRDs cert-manager если они есть
-		for crd in $(kubectl get crd -o name | grep cert-manager); do
-			kubectl delete $crd --timeout=60s 2>/dev/null || true
+		# Принудительно удаляем все CRD cert-manager
+		for crd in $(kubectl get crd -o name | grep cert-manager 2>/dev/null || true); do
+			kubectl patch $crd -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null || true
+			kubectl delete $crd --timeout=60s --force --grace-period=0 2>/dev/null || true
 		done
 		
 		# Ждем полного удаления ресурсов
 		sleep 10
+		
+		# Проверяем наличие репозитория jetstack
+		if ! helm repo list | grep -q "jetstack"; then
+			echo -e "${CYAN}Добавление репозитория cert-manager...${NC}"
+			helm repo add jetstack https://charts.jetstack.io
+			helm repo update
+		fi
 
-		# Устанавливаем CRD отдельно перед установкой чарта
+		# Устанавливаем в правильный namespace
+		namespace="cert-manager"
+
+		# Устанавливаем CRD напрямую из репозитория
 		echo -e "${CYAN}Установка CRD для cert-manager...${NC}"
-		kubectl apply -f "${CHARTS_DIR}/${chart}/crds/" || {
+		kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.3/cert-manager.crds.yaml || {
 			echo -e "${RED}Ошибка при установке CRD для cert-manager${NC}"
 			exit 1
 		}
+
+		# Ждем готовности CRD с проверкой их наличия
+		echo -e "${CYAN}Ожидание готовности CRD cert-manager...${NC}"
+		local crds=(
+			"certificates.cert-manager.io"
+			"challenges.acme.cert-manager.io"
+			"clusterissuers.cert-manager.io"
+			"issuers.cert-manager.io"
+			"orders.acme.cert-manager.io"
+			"certificaterequests.cert-manager.io"
+		)
 		
-		# Ждем готовности CRD
-		echo -e "${CYAN}Ожидание готовности CRD...${NC}"
-		for crd in $(kubectl get crd -o name | grep cert-manager); do
-			kubectl wait --for=condition=established $crd --timeout=60s || {
-				echo -e "${RED}Ошибка при ожидании готовности CRD ${crd}${NC}"
+		for crd in "${crds[@]}"; do
+			echo -e "${CYAN}Ожидание готовности CRD ${crd}...${NC}"
+			local retries=0
+			while [ $retries -lt 30 ]; do
+				if kubectl get crd $crd >/dev/null 2>&1; then
+					if kubectl wait --for=condition=established --timeout=10s crd/$crd >/dev/null 2>&1; then
+						echo -e "${GREEN}CRD ${crd} готов${NC}"
+						break
+					fi
+				fi
+				retries=$((retries + 1))
+				sleep 2
+			done
+			if [ $retries -eq 30 ]; then
+				echo -e "${RED}Превышено время ожидания готовности CRD ${crd}${NC}"
 				exit 1
-			}
+			fi
 		done
-		
-		# Устанавливаем в правильный namespace
-		namespace="cert-manager"
 	fi
 
 	# Добавляем сборку зависимостей перед установкой
@@ -185,13 +210,20 @@ install_chart() {
 	[ -n "$version" ] && helm_cmd+=" --version ${version}"
 	[ -n "$values_file" ] && helm_cmd+=" -f ${values_file}"
 
-	# Для cert-manager НЕ устанавливаем CRD через Helm, так как мы уже установили их отдельно
+	# Для cert-manager добавляем таймаут установки
 	if [ "$chart" = "cert-manager" ]; then
-		helm_cmd+=" --skip-crds"
+		helm_cmd+=" --timeout 5m"
 	fi
+
 	
 	echo -e "${CYAN}Выполняется ${action} чарта ${chart}...${NC}"
 	eval $helm_cmd
+	
+	# Дополнительное ожидание готовности CRD для cert-manager
+	if [ "$chart" = "cert-manager" ] && [ $? -eq 0 ]; then
+		echo -e "${CYAN}Ожидание готовности CRD cert-manager...${NC}"
+		sleep 30
+	fi
 	
 	if [ $? -eq 0 ]; then
 		echo -e "\n"
