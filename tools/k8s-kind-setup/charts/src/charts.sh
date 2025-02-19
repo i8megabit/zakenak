@@ -127,6 +127,51 @@ install_chart() {
 		exit 1
 	fi
 
+	# Специальная обработка для cert-manager
+	if [ "$chart" = "cert-manager" ]; then
+		echo -e "${CYAN}Подготовка к установке cert-manager...${NC}"
+		
+		# Удаляем существующий релиз cert-manager если он есть
+		helm uninstall cert-manager -n cert-manager 2>/dev/null || true
+		
+		# Ждем удаления релиза
+		sleep 10
+		
+		# Удаляем namespace если он существует
+		kubectl delete namespace cert-manager --timeout=60s 2>/dev/null || true
+		
+		# Удаляем CRDs
+		kubectl delete crd -l app.kubernetes.io/instance=cert-manager 2>/dev/null || true
+		kubectl delete crd -l app.kubernetes.io/name=cert-manager 2>/dev/null || true
+		
+		# Принудительно удаляем оставшиеся CRDs cert-manager если они есть
+		for crd in $(kubectl get crd -o name | grep cert-manager); do
+			kubectl delete $crd --timeout=60s 2>/dev/null || true
+		done
+		
+		# Ждем полного удаления ресурсов
+		sleep 10
+
+		# Устанавливаем CRD отдельно перед установкой чарта
+		echo -e "${CYAN}Установка CRD для cert-manager...${NC}"
+		kubectl apply -f "${CHARTS_DIR}/${chart}/crds/" || {
+			echo -e "${RED}Ошибка при установке CRD для cert-manager${NC}"
+			exit 1
+		}
+		
+		# Ждем готовности CRD
+		echo -e "${CYAN}Ожидание готовности CRD...${NC}"
+		for crd in $(kubectl get crd -o name | grep cert-manager); do
+			kubectl wait --for=condition=established $crd --timeout=60s || {
+				echo -e "${RED}Ошибка при ожидании готовности CRD ${crd}${NC}"
+				exit 1
+			}
+		done
+		
+		# Устанавливаем в правильный namespace
+		namespace="cert-manager"
+	fi
+
 	# Добавляем сборку зависимостей перед установкой
 	echo -e "${CYAN}Проверка и сборка зависимостей чарта ${chart}...${NC}"
 	helm dependency build "${CHARTS_DIR}/${chart}" || {
@@ -139,6 +184,11 @@ install_chart() {
 	
 	[ -n "$version" ] && helm_cmd+=" --version ${version}"
 	[ -n "$values_file" ] && helm_cmd+=" -f ${values_file}"
+
+	# Для cert-manager НЕ устанавливаем CRD через Helm, так как мы уже установили их отдельно
+	if [ "$chart" = "cert-manager" ]; then
+		helm_cmd+=" --skip-crds"
+	fi
 	
 	echo -e "${CYAN}Выполняется ${action} чарта ${chart}...${NC}"
 	eval $helm_cmd
