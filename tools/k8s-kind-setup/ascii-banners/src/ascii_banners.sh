@@ -65,3 +65,17 @@ ingress_banner() {
 EOF
 	echo -e "${NC}"
 }
+
+# DNS Banner
+dns_banner() {
+	echo -e "${BLUE}"
+	cat << "EOF"
+  ____  _   _ ____  
+ |  _ \| \ | / ___| 
+ | | | |  \| \___ \ 
+ | |_| | |\  |___) |
+ |____/|_| \_|____/ 
+            by @eberil
+EOF
+	echo -e "${NC}"
+}
