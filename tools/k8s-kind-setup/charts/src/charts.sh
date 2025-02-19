@@ -24,49 +24,45 @@ CHARTS_DIR="${TOOLS_DIR}/../helm-charts"
 source "${K8S_KIND_SETUP_DIR}/env/src/env.sh"
 if [ -f "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh" ]; then
 	source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
-	# Отображение баннера при старте только если функция существует
 	if declare -F charts_banner >/dev/null; then
 		charts_banner
 		echo ""
 	fi
 fi
 
+# Функция перезапуска CoreDNS
+restart_coredns() {
+	echo -e "${CYAN}Перезапуск CoreDNS...${NC}"
 
+	# Проверка текущего состояния
+	echo -e "${CYAN}Текущее состояние CoreDNS:${NC}"
+	kubectl get pods -n kube-system -l k8s-app=kube-dns -o wide
+	kubectl describe deployment coredns -n kube-system
 
+	# Применение обновленной конфигурации
+	echo -e "${CYAN}Применение конфигурации CoreDNS...${NC}"
+	kubectl apply -f "${K8S_KIND_SETUP_DIR}/setup-dns/src/coredns-custom.yaml"
 
-# Перезапуск и проверка CoreDNS
-echo -e "${CYAN}Перезапуск CoreDNS...${NC}"
+	# Перезапуск CoreDNS
+	kubectl rollout restart deployment/coredns -n kube-system
+	sleep 10
 
-# Проверка текущего состояния
-echo -e "${CYAN}Текущее состояние CoreDNS:${NC}"
-kubectl get pods -n kube-system -l k8s-app=kube-dns -o wide
-kubectl describe deployment coredns -n kube-system
+	echo -e "${CYAN}Ожидание готовности CoreDNS...${NC}"
+	if ! kubectl rollout status deployment/coredns -n kube-system --timeout=300s; then
+		echo -e "${RED}Ошибка при ожидании готовности CoreDNS${NC}"
+		echo -e "${YELLOW}Проверка логов новых подов...${NC}"
+		kubectl logs -n kube-system -l k8s-app=kube-dns --tail=50 || true
+		echo -e "${YELLOW}Описание подов...${NC}"
+		kubectl describe pods -n kube-system -l k8s-app=kube-dns
+		exit 1
+	fi
 
-# Применение обновленной конфигурации
-echo -e "${CYAN}Применение конфигурации CoreDNS...${NC}"
-kubectl apply -f "${K8S_KIND_SETUP_DIR}/setup-dns/src/coredns-custom.yaml"
+	# Финальная проверка
+	echo -e "${CYAN}Финальное состояние CoreDNS:${NC}"
+	kubectl get pods -n kube-system -l k8s-app=kube-dns -o wide
 
-# Перезапуск CoreDNS
-kubectl rollout restart deployment/coredns -n kube-system
-sleep 10
-
-echo -e "${CYAN}Ожидание готовности CoreDNS...${NC}"
-if ! kubectl rollout status deployment/coredns -n kube-system --timeout=300s; then
-	echo -e "${RED}Ошибка при ожидании готовности CoreDNS${NC}"
-	echo -e "${YELLOW}Проверка логов новых подов...${NC}"
-	kubectl logs -n kube-system -l k8s-app=kube-dns --tail=50 || true
-	echo -e "${YELLOW}Описание подов...${NC}"
-	kubectl describe pods -n kube-system -l k8s-app=kube-dns
-	exit 1
-fi
-
-# Финальная проверка
-echo -e "${CYAN}Финальное состояние CoreDNS:${NC}"
-kubectl get pods -n kube-system -l k8s-app=kube-dns -o wide
-
-echo -e "${GREEN}CoreDNS успешно перезапущен${NC}"
-
-
+	echo -e "${GREEN}CoreDNS успешно перезапущен${NC}"
+}
 
 
 # Функция получения списка чартов
@@ -79,6 +75,7 @@ get_charts() {
 	done
 	echo "${charts[@]}"
 }
+
 
 # Функция генерации цветного меню чартов
 generate_charts_menu() {
@@ -105,6 +102,7 @@ usage() {
 	echo -e "${GREEN}  upgrade        ${YELLOW}-${NC} Обновить чарт"
 	echo -e "${GREEN}  uninstall      ${YELLOW}-${NC} Удалить чарт"
 	echo -e "${GREEN}  list           ${YELLOW}-${NC} Показать список установленных чартов"
+	echo -e "${GREEN}  restart-dns    ${YELLOW}-${NC} Перезапустить CoreDNS"
 	echo ""
 	generate_charts_menu "$(get_charts)"
 	echo ""
@@ -127,6 +125,13 @@ install_chart() {
 	if [ ! -d "${CHARTS_DIR}/${chart}" ]; then
 		echo -e "${RED}Ошибка: Чарт ${chart} не найден${NC}"
 		exit 1
+	fi
+
+	# Добавляем сборку зависимостей перед установкой
+	echo -e "${CYAN}Проверка и сборка зависимостей чарта ${chart}...${NC}"
+	helm dependency build "${CHARTS_DIR}/${chart}" || {
+		echo -e "${RED}Ошибка при сборке зависимостей чарта ${chart}${NC}"
+		exit 1
 	}
 	
 	local helm_cmd="helm ${action} ${chart} ${CHARTS_DIR}/${chart}"
@@ -140,11 +145,19 @@ install_chart() {
 	
 	if [ $? -eq 0 ]; then
 		echo -e "\n"
-		success_banner
+		if declare -F success_banner >/dev/null; then
+			success_banner
+		else
+			echo -e "${GREEN}Успешно!${NC}"
+		fi
 		echo -e "\n${GREEN}${action^} чарта ${chart} успешно завершен${NC}"
 	else
 		echo -e "\n"
-		error_banner
+		if declare -F error_banner >/dev/null; then
+			error_banner
+		else
+			echo -e "${RED}Ошибка!${NC}"
+		fi
 		echo -e "\n${RED}Ошибка при выполнении ${action} чарта ${chart}${NC}"
 		exit 1
 	fi
@@ -209,6 +222,9 @@ case $action in
 	list)
 		echo -e "${CYAN}Установленные чарты в namespace ${namespace:-$NAMESPACE_PROD}:${NC}"
 		helm list -n ${namespace:-$NAMESPACE_PROD}
+		;;
+	restart-dns)
+		restart_coredns
 		;;
 	*)
 		echo -e "${RED}Ошибка: Неизвестное действие ${action}${NC}"
