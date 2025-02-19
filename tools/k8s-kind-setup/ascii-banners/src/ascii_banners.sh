@@ -90,9 +90,19 @@ cert_manager_banner() {
  | |___|  _| | |_) || |  
 \____|_|   |____/ |_|  
 							by @eberil
+EOF
+	echo -e "${NC}"
+}
 
+# Dashboard Banner
+dashboard_banner() {
 	echo -e "${BLUE}"
 	cat << "EOF"
-____            _     _                         _ 
-																				by @eberil
+  ____            _     _                         _ 
+ |  _ \  __ _ ___| |__ | |__   ___   __ _ _ __ | |
+ | | | |/ _` / __| '_ \| '_ \ / _ \ / _` | '_ \| |
+ | |_| | (_| \__ \ | | | |_) | (_) | (_| | | | | |
+ |____/ \__,_|___/_| |_|_.__/ \___/ \__,_|_| |_|_|
+										 by @eberil
+EOF
 	echo -e "${NC}"
