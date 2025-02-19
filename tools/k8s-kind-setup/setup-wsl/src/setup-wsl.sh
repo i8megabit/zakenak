@@ -30,15 +30,7 @@ sudo apt-get update && sudo apt-get install -y \
 	gnupg \
 	make
 
-# Установка CUDA
-echo "Installing CUDA..."
-wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
-sudo mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600
-wget https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda-repo-wsl-ubuntu-12-8-local_12.8.0-1_amd64.deb
-sudo dpkg -i cuda-repo-wsl-ubuntu-12-8-local_12.8.0-1_amd64.deb
-sudo cp /var/cuda-repo-wsl-ubuntu-12-8-local/cuda-*-keyring.gpg /usr/share/keyrings/
-sudo apt-get update
-sudo apt-get -y install cuda-toolkit-12-8
+
 
 # Установка Docker
 echo "Installing Docker..."
@@ -47,12 +39,20 @@ sudo sh get-docker.sh
 
 # Настройка NVIDIA Container Toolkit
 echo "Setting up NVIDIA Container Toolkit..."
-distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-curl -s -L https://nvidia.github.io/libnvidia-container/gpgkey | \
-  sudo apt-key add -
-curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
-  sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
 
+# Очистка старых файлов
+sudo rm -f /etc/apt/sources.list.d/nvidia-container-toolkit.list
+sudo rm -f /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+
+# Установка GPG ключа
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+
+# Добавление стабильного DEB репозитория
+curl -fsSL https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+	sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+	sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+
+# Установка NVIDIA Container Toolkit
 sudo apt-get update
 sudo apt-get install -y nvidia-container-toolkit
 sudo nvidia-ctk runtime configure --runtime=docker
