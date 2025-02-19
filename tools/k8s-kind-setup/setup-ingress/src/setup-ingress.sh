@@ -10,15 +10,17 @@
 # This code is free! Share it, spread peace and technology!
 # "Because Ingress should just work!"
 
-set -e
-
 # Определение пути к директории скрипта и корню репозитория
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 
 # Загрузка общих переменных и баннеров
-source "${SCRIPT_DIR}/env.sh"
-source "${SCRIPT_DIR}/ascii_banners.sh"
+source "${REPO_ROOT}/tools/k8s-kind-setup/env.sh"
+source "${REPO_ROOT}/tools/k8s-kind-setup/ascii-banners/src/ascii_banners.sh"
+
+# Отображение баннера при старте
+ingress_banner
+echo ""
 
 echo -e "${CYAN}Установка Ingress Controller...${NC}"
 
