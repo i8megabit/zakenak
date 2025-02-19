@@ -136,3 +136,17 @@ show_deploy_banner() {
 EOF
 	echo -e "${NC}"
 }
+
+# Success Banner
+success_banner() {
+	echo -e "${GREEN}"
+	cat << "EOF"
+  ____                          _ 
+ / ___|  _   _   ___   ___  ___| |
+ \___ \ | | | | / __| / __|/ _ \ |
+  ___) || |_| || (__ | (__||  __/_|
+ |____/  \__,_| \___| \___|\___(_)
+                              by @eberil
+EOF
+	echo -e "${NC}"
+}

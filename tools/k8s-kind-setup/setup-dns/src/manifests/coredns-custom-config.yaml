@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-	name: coredns-custom
-	namespace: kube-system
+  name: coredns-custom
+  namespace: kube-system
 data:
-	prod.local.server: |
-		prod.local {
-				hosts {
-					${OLLAMA_IP} ollama.prod.local
-					${WEBUI_IP} webui.prod.local
-					fallthrough
-				}
-		}
+  prod.local.server: |
+    prod.local {
+        hosts {
+          ${OLLAMA_IP} ollama.prod.local
+          ${WEBUI_IP} webui.prod.local
+          fallthrough
+        }
+    }

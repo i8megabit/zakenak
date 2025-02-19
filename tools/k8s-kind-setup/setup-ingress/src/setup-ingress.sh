@@ -28,11 +28,10 @@ check_error "Ошибка установки Ingress NGINX Controller"
 
 # Ожидание готовности ingress-controller
 echo -e "${CYAN}Ожидание готовности Ingress Controller...${NC}"
-kubectl wait --namespace "${NAMESPACE_INGRESS}" \
-	--for=condition=ready pod \
-	--selector=app.kubernetes.io/component=controller \
-	--timeout=300s
+if ! wait_for_pods "${NAMESPACE_INGRESS}" "app.kubernetes.io/component=controller" 900 5; then
+	echo -e "${RED}Ошибка при ожидании готовности Ingress Controller${NC}"
+	exit 1
+fi
 
-check_error "Ingress Controller не готов"
 
 echo -e "${GREEN}Ingress NGINX Controller успешно установлен!${NC}"

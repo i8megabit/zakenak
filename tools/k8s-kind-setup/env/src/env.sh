@@ -57,15 +57,29 @@ check_error() {
 	fi
 }
 
-# Функция ожидания готовности подов
+# Функция ожидания готовности подов с повторными попытками
 wait_for_pods() {
 	local namespace=$1
 	local selector=$2
-	local timeout=300
+	local timeout=${3:-600}  # Увеличенный таймаут по умолчанию до 600 секунд
+	local max_attempts=${4:-3}  # Количество попыток по умолчанию
+	local attempt=1
 
-	echo -e "${CYAN}Ожидание готовности подов в namespace $namespace...${NC}"
-	kubectl wait --for=condition=Ready pods -l $selector -n $namespace --timeout=${timeout}s
-	check_error "Превышено время ожидания готовности подов"
+	while [ $attempt -le $max_attempts ]; do
+		echo -e "${CYAN}Попытка $attempt из $max_attempts: Ожидание готовности подов в namespace $namespace...${NC}"
+		
+		if kubectl wait --for=condition=Ready pods -l $selector -n $namespace --timeout=${timeout}s; then
+			echo -e "${GREEN}Поды успешно запущены!${NC}"
+			return 0
+		fi
+
+		echo -e "${YELLOW}Попытка $attempt не удалась. Ожидание 30 секунд перед следующей попыткой...${NC}"
+		sleep 30
+		attempt=$((attempt + 1))
+	done
+
+	echo -e "${RED}Превышено количество попыток ожидания готовности подов${NC}"
+	return 1
 }
 
 # Функция ожидания готовности CRDs
@@ -78,6 +92,15 @@ wait_for_crds() {
 	done
 }
 
+# Функция проверки наличия GPU
+check_gpu_available() {
+	if command -v nvidia-smi &> /dev/null && nvidia-smi &> /dev/null; then
+		return 0
+	else
+		return 1
+	fi
+}
+
 # Если скрипт запущен напрямую, выводим информацию о переменных
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 	echo -e "${CYAN}Текущие настройки окружения:${NC}"
@@ -88,4 +111,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 	echo -e "\n${YELLOW}Хосты сервисов:${NC}"
 	echo -e "Ollama API: https://$OLLAMA_HOST"
 	echo -e "Open WebUI: https://$WEBUI_HOST"
+
+	if check_gpu_available; then
+		echo -e "\n${GREEN}GPU обнаружен${NC}"
+	else
+		echo -e "\n${YELLOW}GPU не обнаружен${NC}"
+	fi
 fi

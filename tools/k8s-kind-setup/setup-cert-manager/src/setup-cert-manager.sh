@@ -11,12 +11,13 @@
 # "Because certificates should be automated!"
 
 # Определение пути к директории скрипта и корню репозитория
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
+export BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+export TOOLS_DIR="${BASE_DIR}/tools/k8s-kind-setup"
+export SCRIPTS_ENV_PATH="${TOOLS_DIR}/env/src/env.sh"
 
 # Загрузка общих переменных и баннеров
-source "${REPO_ROOT}/tools/k8s-kind-setup/env.sh"
-source "${REPO_ROOT}/tools/k8s-kind-setup/ascii-banners/src/ascii_banners.sh"
+source "${SCRIPTS_ENV_PATH}"
+source "${SCRIPTS_ASCII_BANNERS_PATH}"
 
 # Определение имени релиза
 RELEASE_CERT_MANAGER="cert-manager"
@@ -68,6 +69,5 @@ spec:
 EOF
 check_error "Не удалось создать ClusterIssuer"
 
-echo -e "\n"
 success_banner
-echo -e "\n${GREEN}Установка cert-manager успешно завершена!${NC}"
+echo -e "${GREEN}Установка cert-manager успешно завершена!${NC}"

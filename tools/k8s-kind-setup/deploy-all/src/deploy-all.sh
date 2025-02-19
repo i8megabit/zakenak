@@ -4,9 +4,19 @@ export BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 export TOOLS_DIR="${BASE_DIR}/tools/k8s-kind-setup"
 export SCRIPTS_ENV_PATH="${TOOLS_DIR}/env/src/env.sh"
 
+# Функция вывода справки
+show_help() {
+    echo "Использование: $0 [--no-wsl]"
+    echo ""
+    echo "Опции:"
+    echo "  --no-wsl        Пропустить настройку WSL"
+    echo ""
+    exit 0
+}
+
+
 # Парсинг аргументов командной строки
 SKIP_WSL=false
-REINSTALL_CLUSTER=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -14,19 +24,18 @@ while [[ $# -gt 0 ]]; do
             SKIP_WSL=true
             shift
             ;;
-        --re-install)
-            REINSTALL_CLUSTER=true
-            shift
+        --help)
+            show_help
             ;;
         *)
             echo "Неизвестный параметр: $1"
+            echo "Использование: $0 [--no-wsl]"
             exit 1
             ;;
     esac
 done
 
-# Экспортируем переменную для использования в других скриптах
-export REINSTALL_CLUSTER
+
 
 source "${SCRIPTS_ENV_PATH}"
 source "${SCRIPTS_ASCII_BANNERS_PATH}"
@@ -35,7 +44,7 @@ show_deploy_banner
 
 # Функция для логирования
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
 }
 
 # Функция для установки прав выполнения
@@ -122,30 +131,54 @@ check_dependencies
 
 # Развертывание Kind кластера
 log "Развертывание Kind кластера..."
-source "${SCRIPTS_SETUP_KIND_PATH}"
+if ! source "${SCRIPTS_SETUP_KIND_PATH}"; then
+    log "Ошибка при развертывании Kind кластера"
+    exit 1
+fi
 
 # Настройка Ingress Controller
 log "Настройка Ingress Controller..."
-source "${SCRIPTS_SETUP_INGRESS_PATH}"
+if ! source "${SCRIPTS_SETUP_INGRESS_PATH}"; then
+    log "Ошибка при настройке Ingress Controller"
+    exit 1
+fi
 
 # Установка Cert Manager
 log "Установка Cert Manager..."
-source "${SCRIPTS_SETUP_CERT_MANAGER_PATH}"
+if ! source "${SCRIPTS_SETUP_CERT_MANAGER_PATH}"; then
+    log "Ошибка при установке Cert Manager"
+    exit 1
+fi
 
 # Настройка DNS
 log "Настройка DNS..."
-source "${SCRIPTS_SETUP_DNS_PATH}"
+if ! source "${SCRIPTS_SETUP_DNS_PATH}"; then
+    log "Ошибка при настройке DNS"
+    exit 1
+fi
 
 # Получение токена для Dashboard
 log "Генерация токена для Dashboard..."
-source "${SCRIPTS_DASHBOARD_TOKEN_PATH}"
+if ! source "${SCRIPTS_DASHBOARD_TOKEN_PATH}"; then
+    log "Ошибка при генерации токена для Dashboard"
+    exit 1
+fi
 
 # Установка Helm чартов
 log "Установка Helm чартов..."
-source "${SCRIPTS_CHARTS_PATH}"
+if ! source "${SCRIPTS_CHARTS_PATH}"; then
+    log "Ошибка при установке Helm чартов"
+    exit 1
+fi
+
+
+
 
 # Проверка доступности сервисов
 log "Проверка доступности сервисов..."
-source "${SCRIPTS_CONNECTIVITY_CHECK_PATH}"
+if ! source "${SCRIPTS_CONNECTIVITY_CHECK_PATH}"; then
+    log "Ошибка при проверке доступности сервисов"
+    exit 1
+fi
 
 log "Развертывание успешно завершено!"
