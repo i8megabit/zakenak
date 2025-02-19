@@ -70,8 +70,8 @@ deploy_component "setup-wsl/src/setup-wsl.sh" "WSL окружения"
 deploy_component "setup-bins/src/setup-bins.sh" "бинарных компонентов"
 deploy_component "setup-kind/src/setup-kind.sh" "кластера Kind"
 deploy_component "setup-ingress/src/setup-ingress.sh" "Ingress Controller"
-deploy_component "setup-cert-manager.sh" "Cert Manager"
-deploy_component "setup-dns.sh" "DNS"
+deploy_component "setup-cert-manager/src/setup-cert-manager.sh" "Cert Manager"
+deploy_component "setup-dns/src/setup-dns.sh" "DNS"
 
 # Установка приложений через charts
 

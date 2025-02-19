@@ -50,3 +50,18 @@ check_color_support() {
 
 # Инициализация
 check_color_support
+
+# Ingress Banner
+ingress_banner() {
+	echo -e "${BLUE}"
+	cat << "EOF"
+  ___                              
+ |_ _|_ __   __ _ _ __ ___  ___ ___
+  | || '_ \ / _` | '__/ _ \/ __/ __|
+  | || | | | (_| | | |  __/\__ \__ \
+ |___|_| |_|\__, |_|  \___||___/___/
+			|___/                    
+							  by @eberil
+EOF
+	echo -e "${NC}"
+}
