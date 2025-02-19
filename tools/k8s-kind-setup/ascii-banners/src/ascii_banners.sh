@@ -88,8 +88,11 @@ cert_manager_banner() {
   / ___|  ___| __ )_   _|
  | |   | |_  |  _ \ | |  
  | |___|  _| | |_) || |  
-  \____|_|   |____/ |_|  
-                by @eberil
-EOF
+\____|_|   |____/ |_|  
+							by @eberil
+
+	echo -e "${BLUE}"
+	cat << "EOF"
+____            _     _                         _ 
+																				by @eberil
 	echo -e "${NC}"
-}
