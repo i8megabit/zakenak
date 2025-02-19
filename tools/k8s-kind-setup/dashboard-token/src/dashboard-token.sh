@@ -12,11 +12,26 @@
 
 # Определение пути к директории скрипта и корню репозитория
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
+TOOLS_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+K8S_KIND_SETUP_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+# Проверка наличия необходимых файлов конфигурации
+required_files=(
+	"${K8S_KIND_SETUP_DIR}/env.sh"
+	"${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
+)
+
+# Проверка наличия всех необходимых файлов
+for file in "${required_files[@]}"; do
+	if [[ ! -f "$file" ]]; then
+		echo -e "${RED}Ошибка: Файл $file не найден${NC}"
+		exit 1
+	fi
+done
 
 # Загрузка общих переменных и баннеров
-source "${REPO_ROOT}/tools/k8s-kind-setup/env.sh"
-source "${REPO_ROOT}/tools/k8s-kind-setup/ascii-banners/src/ascii_banners.sh"
+source "${K8S_KIND_SETUP_DIR}/env.sh"
+source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
 
 # Отображение баннера при старте
 dashboard_banner
