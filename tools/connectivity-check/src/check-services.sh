@@ -11,12 +11,12 @@
 # "Because monitoring should be thorough!"
 
 # Определение пути к директории скрипта и корню репозитория
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Загрузка общих переменных и баннеров
-source "${REPO_ROOT}/tools/k8s-kind-setup/env.sh"
-source "${REPO_ROOT}/tools/k8s-kind-setup/ascii_banners.sh"
+source "${SCRIPT_DIR}/k8s-kind-setup/env/src/env.sh"
+source "${SCRIPT_DIR}/k8s-kind-setup/ascii-banners/src/ascii_banners.sh"
 
 # Отображение баннера при старте
 check_banner
