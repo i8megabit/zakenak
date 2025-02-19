@@ -23,8 +23,293 @@ CHARTS_DIR="${TOOLS_DIR}/../helm-charts"
 # Загрузка общих переменных
 source "${K8S_KIND_SETUP_DIR}/env/src/env.sh"
 
-# Функция вывода справки (перемещена выше загрузки баннеров)
+# Функция получения списка чартов
+get_charts() {
+	local charts=()
+	for chart_dir in "${CHARTS_DIR}"/*; do
+		if [ -f "${chart_dir}/Chart.yaml" ]; then
+			charts+=("$(basename "${chart_dir}")")
+		fi
+	done
+	echo "${charts[@]}"
+}
 
+# Функция генерации цветного меню чартов
+generate_charts_menu() {
+	local charts=($1)
+	echo -e "${CYAN}Доступные чарты:${NC}"
+	echo -e "${GREEN}  all          ${YELLOW}-${NC} Все чарты"
+	for chart in "${charts[@]}"; do
+		local description=""
+		if [ -f "${CHARTS_DIR}/${chart}/Chart.yaml" ]; then
+			description=$(grep "description:" "${CHARTS_DIR}/${chart}/Chart.yaml" | cut -d'"' -f2 || echo "")
+		fi
+		printf "${GREEN}  %-12s ${YELLOW}-${NC} %s\n" "$chart" "${description:-$chart}"
+	done
+}
+
+# Загрузка баннеров с предотвращением автозапуска
+if [ -f "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh" ]; then
+	export SKIP_BANNER_MAIN=1
+	source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
+fi
+
+# Показываем баннер charts
+if declare -F charts_banner >/dev/null; then
+	charts_banner
+	echo ""
+fi
+
+# Функция перезапуска CoreDNS
+restart_coredns() {
+	echo -e "${CYAN}Перезапуск CoreDNS...${NC}"
+
+	# Проверка текущего состояния
+	echo -e "${CYAN}Текущее состояние CoreDNS:${NC}"
+	kubectl get pods -n kube-system -l k8s-app=kube-dns -o wide
+	kubectl describe deployment coredns -n kube-system
+
+	# Применение обновленной конфигурации
+	echo -e "${CYAN}Применение конфигурации CoreDNS...${NC}"
+	kubectl apply -f "${K8S_KIND_SETUP_DIR}/setup-dns/src/coredns-custom.yaml"
+
+	# Перезапуск CoreDNS
+	kubectl rollout restart deployment/coredns -n kube-system
+	sleep 10
+
+	echo -e "${CYAN}Ожидание готовности CoreDNS...${NC}"
+	if ! kubectl rollout status deployment/coredns -n kube-system --timeout=300s; then
+		echo -e "${RED}Ошибка при ожидании готовности CoreDNS${NC}"
+		echo -e "${YELLOW}Проверка логов новых подов...${NC}"
+		kubectl logs -n kube-system -l k8s-app=kube-dns --tail=50 || true
+		echo -e "${YELLOW}Описание подов...${NC}"
+		kubectl describe pods -n kube-system -l k8s-app=kube-dns
+		exit 1
+	fi
+
+	# Финальная проверка
+	echo -e "${CYAN}Финальное состояние CoreDNS:${NC}"
+	kubectl get pods -n kube-system -l k8s-app=kube-dns -o wide
+
+	echo -e "${GREEN}CoreDNS успешно перезапущен${NC}"
+}
+
+# Функция установки/обновления чарта
+install_chart() {
+	local action=$1
+	local chart=$2
+	local namespace=${3:-$NAMESPACE_PROD}
+	local version=$4
+	local values_file=$5
+	
+	if [ ! -d "${CHARTS_DIR}/${chart}" ]; then
+		echo -e "${RED}Ошибка: Чарт ${chart} не найден${NC}"
+		exit 1
+	fi
+
+	# Удаляем существующий релиз только при install
+	if [ "$action" = "install" ]; then
+		echo -e "${CYAN}Проверка существующего релиза ${chart}...${NC}"
+		helm uninstall ${chart} -n ${namespace} 2>/dev/null || true
+		# Ждем удаления релиза
+		sleep 5
+	fi
+
+	# Специальная обработка для local-ca
+	if [ "$chart" = "local-ca" ] && [ "$action" = "install" ]; then
+		echo -e "${CYAN}Подготовка к установке local-ca...${NC}"
+		
+		# Удаляем существующий релиз если он есть
+		helm uninstall local-ca -n ${namespace} 2>/dev/null || true
+		
+		# Ждем удаления релиза
+		sleep 5
+		
+		# Удаляем существующие сертификаты и их секреты
+		kubectl delete certificate -n ${namespace} --all 2>/dev/null || true
+		kubectl delete secret -n ${namespace} ollama-tls 2>/dev/null || true
+		
+		# Ждем полного удаления ресурсов
+		sleep 5
+	fi
+
+	# Специальная обработка для cert-manager
+	if [ "$chart" = "cert-manager" ]; then
+		echo -e "${CYAN}Подготовка к установке cert-manager...${NC}"
+		
+		# Проверяем существование релиза перед upgrade
+		if [ "$action" = "upgrade" ] && ! helm status cert-manager -n cert-manager >/dev/null 2>&1; then
+			echo -e "${YELLOW}Релиз cert-manager не найден, выполняем установку...${NC}"
+			action="install"
+		fi
+		
+		# Если это установка, выполняем полную очистку
+		if [ "$action" = "install" ]; then
+			# Удаляем существующий релиз cert-manager если он есть
+			helm uninstall cert-manager -n cert-manager 2>/dev/null || true
+			
+			# Ждем удаления релиза
+			sleep 10
+			
+			# Удаляем namespace если он существует
+			kubectl delete namespace cert-manager --timeout=60s 2>/dev/null || true
+			
+			# Принудительно удаляем все CRD cert-manager
+			for crd in $(kubectl get crd -o name | grep cert-manager 2>/dev/null || true); do
+				kubectl patch $crd -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null || true
+				kubectl delete $crd --timeout=60s --force --grace-period=0 2>/dev/null || true
+			done
+			
+			# Ждем полного удаления ресурсов
+			sleep 10
+		fi
+		
+		# Проверяем наличие репозитория jetstack
+		if ! helm repo list | grep -q "jetstack"; then
+			echo -e "${CYAN}Добавление репозитория cert-manager...${NC}"
+			helm repo add jetstack https://charts.jetstack.io
+			helm repo update
+		fi
+
+		# Устанавливаем в правильный namespace
+		namespace="cert-manager"
+
+		# Устанавливаем CRD напрямую из репозитория
+		echo -e "${CYAN}Установка CRD для cert-manager...${NC}"
+		kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.3/cert-manager.crds.yaml || {
+			echo -e "${RED}Ошибка при установке CRD для cert-manager${NC}"
+			exit 1
+		}
+
+		# Добавляем метки и аннотации Helm для CRD
+		for crd in $(kubectl get crd -o name | grep cert-manager 2>/dev/null || true); do
+			echo -e "${CYAN}Настройка меток и аннотаций для ${crd}...${NC}"
+			kubectl patch $crd -p '{
+				"metadata": {
+					"labels": {
+						"app.kubernetes.io/managed-by": "Helm"
+					},
+					"annotations": {
+						"meta.helm.sh/release-name": "cert-manager",
+						"meta.helm.sh/release-namespace": "cert-manager"
+					}
+				}
+			}' --type=merge || true
+		done
+
+		# Ждем готовности CRD с проверкой их наличия
+		echo -e "${CYAN}Ожидание готовности CRD cert-manager...${NC}"
+		local crds=(
+			"certificates.cert-manager.io"
+			"challenges.acme.cert-manager.io"
+			"clusterissuers.cert-manager.io"
+			"issuers.cert-manager.io"
+			"orders.acme.cert-manager.io"
+			"certificaterequests.cert-manager.io"
+		)
+		
+		for crd in "${crds[@]}"; do
+			echo -e "${CYAN}Ожидание готовности CRD ${crd}...${NC}"
+			local retries=0
+			while [ $retries -lt 30 ]; do
+				if kubectl get crd $crd >/dev/null 2>&1; then
+					if kubectl wait --for=condition=established --timeout=10s crd/$crd >/dev/null 2>&1; then
+						echo -e "${GREEN}CRD ${crd} готов${NC}"
+						break
+					fi
+				fi
+				retries=$((retries + 1))
+				sleep 2
+			done
+			if [ $retries -eq 30 ]; then
+				echo -e "${RED}Превышено время ожидания готовности CRD ${crd}${NC}"
+				exit 1
+			fi
+		done
+	fi
+
+	# Добавляем сборку зависимостей перед установкой
+	echo -e "${CYAN}Проверка и сборка зависимостей чарта ${chart}...${NC}"
+	helm dependency build "${CHARTS_DIR}/${chart}" || {
+		echo -e "${RED}Ошибка при сборке зависимостей чарта ${chart}${NC}"
+		exit 1
+	}
+	
+	local helm_cmd="helm ${action} ${chart} ${CHARTS_DIR}/${chart}"
+	helm_cmd+=" --namespace ${namespace} --create-namespace"
+	
+	[ -n "$version" ] && helm_cmd+=" --version ${version}"
+	[ -n "$values_file" ] && helm_cmd+=" -f ${values_file}"
+
+	# Для cert-manager добавляем таймаут установки
+	if [ "$chart" = "cert-manager" ]; then
+		helm_cmd+=" --timeout 5m"
+	fi
+
+	
+	echo -e "${CYAN}Выполняется ${action} чарта ${chart}...${NC}"
+	eval $helm_cmd
+	
+	# Дополнительное ожидание готовности CRD для cert-manager
+	if [ "$chart" = "cert-manager" ] && [ $? -eq 0 ]; then
+		echo -e "${CYAN}Ожидание готовности CRD cert-manager...${NC}"
+		sleep 30
+	fi
+	
+	if [ $? -eq 0 ]; then
+		echo -e "\n"
+		if declare -F success_banner >/dev/null; then
+			success_banner
+		else
+			echo -e "${GREEN}Успешно!${NC}"
+		fi
+		echo -e "\n${GREEN}${action^} чарта ${chart} успешно завершен${NC}"
+	else
+		echo -e "\n"
+		if declare -F error_banner >/dev/null; then
+			error_banner
+		else
+			echo -e "${RED}Ошибка!${NC}"
+		fi
+		echo -e "\n${RED}Ошибка при выполнении ${action} чарта ${chart}${NC}"
+		exit 1
+	fi
+}
+
+# Функция проверки корректности команды
+check_action() {
+	local action=$1
+	local valid_actions=("install" "upgrade" "uninstall" "list" "restart-dns")
+	
+	# Проверяем совпадение с известными командами
+	for valid_action in "${valid_actions[@]}"; do
+		if [ "$action" = "$valid_action" ]; then
+			return 0
+		fi
+	done
+	
+	# Если команда похожа на известную, предлагаем правильный вариант
+	for valid_action in "${valid_actions[@]}"; do
+		if [[ "$valid_action" == *"${action}"* ]] || [[ "${action}" == *"${valid_action}"* ]]; then
+			if declare -F error_banner >/dev/null; then
+				error_banner
+			fi
+			echo -e "${RED}Ошибка: Неизвестное действие '${action}'${NC}"
+			echo -e "${YELLOW}Возможно, вы имели в виду: ${GREEN}${valid_action}${NC}"
+			usage
+		fi
+	done
+	
+	# Если команда совсем не похожа на известные
+	if declare -F error_banner >/dev/null; then
+		error_banner
+	fi
+	echo -e "${RED}Ошибка: Неизвестное действие '${action}'${NC}"
+	echo -e "${YELLOW}Доступные действия: install, upgrade, uninstall, list, restart-dns${NC}"
+	usage
+}
+
+# Функция вывода справки
 usage() {
 	local charts=($(get_charts))
 	
