@@ -1,55 +1,64 @@
-#!/usr/bin/bash
-#  ___                              
-# |_ _|_ __   __ _ _ __ ___  ___ ___
-#  | || '_ \ / _` | '__/ _ \/ __/ __|
-#  | || | | | (_| | | |  __/\__ \__ \
-# |___|_| |_|\__, |_|  \___||___/___/
-#            |___/
-#
-# Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
-# This code is free! Share it, spread peace and technology!
-# "Because Ingress should just work!"
+#!/bin/bash
 
-# Определение пути к директории скрипта и корню репозитория
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
+set -euo pipefail
 
-# Загрузка общих переменных и баннеров
-source "${REPO_ROOT}/tools/k8s-kind-setup/env.sh"
-source "${REPO_ROOT}/tools/k8s-kind-setup/ascii-banners/src/ascii_banners.sh"
+# Определение цветов для вывода
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
 
-# Отображение баннера при старте
-ingress_banner
-echo ""
+# Конфигурационные переменные
+INGRESS_NAMESPACE=${INGRESS_NAMESPACE:-"ingress-nginx"}
+INGRESS_CLASS_NAME=${INGRESS_CLASS_NAME:-"nginx"}
+ENABLE_TLS=${ENABLE_TLS:-"true"}
+CHART_VERSION="4.8.3"
 
-echo -e "${CYAN}Установка Ingress Controller...${NC}"
+echo -e "${GREEN}Начинаем установку NGINX Ingress Controller...${NC}"
 
-# Добавление репозитория ingress-nginx
+# Создание namespace если он не существует
+if ! kubectl get namespace "$INGRESS_NAMESPACE" >/dev/null 2>&1; then
+	echo "Создание namespace $INGRESS_NAMESPACE..."
+	kubectl create namespace "$INGRESS_NAMESPACE"
+fi
+
+# Добавление helm репозитория
+echo "Добавление helm репозитория ingress-nginx..."
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
-check_error "Не удалось добавить репозиторий ingress-nginx"
 
-# Установка Ingress Controller с правильной конфигурацией для Kind
-helm upgrade --install $RELEASE_INGRESS ingress-nginx/ingress-nginx \
-	--namespace $NAMESPACE_INGRESS \
-	--create-namespace \
-	--set controller.service.type=NodePort \
-	--set controller.hostPort.enabled=true \
-	--set controller.service.ports.http=80 \
-	--set controller.service.ports.https=443 \
-	--set controller.service.nodePorts.http=30080 \
-	--set controller.service.nodePorts.https=30443 \
-	--set controller.watchIngressWithoutClass=true \
-	--wait
-check_error "Не удалось установить Ingress Controller"
+# Подготовка values для helm
+VALUES_FILE=$(mktemp)
+cat << EOF > "$VALUES_FILE"
+controller:
+  ingressClassResource:
+	name: ${INGRESS_CLASS_NAME}
+	enabled: true
+	default: true
+  service:
+	type: NodePort
+  admissionWebhooks:
+	enabled: true
+EOF
 
-# Ожидание готовности подов
-kubectl wait --namespace $NAMESPACE_INGRESS \
-	--for=condition=ready pod \
-	--selector=app.kubernetes.io/component=controller \
-	--timeout=90s
-check_error "Не удалось дождаться готовности Ingress Controller"
+# Установка ingress-controller
+echo "Установка NGINX Ingress Controller..."
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+	--namespace "$INGRESS_NAMESPACE" \
+	--version "$CHART_VERSION" \
+	-f "$VALUES_FILE"
 
-echo -e "\n"
-success_banner
-echo -e "\n${GREEN}Установка Ingress Controller успешно завершена!${NC}"
+# Очистка временного файла
+rm -f "$VALUES_FILE"
+
+# Проверка установки
+echo "Ожидание запуска ingress-controller..."
+kubectl wait --namespace "$INGRESS_NAMESPACE" \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=90s
+
+echo -e "${GREEN}NGINX Ingress Controller успешно установлен!${NC}"
+
+# Вывод информации о созданных ресурсах
+echo -e "\nСозданные ресурсы:"
+kubectl get all -n "$INGRESS_NAMESPACE
