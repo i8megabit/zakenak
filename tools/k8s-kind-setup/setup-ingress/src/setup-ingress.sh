@@ -61,4 +61,4 @@ echo -e "${GREEN}NGINX Ingress Controller успешно установлен!${
 
 # Вывод информации о созданных ресурсах
 echo -e "\nСозданные ресурсы:"
-kubectl get all -n "$INGRESS_NAMESPACE
+kubectl get all -n "$INGRESS_NAMESPACE"

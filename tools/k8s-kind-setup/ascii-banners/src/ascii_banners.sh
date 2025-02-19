@@ -106,3 +106,17 @@ dashboard_banner() {
 										 by @eberil
 EOF
 	echo -e "${NC}"
+}
+
+# K8s Banner
+k8s_banner() {
+    echo -e "${BLUE}"
+    cat << "EOF"
+  _  __    ___  ____  
+ | |/ /   ( _ )/ ___| 
+ | ' /    / _ \\___ \ 
+ | . \   | (_) |___) |
+ |_|\_\   \___/|____/ 
+                by @eberil
+EOF
+    echo -e "${NC}"

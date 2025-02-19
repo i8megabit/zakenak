@@ -18,6 +18,9 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 source "${REPO_ROOT}/tools/k8s-kind-setup/env.sh"
 source "${REPO_ROOT}/tools/k8s-kind-setup/ascii-banners/src/ascii_banners.sh"
 
+# Определение имени релиза
+RELEASE_CERT_MANAGER="cert-manager"
+
 # Отображение баннера при старте
 cert_manager_banner
 echo ""

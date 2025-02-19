@@ -15,8 +15,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Загрузка общих переменных и баннеров
-source "${SCRIPT_DIR}/k8s-kind-setup/env/src/env.sh"
-source "${SCRIPT_DIR}/k8s-kind-setup/ascii-banners/src/ascii_banners.sh"
+source "${SCRIPT_DIR}/env/src/env.sh"
+source "${SCRIPT_DIR}/ascii-banners/src/ascii_banners.sh"
 
 # Отображение баннера при старте
 check_banner
@@ -119,6 +119,15 @@ check_ingress() {
 
 # Основная функция
 main() {
+    # Проверка наличия необходимых переменных окружения
+    local required_vars=("NAMESPACE_PROD" "NAMESPACE_CERT_MANAGER" "NAMESPACE_INGRESS" "OLLAMA_HOST" "WEBUI_HOST")
+    for var in "${required_vars[@]}"; do
+        if [ -z "${!var}" ]; then
+            echo -e "${RED}Ошибка: Переменная $var не установлена${NC}"
+            exit 1
+        fi
+    done
+
     # Проверка наличия необходимых утилит
     local required_tools=("kubectl" "curl" "nc" "getent")
     for tool in "${required_tools[@]}"; do

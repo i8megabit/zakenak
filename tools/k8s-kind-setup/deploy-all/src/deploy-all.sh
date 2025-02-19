@@ -15,6 +15,20 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
+# Проверка наличия необходимых утилит
+check_dependencies() {
+	local required_tools=("docker" "kind" "kubectl" "helm" "curl" "nc" "getent")
+	for tool in "${required_tools[@]}"; do
+		if ! command -v "$tool" &> /dev/null; then
+			echo "Ошибка: Утилита $tool не установлена"
+			exit 1
+		fi
+	done
+}
+
+# Выполняем проверку зависимостей
+check_dependencies
+
 # Проверка наличия необходимых файлов конфигурации
 required_files=(
 	"${SCRIPT_DIR}/env/src/env.sh"
