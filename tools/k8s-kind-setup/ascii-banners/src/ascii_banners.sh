@@ -79,3 +79,17 @@ dns_banner() {
 EOF
 	echo -e "${NC}"
 }
+
+# Cert Manager Banner
+cert_manager_banner() {
+	echo -e "${BLUE}"
+	cat << "EOF"
+   ____ _____ ____ _____ 
+  / ___|  ___| __ )_   _|
+ | |   | |_  |  _ \ | |  
+ | |___|  _| | |_) || |  
+  \____|_|   |____/ |_|  
+                by @eberil
+EOF
+	echo -e "${NC}"
+}
