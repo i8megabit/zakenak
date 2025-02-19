@@ -21,84 +21,156 @@ K8S_KIND_SETUP_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 CHARTS_DIR="${TOOLS_DIR}/../helm-charts"
 
 # Загрузка общих переменных и баннеров
-source "${K8S_KIND_SETUP_DIR}/env.sh"
+source "${K8S_KIND_SETUP_DIR}/env/src/env.sh"
 source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
 
 # Отображение баннера при старте
 charts_banner
 echo ""
 
-# Функция для проверки ошибок
-check_error() {
-	if [ $? -ne 0 ]; then
-		echo -e "${RED}$1${NC}"
+# Функция получения списка чартов
+get_charts() {
+	local charts=()
+	for chart_dir in "${CHARTS_DIR}"/*; do
+		if [ -f "${chart_dir}/Chart.yaml" ]; then
+			charts+=("$(basename "${chart_dir}")")
+		fi
+	done
+	echo "${charts[@]}"
+}
+
+# Функция генерации цветного меню чартов
+generate_charts_menu() {
+	local charts=($1)
+	echo -e "${CYAN}Доступные чарты:${NC}"
+	echo -e "${GREEN}  all          ${YELLOW}-${NC} Все чарты"
+	for chart in "${charts[@]}"; do
+		local description=""
+		if [ -f "${CHARTS_DIR}/${chart}/Chart.yaml" ]; then
+			description=$(grep "description:" "${CHARTS_DIR}/${chart}/Chart.yaml" | cut -d'"' -f2 || echo "")
+		fi
+		printf "${GREEN}  %-12s ${YELLOW}-${NC} %s\n" "$chart" "${description:-$chart}"
+	done
+}
+
+# Функция вывода справки
+usage() {
+	local charts=($(get_charts))
+	
+	echo -e "${CYAN}Использование:${NC} $0 ${YELLOW}[опции]${NC} ${GREEN}<действие>${NC} ${GREEN}<чарт>${NC}"
+	echo ""
+	echo -e "${CYAN}Действия:${NC}"
+	echo -e "${GREEN}  install        ${YELLOW}-${NC} Установить чарт"
+	echo -e "${GREEN}  upgrade        ${YELLOW}-${NC} Обновить чарт"
+	echo -e "${GREEN}  uninstall      ${YELLOW}-${NC} Удалить чарт"
+	echo -e "${GREEN}  list           ${YELLOW}-${NC} Показать список установленных чартов"
+	echo ""
+	generate_charts_menu "$(get_charts)"
+	echo ""
+	echo -e "${CYAN}Опции:${NC}"
+	echo -e "${GREEN}  -n, --namespace ${YELLOW}<namespace>${NC}  - Использовать указанный namespace"
+	echo -e "${GREEN}  -v, --version ${YELLOW}<version>${NC}      - Использовать указанную версию"
+	echo -e "${GREEN}  -f, --values ${YELLOW}<file>${NC}          - Использовать дополнительный values файл"
+	echo -e "${GREEN}  -h, --help${NC}                   - Показать эту справку"
+	exit 1
+}
+
+# Функция установки/обновления чарта
+install_chart() {
+	local action=$1
+	local chart=$2
+	local namespace=${3:-$NAMESPACE_PROD}
+	local version=$4
+	local values_file=$5
+	
+	if [ ! -d "${CHARTS_DIR}/${chart}" ]; then
+		echo -e "${RED}Ошибка: Чарт ${chart} не найден${NC}"
+		exit 1
+	}
+	
+	local helm_cmd="helm ${action} ${chart} ${CHARTS_DIR}/${chart}"
+	helm_cmd+=" --namespace ${namespace} --create-namespace"
+	
+	[ -n "$version" ] && helm_cmd+=" --version ${version}"
+	[ -n "$values_file" ] && helm_cmd+=" -f ${values_file}"
+	
+	echo -e "${CYAN}Выполняется ${action} чарта ${chart}...${NC}"
+	eval $helm_cmd
+	
+	if [ $? -eq 0 ]; then
+		echo -e "\n"
+		success_banner
+		echo -e "\n${GREEN}${action^} чарта ${chart} успешно завершен${NC}"
+	else
+		echo -e "\n"
+		error_banner
+		echo -e "\n${RED}Ошибка при выполнении ${action} чарта ${chart}${NC}"
 		exit 1
 	fi
 }
 
-# Функция для вывода справки
-show_help() {
-	echo "Использование: $0 <команда> <имя_чарта>"
-	echo ""
-	echo "Команды:"
-	echo "  install   - Установить чарт"
-	echo "  uninstall - Удалить чарт"
-	echo "  upgrade   - Обновить чарт"
-	echo "  list      - Показать список установленных чартов"
-	echo ""
-	echo "Пример:"
-	echo "  $0 install ollama"
-	exit 0
-}
+# Обработка параметров командной строки
+namespace=""
+version=""
+values_file=""
 
-# Проверка наличия аргументов
-if [ $# -lt 1 ]; then
-	show_help
+while [[ $# -gt 0 ]]; do
+	case $1 in
+		-h|--help)
+			usage
+			;;
+		-n|--namespace)
+			namespace="$2"
+			shift 2
+			;;
+		-v|--version)
+			version="$2"
+			shift 2
+			;;
+		-f|--values)
+			values_file="$2"
+			shift 2
+			;;
+		*)
+			break
+			;;
+	esac
+done
+
+if [ $# -lt 2 ]; then
+	usage
 fi
 
-# Обработка команд
-command=$1
-chart_name=$2
+action=$1
+chart=$2
 
-case $command in
-	"install")
-		if [ -z "$chart_name" ]; then
-			echo -e "${RED}Ошибка: Не указано имя чарта${NC}"
-			show_help
+case $action in
+	install|upgrade|uninstall)
+		if [ "$chart" = "all" ]; then
+			charts=($(get_charts))
+			for c in "${charts[@]}"; do
+				install_chart $action $c "$namespace" "$version" "$values_file"
+			done
+			if [ "$action" = "install" ] || [ "$action" = "upgrade" ]; then
+				echo -e "\n${CYAN}Проверка работоспособности сервисов...${NC}"
+				"${TOOLS_DIR}/connectivity-check/check-services.sh"
+			fi
+		else
+			install_chart $action $chart "$namespace" "$version" "$values_file"
+			if [ "$action" = "install" ] || [ "$action" = "upgrade" ]; then
+				if [ "$chart" = "ollama" ] || [ "$chart" = "open-webui" ]; then
+					echo -e "\n${CYAN}Проверка работоспособности сервиса $chart...${NC}"
+					"${TOOLS_DIR}/connectivity-check/check-services.sh"
+				fi
+			fi
 		fi
-		echo -e "${CYAN}Установка чарта $chart_name...${NC}"
-		helm upgrade --install $chart_name "${CHARTS_DIR}/$chart_name" \
-			--namespace default --create-namespace
-		check_error "Ошибка при установке чарта $chart_name"
 		;;
-	"uninstall")
-		if [ -z "$chart_name" ]; then
-			echo -e "${RED}Ошибка: Не указано имя чарта${NC}"
-			show_help
-		fi
-		echo -e "${CYAN}Удаление чарта $chart_name...${NC}"
-		helm uninstall $chart_name --namespace default
-		check_error "Ошибка при удалении чарта $chart_name"
-		;;
-	"upgrade")
-		if [ -z "$chart_name" ]; then
-			echo -e "${RED}Ошибка: Не указано имя чарта${NC}"
-			show_help
-		fi
-		echo -e "${CYAN}Обновление чарта $chart_name...${NC}"
-		helm upgrade $chart_name "${CHARTS_DIR}/$chart_name" \
-			--namespace default
-		check_error "Ошибка при обновлении чарта $chart_name"
-		;;
-	"list")
-		echo -e "${CYAN}Список установленных чартов:${NC}"
-		helm list --all-namespaces
-		check_error "Ошибка при получении списка чартов"
+	list)
+		echo -e "${CYAN}Установленные чарты в namespace ${namespace:-$NAMESPACE_PROD}:${NC}"
+		helm list -n ${namespace:-$NAMESPACE_PROD}
 		;;
 	*)
-		echo -e "${RED}Неизвестная команда: $command${NC}"
-		show_help
+		echo -e "${RED}Ошибка: Неизвестное действие ${action}${NC}"
+		usage
 		;;
 esac
-
-echo -e "${GREEN}Операция успешно завершена!${NC}"
