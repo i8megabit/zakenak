@@ -23,6 +23,15 @@ CHARTS_DIR="${TOOLS_DIR}/../helm-charts"
 # Загрузка общих переменных
 source "${K8S_KIND_SETUP_DIR}/env/src/env.sh"
 
+# Загрузка баннеров с предотвращением автозапуска
+if [ -f "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh" ]; then
+	export SKIP_BANNER_MAIN=1
+	source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
+fi
+
+
+
+
 # Функция получения списка чартов
 get_charts() {
 	local charts=()
@@ -42,7 +51,7 @@ generate_charts_menu() {
 	for chart in "${charts[@]}"; do
 		local description=""
 		if [ -f "${CHARTS_DIR}/${chart}/Chart.yaml" ]; then
-			description=$(grep "description:" "${CHARTS_DIR}/${chart}/Chart.yaml" | cut -d'"' -f2 || echo "")
+			description=$(grep "description:" "${CHARTS_DIR}/${chart}/Chart.yaml" | cut -d: -f2 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || echo "")
 		fi
 		printf "${GREEN}  %-12s ${YELLOW}-${NC} %s\n" "$chart" "${description:-$chart}"
 	done
@@ -392,7 +401,7 @@ get_dashboard_token() {
 		fi
 		echo -e "${GREEN}Токен для доступа к dashboard:${NC}"
 		echo -e "${YELLOW}$token${NC}"
-		echo -e "\n${CYAN}Доступ к dashboard: ${GREEN}https://dashboard.local${NC}"
+		echo -e "\n${CYAN}Доступ к dashboard: ${GREEN}https://dashboard.prod.local${NC}"
 		return 0
 	else
 		if declare -F error_banner >/dev/null; then
@@ -436,9 +445,35 @@ check_action() {
 	usage
 }
 
+# Определение пути к директории скрипта и корню репозитория
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TOOLS_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+K8S_KIND_SETUP_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+CHARTS_DIR="${TOOLS_DIR}/../helm-charts"
+
+# Загрузка общих переменных
+source "${K8S_KIND_SETUP_DIR}/env/src/env.sh"
+
+# Загрузка баннеров с предотвращением автозапуска
+if [ -f "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh" ]; then
+	export SKIP_BANNER_MAIN=1
+	source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
+fi
+
+# Показываем баннер charts только если нет аргументов
+if [ $# -eq 0 ]; then
+	if declare -F charts_banner >/dev/null; then
+		charts_banner
+		echo ""
+	fi
+	usage
+	exit 1
+fi
+
 # Функция вывода справки
 usage() {
-	local charts=($(get_charts))
+	local charts
+	charts=($(get_charts))
 	
 	echo -e "${CYAN}Использование:${NC} $0 ${YELLOW}[опции]${NC} ${GREEN}<действие>${NC} ${GREEN}<чарт>${NC}"
 	echo ""
@@ -459,22 +494,6 @@ usage() {
 	echo -e "${GREEN}  -h, --help${NC}                   - Показать эту справку"
 	exit 1
 }
-
-# Загрузка баннеров с предотвращением автозапуска
-if [ -f "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh" ]; then
-	export SKIP_BANNER_MAIN=1
-	source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
-fi
-
-# Показываем баннер charts только если нет аргументов
-if [ $# -eq 0 ]; then
-	if declare -F charts_banner >/dev/null; then
-		charts_banner
-		echo ""
-	fi
-	usage
-	exit 1
-fi
 
 # Функция перезапуска CoreDNS
 
