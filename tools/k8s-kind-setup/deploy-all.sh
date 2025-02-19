@@ -15,6 +15,28 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
+# Проверка наличия необходимых файлов конфигурации
+required_files=(
+	"${SCRIPT_DIR}/env.sh"
+	"${SCRIPT_DIR}/ascii-banners/src/ascii_banners.sh"
+	"${SCRIPT_DIR}/setup-wsl/src/setup-wsl.sh"
+	"${SCRIPT_DIR}/setup-bins/src/setup-bins.sh"
+	"${SCRIPT_DIR}/setup-kind/src/setup-kind.sh"
+	"${SCRIPT_DIR}/setup-ingress/src/setup-ingress.sh"
+	"${SCRIPT_DIR}/setup-cert-manager/src/setup-cert-manager.sh"
+	"${SCRIPT_DIR}/setup-dns/src/setup-dns.sh"
+	"${SCRIPT_DIR}/charts"
+	"${REPO_ROOT}/tools/connectivity-check/check-services.sh"
+)
+
+# Проверка наличия всех необходимых файлов
+for file in "${required_files[@]}"; do
+	if [[ ! -f "$file" && ! -x "$file" ]]; then
+		echo -e "${RED}Ошибка: Файл $file не найден или не является исполняемым${NC}"
+		exit 1
+	fi
+done
+
 # Загрузка общих переменных и баннеров
 source "${SCRIPT_DIR}/env.sh"
 source "${SCRIPT_DIR}/ascii-banners/src/ascii_banners.sh"
@@ -40,9 +62,14 @@ deploy_component() {
 	local description=$2
 	
 	echo -e "\n${CYAN}[$component] Установка $description...${NC}"
-	"${SCRIPT_DIR}/$component"
-	check_error "Ошибка при установке $description"
-	echo -e "${GREEN}[$component] Установка $description завершена${NC}"
+	if [[ -x "${SCRIPT_DIR}/$component" ]]; then
+		"${SCRIPT_DIR}/$component"
+		check_error "Ошибка при установке $description"
+		echo -e "${GREEN}[$component] Установка $description завершена${NC}"
+	else
+		echo -e "${RED}Ошибка: Компонент $component не найден или не является исполняемым${NC}"
+		exit 1
+	fi
 }
 
 # Функция для вывода статуса компонентов
