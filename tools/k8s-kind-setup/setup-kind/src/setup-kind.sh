@@ -10,6 +10,7 @@
 export BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 export TOOLS_DIR="${BASE_DIR}/tools/k8s-kind-setup"
 export SCRIPTS_ENV_PATH="${TOOLS_DIR}/env/src/env.sh"
+export CLUSTER_NAME="kind"
 
 # Загрузка общих переменных и баннеров
 source "${SCRIPTS_ENV_PATH}"
@@ -112,25 +113,35 @@ EOF
 
 # Создание кластера
 setup_kind_cluster() {
-	echo -e "${CYAN}Проверка существующего кластера...${NC}"
-	if kind get clusters 2>/dev/null | grep -q "^kind$"; then
-		echo -e "${YELLOW}Обнаружен существующий кластер 'kind'. Удаляем...${NC}"
-		kind delete cluster
-		check_error "Не удалось удалить существующий кластер"
-		sleep 5
+	# Проверяем существование кластера
+	if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
+		if [ "$REINSTALL_CLUSTER" = true ]; then
+			echo -e "${YELLOW}Удаление существующего кластера ${CLUSTER_NAME}...${NC}"
+			kind delete cluster --name "${CLUSTER_NAME}"
+			check_error "Не удалось удалить существующий кластер"
+		else
+			echo -e "${GREEN}Кластер ${CLUSTER_NAME} уже существует, пропускаем установку${NC}"
+			return 0
+		fi
 	fi
-	
+
 	# Генерация конфигурации перед созданием кластера
 	generate_kind_config
 	
-	echo -e "${CYAN}Создание нового кластера Kind...${NC}"
-	kind create cluster --config "${SCRIPT_DIR}/kind-config.yaml"
-	check_error "Не удалось создать кластер Kind"
+	echo -e "${CYAN}Создание нового кластера ${CLUSTER_NAME}...${NC}"
+	kind create cluster --name "${CLUSTER_NAME}" --config "${SCRIPT_DIR}/kind-config.yaml"
+	check_error "Ошибка при создании кластера"
+	
+	# Настройка контекста kubectl
+	kubectl cluster-info --context "kind-${CLUSTER_NAME}"
+	check_error "Ошибка при настройке контекста kubectl"
 	
 	# Ожидание готовности узлов
 	echo -e "${CYAN}Ожидание готовности узлов кластера...${NC}"
 	kubectl wait --for=condition=Ready nodes --all --timeout=300s
 	check_error "Узлы кластера не готовы"
+	
+	echo -e "${GREEN}Кластер ${CLUSTER_NAME} успешно создан${NC}"
 }
 
 # Установка NVIDIA Device Plugin

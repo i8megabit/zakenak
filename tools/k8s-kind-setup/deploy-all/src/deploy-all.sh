@@ -6,10 +6,16 @@ export SCRIPTS_ENV_PATH="${TOOLS_DIR}/env/src/env.sh"
 
 # Парсинг аргументов командной строки
 SKIP_WSL=false
+REINSTALL_CLUSTER=false
+
 while [[ $# -gt 0 ]]; do
     case $1 in
         --no-wsl)
             SKIP_WSL=true
+            shift
+            ;;
+        --re-install)
+            REINSTALL_CLUSTER=true
             shift
             ;;
         *)
@@ -18,6 +24,9 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Экспортируем переменную для использования в других скриптах
+export REINSTALL_CLUSTER
 
 source "${SCRIPTS_ENV_PATH}"
 source "${SCRIPTS_ASCII_BANNERS_PATH}"
