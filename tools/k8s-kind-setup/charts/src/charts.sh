@@ -29,8 +29,85 @@ if [ -f "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh" ]; then
 	source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
 fi
 
+# Функция просмотра состояния подов
+get_pods() {
+	local namespace=$1
+	
+	echo -e "${CYAN}Просмотр состояния подов...${NC}"
+	
+	if [ -n "$namespace" ]; then
+		echo -e "${CYAN}Поды в namespace ${namespace}:${NC}"
+		kubectl get pods -n "$namespace" -o wide
+	else
+		echo -e "${CYAN}Поды во всех namespace:${NC}"
+		kubectl get pods -A -o wide
+	fi
+}
+
+# Функция принудительного удаления подов
+kill_pods() {
+    local namespace=$1
+    local deployment=$2
+    
+    if [ -z "$namespace" ] || [ -z "$deployment" ]; then
+        echo -e "${RED}Ошибка: Требуется указать namespace и deployment${NC}"
+        echo -e "${YELLOW}Использование: $0 kill-pods -n <namespace> <deployment>${NC}"
+        return 1
+    }
+    
+    echo -e "${CYAN}Получение списка подов для deployment ${deployment} в namespace ${namespace}...${NC}"
+    local pods
+    pods=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/name=$deployment" -o name)
+    
+    if [ -z "$pods" ]; then
+        echo -e "${RED}Ошибка: Поды не найдены для deployment ${deployment} в namespace ${namespace}${NC}"
+        return 1
+    }
+    
+    echo -e "${YELLOW}Найдены следующие поды:${NC}"
+    echo "$pods"
+    
+    echo -e "${RED}Выполняется принудительное удаление подов...${NC}"
+    echo "$pods" | while read -r pod; do
+        echo -e "${CYAN}Удаление пода ${pod}...${NC}"
+        kubectl delete "$pod" -n "$namespace" --force --grace-period=0
+    done
+    
+    echo -e "${CYAN}Ожидание создания новых подов...${NC}"
+    kubectl rollout status deployment/"$deployment" -n "$namespace" --timeout=300s
+    
+    echo -e "${GREEN}Все поды успешно пересозданы${NC}"
+    kubectl get pods -n "$namespace" -l "app.kubernetes.io/name=$deployment"
+}
 
 
+# Функция вывода справки
+usage() {
+	local charts
+	charts=($(get_charts))
+	
+	echo -e "${CYAN}Использование:${NC} $0 ${YELLOW}[опции]${NC} ${GREEN}<действие>${NC} ${GREEN}<чарт>${NC}"
+	echo ""
+	echo -e "${CYAN}Действия:${NC}"
+	echo -e "${GREEN}  install        ${YELLOW}-${NC} Установить чарт"
+	echo -e "${GREEN}  upgrade        ${YELLOW}-${NC} Обновить чарт"
+	echo -e "${GREEN}  uninstall      ${YELLOW}-${NC} Удалить чарт"
+	echo -e "${GREEN}  list           ${YELLOW}-${NC} Показать список установленных чартов"
+	echo -e "${GREEN}  pods           ${YELLOW}-${NC} Показать состояние подов"
+	echo -e "${GREEN}  kill-pods      ${YELLOW}-${NC} Принудительно пересоздать поды"
+	echo -e "${GREEN}  restart-dns    ${YELLOW}-${NC} Перезапустить CoreDNS"
+	echo -e "${GREEN}  restart-nginx  ${YELLOW}-${NC} Перезапустить nginx-controller"
+	echo -e "${GREEN}  dashboard-token ${YELLOW}-${NC} Получить токен для доступа к dashboard"
+	echo ""
+	generate_charts_menu "${charts[@]}"
+	echo ""
+	echo -e "${CYAN}Опции:${NC}"
+	echo -e "${GREEN}  -n, --namespace ${YELLOW}<namespace>${NC}  - Использовать указанный namespace"
+	echo -e "${GREEN}  -v, --version ${YELLOW}<version>${NC}      - Использовать указанную версию"
+	echo -e "${GREEN}  -f, --values ${YELLOW}<file>${NC}          - Использовать дополнительный values файл"
+	echo -e "${GREEN}  -h, --help${NC}                   - Показать эту справку"
+	exit 1
+}
 
 # Функция получения списка чартов
 get_charts() {
@@ -75,6 +152,36 @@ EOF
 
 
 
+
+# Функция перезапуска nginx-controller
+restart_nginx() {
+	echo -e "${CYAN}Перезапуск nginx-controller...${NC}"
+
+	# Проверка текущего состояния
+	echo -e "${CYAN}Текущее состояние nginx-controller:${NC}"
+	kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller -o wide
+	kubectl describe deployment ingress-nginx-controller -n ingress-nginx
+
+	# Перезапуск nginx-controller
+	kubectl rollout restart deployment/ingress-nginx-controller -n ingress-nginx
+	sleep 5
+
+	echo -e "${CYAN}Ожидание готовности nginx-controller...${NC}"
+	if ! kubectl rollout status deployment/ingress-nginx-controller -n ingress-nginx --timeout=300s; then
+		echo -e "${RED}Ошибка при ожидании готовности nginx-controller${NC}"
+		echo -e "${YELLOW}Проверка логов новых подов...${NC}"
+		kubectl logs -n ingress-nginx -l app.kubernetes.io/component=controller --tail=50 || true
+		echo -e "${YELLOW}Описание подов...${NC}"
+		kubectl describe pods -n ingress-nginx -l app.kubernetes.io/component=controller
+		exit 1
+	fi
+
+	# Финальная проверка
+	echo -e "${CYAN}Финальное состояние nginx-controller:${NC}"
+	kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller -o wide
+
+	echo -e "${GREEN}nginx-controller успешно перезапущен${NC}"
+}
 
 # Функция перезапуска CoreDNS
 restart_coredns() {
@@ -415,7 +522,7 @@ get_dashboard_token() {
 # Функция проверки корректности команды
 check_action() {
 	local action=$1
-	local valid_actions=("install" "upgrade" "uninstall" "list" "restart-dns" "dashboard-token")
+	local valid_actions=("install" "upgrade" "uninstall" "list" "restart-dns" "dashboard-token" "pods")
 	
 	# Проверяем совпадение с известными командами
 	for valid_action in "${valid_actions[@]}"; do
@@ -470,30 +577,8 @@ if [ $# -eq 0 ]; then
 	exit 1
 fi
 
-# Функция вывода справки
-usage() {
-	local charts
-	charts=($(get_charts))
-	
-	echo -e "${CYAN}Использование:${NC} $0 ${YELLOW}[опции]${NC} ${GREEN}<действие>${NC} ${GREEN}<чарт>${NC}"
-	echo ""
-	echo -e "${CYAN}Действия:${NC}"
-	echo -e "${GREEN}  install        ${YELLOW}-${NC} Установить чарт"
-	echo -e "${GREEN}  upgrade        ${YELLOW}-${NC} Обновить чарт"
-	echo -e "${GREEN}  uninstall      ${YELLOW}-${NC} Удалить чарт"
-	echo -e "${GREEN}  list           ${YELLOW}-${NC} Показать список установленных чартов"
-	echo -e "${GREEN}  restart-dns    ${YELLOW}-${NC} Перезапустить CoreDNS"
-	echo -e "${GREEN}  dashboard-token ${YELLOW}-${NC} Получить токен для доступа к dashboard"
-	echo ""
-	generate_charts_menu "$(get_charts)"
-	echo ""
-	echo -e "${CYAN}Опции:${NC}"
-	echo -e "${GREEN}  -n, --namespace ${YELLOW}<namespace>${NC}  - Использовать указанный namespace"
-	echo -e "${GREEN}  -v, --version ${YELLOW}<version>${NC}      - Использовать указанную версию"
-	echo -e "${GREEN}  -f, --values ${YELLOW}<file>${NC}          - Использовать дополнительный values файл"
-	echo -e "${GREEN}  -h, --help${NC}                   - Показать эту справку"
-	exit 1
-}
+
+
 
 # Функция перезапуска CoreDNS
 
@@ -792,7 +877,7 @@ install_chart() {
 # Функция проверки корректности команды
 check_action() {
 	local action=$1
-	local valid_actions=("install" "upgrade" "uninstall" "list" "restart-dns" "dashboard-token")
+	local valid_actions=("install" "upgrade" "uninstall" "list" "restart-dns" "restart-nginx" "dashboard-token" "pods" "kill-pods")
 	
 	# Проверяем совпадение с известными командами
 	for valid_action in "${valid_actions[@]}"; do
@@ -882,7 +967,7 @@ get_dashboard_token() {
 		fi
 		echo -e "${GREEN}Токен для доступа к dashboard:${NC}"
 		echo -e "${YELLOW}$token${NC}"
-		echo -e "\n${CYAN}Доступ к dashboard: ${GREEN}https://dashboard.local${NC}"
+		echo -e "\n${CYAN}Доступ к dashboard: ${GREEN}https://dashboard.prod.local${NC}"
 		return 0
 	else
 		if declare -F error_banner >/dev/null; then
@@ -961,8 +1046,18 @@ case $action in
 		fi
 		exit 0
 		;;
+	pods)
+		get_pods "$namespace"
+		exit 0
+		;;
+	kill-pods)
+		kill_pods "$namespace" "$chart"
+		;;
 	restart-dns)
 		restart_coredns
+		;;
+	restart-nginx)
+		restart_nginx
 		;;
 	dashboard-token)
 		get_dashboard_token

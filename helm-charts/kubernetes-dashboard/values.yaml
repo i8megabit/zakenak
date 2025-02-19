@@ -8,11 +8,15 @@ kubernetes-dashboard:
     clusterReadOnlyRole: true
   ingress:
     enabled: true
+    className: nginx
     hosts:
-      - dashboard.local
+      - dashboard.prod.local
     annotations:
       cert-manager.io/cluster-issuer: selfsigned-issuer
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/ssl-passthrough: "true"
     tls:
       - secretName: kubernetes-dashboard-tls
         hosts:
-          - dashboard.local
+          - dashboard.prod.local
