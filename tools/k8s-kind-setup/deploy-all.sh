@@ -17,7 +17,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Проверка наличия необходимых файлов конфигурации
 required_files=(
-	"${SCRIPT_DIR}/env.sh"
+	"${SCRIPT_DIR}/env/src/env.sh"
 	"${SCRIPT_DIR}/ascii-banners/src/ascii_banners.sh"
 	"${SCRIPT_DIR}/setup-wsl/src/setup-wsl.sh"
 	"${SCRIPT_DIR}/setup-bins/src/setup-bins.sh"
@@ -39,7 +39,7 @@ for file in "${required_files[@]}"; do
 done
 
 # Загрузка общих переменных и баннеров
-source "${SCRIPT_DIR}/env.sh"
+source "${SCRIPT_DIR}/env/src/env.sh"
 source "${SCRIPT_DIR}/ascii-banners/src/ascii_banners.sh"
 
 # Отображение баннера при старте

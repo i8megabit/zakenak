@@ -17,7 +17,7 @@ K8S_KIND_SETUP_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Проверка наличия необходимых файлов конфигурации
 required_files=(
-	"${K8S_KIND_SETUP_DIR}/env.sh"
+	"${K8S_KIND_SETUP_DIR}/env/src/env.sh"
 	"${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
 )
 
@@ -30,7 +30,7 @@ for file in "${required_files[@]}"; do
 done
 
 # Загрузка общих переменных и баннеров
-source "${K8S_KIND_SETUP_DIR}/env.sh"
+source "${K8S_KIND_SETUP_DIR}/env/src/env.sh"
 source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
 
 # Отображение баннера при старте
