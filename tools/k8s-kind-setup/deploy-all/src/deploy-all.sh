@@ -14,6 +14,16 @@
 # Определение пути к директории скрипта и корню проекта
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
+# Загрузка переменных окружения и баннеров
+source "${SCRIPT_DIR}/env/src/env.sh"
+source "${SCRIPT_DIR}/ascii-banners/src/ascii_banners.sh"
+show_deploy_banner
+
+# Функция для логирования
+log() {
+	echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
+
 # Функция для установки прав выполнения
 setup_executable_permissions() {
 	local scripts=(
@@ -40,16 +50,6 @@ setup_executable_permissions() {
 	done
 }
 
-# Загрузка переменных окружения и баннеров
-source "${SCRIPT_DIR}/env/src/env.sh"
-source "${SCRIPT_DIR}/ascii-banners/src/ascii_banners.sh"
-show_deploy_banner
-
-# Функция для логирования
-log() {
-	echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
-}
-
 # Установка прав выполнения
 setup_executable_permissions
 
@@ -57,8 +57,7 @@ setup_executable_permissions
 log "Установка необходимых компонентов..."
 source "${SCRIPT_DIR}/setup-bins/src/setup-bins.sh"
 
-# Проверка наличия необходимых утилит
-
+# Проверка наличия необходимых утилит после установки
 check_dependencies() {
 	local required_tools=("docker" "kind" "kubectl" "helm" "curl" "nc" "getent")
 	for tool in "${required_tools[@]}"; do
@@ -69,8 +68,9 @@ check_dependencies() {
 	done
 }
 
-# Выполняем проверку зависимостей
+# Выполняем проверку зависимостей после установки
 check_dependencies
+
 
 # Проверка наличия необходимых файлов конфигурации
 required_files=(
