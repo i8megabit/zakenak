@@ -25,6 +25,14 @@ data:
         reload
         loadbalance
     }
+    local:53 {
+        errors
+        cache 30
+        hosts {
+            10.96.0.100 dashboard.local
+            fallthrough
+        }
+    }
     prod.local:53 {
         errors
         cache 30

@@ -48,17 +48,24 @@ generate_charts_menu() {
 	done
 }
 
-# Загрузка баннеров с предотвращением автозапуска
-if [ -f "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh" ]; then
-	export SKIP_BANNER_MAIN=1
-	source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
-fi
+# Charts Banner
+charts_banner() {
+	echo -e "${BLUE}"
+	cat << "EOF"
+   ██████╗██╗  ██╗ █████╗ ██████╗ ████████╗███████╗
+  ██╔════╝██║  ██║██╔══██╗██╔══██╗╚══██╔══╝██╔════╝
+  ██║     ███████║███████║██████╔╝   ██║   ███████╗
+  ██║     ██╔══██║██╔══██║██╔══██╗   ██║   ╚════██║
+  ╚██████╗██║  ██║██║  ██║██║  ██║   ██║   ███████║
+   ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
+EOF
+	echo -e "${NC}"
+	echo "Copyright (c) 2023-2025 Mikhail Eberil (@eberil)"
+	echo "\"Because managing charts shouldn't be a pain\""
+}
 
-# Показываем баннер charts
-if declare -F charts_banner >/dev/null; then
-	charts_banner
-	echo ""
-fi
+
+
 
 # Функция перезапуска CoreDNS
 restart_coredns() {
@@ -102,7 +109,23 @@ install_chart() {
 	local version=$4
 	local values_file=$5
 	
+	# Обработка алиасов чартов
+	case "$chart" in
+		"dashboard")
+			chart="kubernetes-dashboard"
+			;;
+		"coredns")
+			chart="coredns"
+			restart_coredns
+			;;
+		*)
+			;;
+	esac
+	
 	if [ ! -d "${CHARTS_DIR}/${chart}" ]; then
+		if declare -F error_banner >/dev/null; then
+			error_banner
+		fi
 		echo -e "${RED}Ошибка: Чарт ${chart} не найден${NC}"
 		exit 1
 	fi
@@ -239,6 +262,11 @@ install_chart() {
 	if [ "$chart" = "kubernetes-dashboard" ]; then
 		echo -e "${CYAN}Подготовка к установке kubernetes-dashboard...${NC}"
 		
+		# Показываем баннер dashboard
+		if declare -F dashboard_banner >/dev/null; then
+			dashboard_banner
+		fi
+		
 		# Проверяем существование релиза перед upgrade
 		if [ "$action" = "upgrade" ] && ! helm status kubernetes-dashboard -n kubernetes-dashboard >/dev/null 2>&1; then
 			echo -e "${YELLOW}Релиз kubernetes-dashboard не найден, выполняем установку...${NC}"
@@ -263,16 +291,12 @@ install_chart() {
 		# Устанавливаем в правильный namespace
 		namespace="kubernetes-dashboard"
 		
-		# Создаем ServiceAccount и ClusterRoleBinding для доступа к дашборду
+		# Применяем конфигурацию admin-user для доступа к дашборду
 		if [ "$action" = "install" ]; then
-			echo -e "${CYAN}Создание ServiceAccount для доступа к dashboard...${NC}"
-			kubectl create serviceaccount -n kubernetes-dashboard admin-user 2>/dev/null || true
-			
-			echo -e "${CYAN}Создание ClusterRoleBinding для admin-user...${NC}"
-			kubectl create clusterrolebinding admin-user \
-				--clusterrole=cluster-admin \
-				--serviceaccount=kubernetes-dashboard:admin-user 2>/dev/null || true
+			echo -e "${CYAN}Применение конфигурации admin-user для доступа к dashboard...${NC}"
+			kubectl apply -f "${SCRIPT_DIR}/kubernetes-dashboard/admin-user.yaml"
 		fi
+
 	fi
 
 	# Добавляем сборку зависимостей перед установкой
@@ -330,23 +354,50 @@ get_dashboard_token() {
 	
 	echo -e "${CYAN}Получение токена для доступа к dashboard...${NC}"
 	
-	# Проверяем существование ServiceAccount
-	if ! kubectl get serviceaccount $account -n $namespace >/dev/null 2>&1; then
-		echo -e "${RED}ServiceAccount $account не найден в namespace $namespace${NC}"
+	# Проверяем установлен ли dashboard
+	if ! helm status kubernetes-dashboard -n $namespace >/dev/null 2>&1; then
+		if declare -F error_banner >/dev/null; then
+			error_banner
+		fi
+		echo -e "${RED}Ошибка: kubernetes-dashboard не установлен${NC}"
+		echo -e "${YELLOW}Для установки выполните:${NC}"
+		echo -e "${CYAN}$0 install kubernetes-dashboard${NC}"
 		return 1
 	fi
 	
+	# Проверяем существование ServiceAccount
+	if ! kubectl get serviceaccount $account -n $namespace >/dev/null 2>&1; then
+		if declare -F error_banner >/dev/null; then
+			error_banner
+		fi
+		echo -e "${RED}Ошибка: ServiceAccount $account не найден в namespace $namespace${NC}"
+		echo -e "${YELLOW}Попробуйте переустановить kubernetes-dashboard:${NC}"
+		echo -e "${CYAN}$0 install kubernetes-dashboard${NC}"
+		return 1
+	fi
+	
+	# Ждем создания ServiceAccount
+	echo -e "${CYAN}Ожидание создания ServiceAccount...${NC}"
+	sleep 5
+
 	# Получаем токен
 	local token=""
-	if kubectl -n $namespace get secret >/dev/null 2>&1; then
+	if kubectl -n $namespace get serviceaccount admin-user >/dev/null 2>&1; then
 		token=$(kubectl -n $namespace create token admin-user)
 	fi
 	
 	if [ -n "$token" ]; then
+		if declare -F success_banner >/dev/null; then
+			success_banner
+		fi
 		echo -e "${GREEN}Токен для доступа к dashboard:${NC}"
 		echo -e "${YELLOW}$token${NC}"
 		echo -e "\n${CYAN}Доступ к dashboard: ${GREEN}https://dashboard.local${NC}"
+		return 0
 	else
+		if declare -F error_banner >/dev/null; then
+			error_banner
+		fi
 		echo -e "${RED}Не удалось получить токен${NC}"
 		return 1
 	fi
@@ -409,8 +460,18 @@ usage() {
 	exit 1
 }
 
-# Проверяем наличие аргументов до загрузки баннеров
-if [ $# -lt 1 ]; then
+# Загрузка баннеров с предотвращением автозапуска
+if [ -f "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh" ]; then
+	export SKIP_BANNER_MAIN=1
+	source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
+fi
+
+# Показываем баннер charts только если нет аргументов
+if [ $# -eq 0 ]; then
+	if declare -F charts_banner >/dev/null; then
+		charts_banner
+		echo ""
+	fi
 	usage
 	exit 1
 fi
@@ -749,23 +810,65 @@ get_dashboard_token() {
 	
 	echo -e "${CYAN}Получение токена для доступа к dashboard...${NC}"
 	
-	# Проверяем существование ServiceAccount
-	if ! kubectl get serviceaccount $account -n $namespace >/dev/null 2>&1; then
-		echo -e "${RED}ServiceAccount $account не найден в namespace $namespace${NC}"
+	# Проверяем установлен ли dashboard
+	if ! helm status kubernetes-dashboard -n $namespace >/dev/null 2>&1; then
+		if declare -F error_banner >/dev/null; then
+			error_banner
+		fi
+		echo -e "${RED}Ошибка: kubernetes-dashboard не установлен${NC}"
+		echo -e "${YELLOW}Для установки выполните:${NC}"
+		echo -e "${CYAN}$0 install kubernetes-dashboard${NC}"
 		return 1
 	fi
 	
+	# Создаем ServiceAccount если он не существует
+	if ! kubectl get serviceaccount $account -n $namespace >/dev/null 2>&1; then
+		echo -e "${CYAN}Создание ServiceAccount для доступа к dashboard...${NC}"
+		kubectl create serviceaccount -n $namespace $account || {
+			if declare -F error_banner >/dev/null; then
+				error_banner
+			fi
+			echo -e "${RED}Ошибка при создании ServiceAccount${NC}"
+			return 1
+		}
+	fi
+	
+	# Создаем ClusterRoleBinding если он не существует
+	if ! kubectl get clusterrolebinding admin-user >/dev/null 2>&1; then
+		echo -e "${CYAN}Создание ClusterRoleBinding для admin-user...${NC}"
+		kubectl create clusterrolebinding admin-user \
+			--clusterrole=cluster-admin \
+			--serviceaccount=$namespace:$account || {
+			if declare -F error_banner >/dev/null; then
+				error_banner
+			fi
+			echo -e "${RED}Ошибка при создании ClusterRoleBinding${NC}"
+			return 1
+		}
+	fi
+	
+	# Ждем создания ServiceAccount
+	echo -e "${CYAN}Ожидание готовности ServiceAccount...${NC}"
+	sleep 5
+	
 	# Получаем токен
 	local token=""
-	if kubectl -n $namespace get secret >/dev/null 2>&1; then
-		token=$(kubectl -n $namespace create token admin-user)
+	if kubectl -n $namespace get serviceaccount $account >/dev/null 2>&1; then
+		token=$(kubectl -n $namespace create token $account)
 	fi
 	
 	if [ -n "$token" ]; then
+		if declare -F success_banner >/dev/null; then
+			success_banner
+		fi
 		echo -e "${GREEN}Токен для доступа к dashboard:${NC}"
 		echo -e "${YELLOW}$token${NC}"
 		echo -e "\n${CYAN}Доступ к dashboard: ${GREEN}https://dashboard.local${NC}"
+		return 0
 	else
+		if declare -F error_banner >/dev/null; then
+			error_banner
+		fi
 		echo -e "${RED}Не удалось получить токен${NC}"
 		return 1
 	fi
@@ -810,7 +913,10 @@ chart=$2
 check_action "$action"
 
 # Проверяем количество аргументов для команд, требующих указания чарта
-if [ "$action" != "list" ] && [ "$action" != "restart-dns" ] && [ $# -lt 2 ]; then
+if [ "$action" != "list" ] && [ "$action" != "restart-dns" ] && [ "$action" != "dashboard-token" ] && [ $# -lt 2 ]; then
+	if declare -F error_banner >/dev/null; then
+		error_banner
+	fi
 	echo -e "${RED}Ошибка: Не указан чарт для действия ${action}${NC}"
 	usage
 fi
