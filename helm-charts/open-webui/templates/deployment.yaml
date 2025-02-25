@@ -15,8 +15,7 @@ spec:
       labels:
         app: open-webui
     spec:
-        containers:
-
+      containers:
       - name: open-webui
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -45,18 +44,15 @@ spec:
         envFrom:
         - secretRef:
             name: {{ .Release.Name }}-secrets
+        {{- if .Values.deployment.envFrom }}
+        {{- toYaml .Values.deployment.envFrom | nindent 8 }}
+        {{- end }}
         env:
-        {{- with .Values.env }}
+        {{- with .Values.deployment.env }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
         resources:
-          limits:
-            cpu: {{ .Values.deployment.resources.limits.cpu | quote }}
-            memory: {{ .Values.deployment.resources.limits.memory | quote }}
-
-          requests:
-            cpu: {{ .Values.deployment.resources.requests.cpu | quote }}
-            memory: {{ .Values.deployment.resources.requests.memory | quote }}
+          {{- toYaml .Values.deployment.resources | nindent 10 }}
         {{- if .Values.persistence.enabled }}
         volumeMounts:
         - name: data

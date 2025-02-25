@@ -24,6 +24,7 @@ Should Harbour?	No.
 - Windows 11 Pro или Enterprise
 - WSL2 с Ubuntu 22.04 LTS
 - Docker Desktop с WSL2 интеграцией
+- NVIDIA драйвер версии 535.104.05 или выше
 - CUDA Toolkit 12.8
 - Kubernetes 1.25+
 - Helm 3.x
@@ -41,22 +42,37 @@ wsl --install -d Ubuntu-22.04
 # Настройка лимитов памяти
 cat << EOF > %UserProfile%\.wslconfig
 [wsl2]
-memory=16GB
-processors=4
-swap=8GB
+memory=40GB
+processors=12
+swap=16GB
+localhostForwarding=true
+kernelCommandLine=systemd.unified_cgroup_hierarchy=1
+nestedVirtualization=true
+guiApplications=true
+debugConsole=false
+[experimental]
+hostAddressLoopback=true
+bestEffortDnsParsing=true
 EOF
 ```
 
 ### 2. Установка CUDA
 ```bash
-# Добавление CUDA репозитория
+# Проверка наличия GPU
+nvidia-smi
+
+# Проверка версии драйвера
+if ! nvidia-smi --query-gpu=driver_version --format=csv,noheader | grep -q "535.104.05"; then
+    echo "Требуется обновить драйвер NVIDIA до версии 535.104.05 или выше"
+    exit 1
+fi
+
+# Установка CUDA Toolkit
 wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
 sudo mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600
 wget https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda-repo-wsl-ubuntu-12-8-local_12.8.0-1_amd64.deb
 sudo dpkg -i cuda-repo-wsl-ubuntu-12-8-local_12.8.0-1_amd64.deb
 sudo cp /var/cuda-repo-wsl-ubuntu-12-8-local/cuda-*-keyring.gpg /usr/share/keyrings/
-
-# Установка CUDA
 sudo apt-get update
 sudo apt-get -y install cuda-toolkit-12-8
 
@@ -65,23 +81,52 @@ nvidia-smi
 nvcc --version
 ```
 
-### 3. Настройка Docker
+### 3. Настройка NVIDIA Container Toolkit
 ```bash
-# Установка Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-
-# Настройка NVIDIA Container Toolkit
+# Настройка репозитория
 distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-curl -s -L https://nvidia.github.io/libnvidia-container/gpgkey | \
-  sudo apt-key add -
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
 curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
-  sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
 
+# Установка NVIDIA Container Toolkit
 sudo apt-get update
 sudo apt-get install -y nvidia-container-toolkit
+
+# Настройка container runtime
 sudo nvidia-ctk runtime configure --runtime=docker
-sudo systemctl restart docker
+
+# Проверка GPU в контейнере
+docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
+```
+
+## Развертывание кластера
+
+### 1. Автоматическое развертывание
+```bash
+# Полное развертывание с проверками
+./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh
+
+# Только проверка конфигурации
+./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --check-only
+
+# Переустановка базовых компонентов
+./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --reinstall-core
+```
+
+### 2. Проверка GPU в кластере
+```bash
+# Проверка узлов с GPU
+kubectl get nodes -l nvidia.com/gpu=true
+kubectl describe node -l nvidia.com/gpu=true | grep nvidia.com/gpu
+
+# Проверка NVIDIA device plugin
+kubectl get pods -n kube-system -l k8s-app=nvidia-device-plugin-daemonset
+
+# Проверка тензорных операций
+kubectl run tensor-test --rm -it --image=nvcr.io/nvidia/pytorch:23.12-py3 \
+  --command -- python3 -c "import torch; print(torch.cuda.is_available())"
 ```
 
 ## Развертывание кластера

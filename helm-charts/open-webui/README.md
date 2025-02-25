@@ -10,28 +10,58 @@
 Should Harbour?	No.
 ```
 ## Версия
-1.0.2
+1.0.3
 
 ## Описание
-Helm чарт для развертывания Open WebUI в Kubernetes кластере.
+Helm чарт для развертывания Open WebUI в Kubernetes кластере с поддержкой GPU через интеграцию с Ollama.
 
-## Последние изменения
-- Добавлен Service для маршрутизации трафика
-- Настроена интеграция с Ingress-контроллером
-- Исправлена проблема с endpoints
+## Особенности
+- Интеграция с централизованным управлением GPU
+- Оптимизированная работа с Ollama через GPU
+- Поддержка модели deepseek-r1:14b
+- Эффективное управление GPU памятью
+- Встроенная поддержка TLS
+- Интеграция с Ingress-контроллером
+
+## Требования
+- Kubernetes 1.19+
+- Helm 3.0+
+- Ollama с GPU поддержкой
+- NVIDIA GPU (RTX 4080 или выше)
+- CUDA Toolkit 12.8+
+- Ingress контроллер
 
 ## Использование
 ```bash
-./tools/helm-deployer/deploy-chart.sh -e prod -c ./helm-charts/open-webui/
+./tools/k8s-kind-setup/charts/src/charts.sh install open-webui -n prod
 ```
 
 ## Конфигурация
-Для настройки используйте values.yaml файл в корне чарта.
+### Основные параметры
+| Параметр | Описание | По умолчанию |
+|----------|-----------|--------------|
+| `deployment.replicas` | Количество реплик | `1` |
+| `service.port` | Порт сервиса | `8080` |
+| `service.targetPort` | Целевой порт | `8080` |
+| `ingress.enabled` | Включение ingress | `true` |
 
-### Важные параметры
-- service.port: Порт сервиса
-- service.targetPort: Целевой порт контейнера
-- release.namespace: Namespace для развертывания
+### Переменные окружения
+| Переменная | Описание | По умолчанию |
+|------------|-----------|--------------|
+| `OLLAMA_API_HOST` | Адрес Ollama API | `http://ollama:11434` |
+| `GPU_MEMORY_UTILIZATION` | Использование GPU памяти | `0.9` |
+| `MAX_PARALLEL_REQUESTS` | Макс. параллельных запросов | `5` |
+
+## Устранение неполадок
+### Проверка подключения к Ollama
+```bash
+kubectl exec -it -n prod $(kubectl get pods -n prod -l app=open-webui -o name) -- curl -f http://ollama:11434/api/version
+```
+
+### Мониторинг GPU использования
+```bash
+kubectl exec -it -n prod $(kubectl get pods -n prod -l app=ollama -o name) -- nvidia-smi
+```
 
 ```plain text
 Copyright (c) 2023-2025 Mikhail Eberil (@eberil)

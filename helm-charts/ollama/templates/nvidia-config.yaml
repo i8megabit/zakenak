@@ -4,10 +4,6 @@ metadata:
   name: {{ .Release.Name }}-nvidia-config
   namespace: {{ .Values.release.namespace }}
 data:
-  cuda-devicequery.sh: |
-    #!/bin/bash
-    nvidia-smi -q
-    nvidia-smi --query-gpu=gpu_name,memory.total,memory.free,memory.used --format=csv,noheader
   config: |
     {
       "default-runtime": "nvidia",

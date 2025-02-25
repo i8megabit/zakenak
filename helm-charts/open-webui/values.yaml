@@ -6,9 +6,9 @@ release:
 # Основные настройки приложения
 image:
   repository: ghcr.io/open-webui/open-webui
-  tag: "v0.1.12"  # Changed from v1.0.0 to v0.1.12
+  tag: "v0.1.12"
   pullPolicy: Always
-  pullSecrets: []    # Add pull secrets if needed
+  pullSecrets: []
 
 # Настройки развертывания
 deployment:
@@ -20,6 +20,30 @@ deployment:
     requests:
       cpu: "500m"
       memory: "1Gi"
+  envFrom:
+    - configMapRef:
+        name: gpu-config
+  env:
+    - name: MODEL
+      value: "deepseek-r1:14b"
+    - name: DEBUG
+      value: "false"
+    - name: ENABLE_MEMORY_REDUCTION
+      value: "true"
+    - name: COMPUTE_SHAPES
+      value: "false"
+    - name: MAX_PARALLEL_REQUESTS
+      valueFrom:
+        configMapKeyRef:
+          name: gpu-config
+          key: MAX_PARALLEL_REQUESTS
+          optional: true
+    - name: NODE_OPTIONS
+      value: "--max-old-space-size=1536"
+    - name: ENABLE_AGGRESSIVE_GC
+      value: "true"
+    - name: OLLAMA_API_BASE
+      value: "http://ollama.prod.svc.cluster.local:11434/api"
 
 # Секреты
 secrets:
@@ -29,31 +53,6 @@ secrets:
   ollama:
     apiBase: "http://ollama.prod.svc.cluster.local:11434/api"
   custom: {}
-
-# Настройки окружения (не секретные)
-env:
-  - name: MODEL
-    value: "deepseek-r1:14b"
-  - name: DEBUG
-    value: "false"
-  - name: ENABLE_MEMORY_REDUCTION
-    value: "true"
-  - name: COMPUTE_SHAPES
-    value: "false"
-  - name: MAX_PARALLEL_REQUESTS
-    value: "2"
-  - name: NODE_OPTIONS
-    value: "--max-old-space-size=1536"
-  - name: ENABLE_AGGRESSIVE_GC
-    value: "true"
-  - name: OLLAMA_API_BASE
-    value: "http://ollama.prod.svc.cluster.local:11434/api"
-
-# GPU Configuration
-gpu:
-  enabled: false  # Changed from true to false
-  count: 1
-
 
 
 # Настройки сервиса

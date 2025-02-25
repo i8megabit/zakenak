@@ -9,6 +9,23 @@
 
 Should Harbour?	No.
 ```
+## [0.2.0] - 2025-02-25
+
+### Changed
+- Централизовано управление GPU:
+  - Удалена конфигурация NVIDIA device plugin
+  - Перенесены настройки GPU в charts.sh
+  - Упрощена конфигурация GPU в values.yaml
+- Оптимизирована интеграция с WSL2:
+  - Обновлены пути монтирования GPU устройств
+  - Улучшена совместимость с NVIDIA Container Toolkit
+  - Добавлены проверки GPU ресурсов
+
+### Removed
+- Удален nvidia-device-plugin.yaml
+- Удалены избыточные GPU параметры из values.yaml
+- Упрощена конфигурация nvidia-config.yaml
+
 ## [0.1.0] -  2025-02-13
 
 ### Added

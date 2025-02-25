@@ -205,6 +205,58 @@ check_chart_endpoints() {
 	return 1
 }
 
+# Функция настройки GPU
+setup_gpu() {
+    local namespace=$1
+    echo -e "${CYAN}Настройка GPU для namespace ${namespace}...${NC}"
+    
+    # Динамическое определение версии драйвера
+    local driver_version=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null)
+    if [ -z "$driver_version" ]; then
+        echo -e "${RED}Ошибка: NVIDIA драйвер не найден${NC}"
+        return 1
+    fi
+    
+    # Динамическое определение версии CUDA
+    local cuda_version=$(nvcc --version 2>/dev/null | grep "release" | awk '{print $5}' | cut -d',' -f1)
+    if [ -z "$cuda_version" ]; then
+        echo -e "${RED}Ошибка: CUDA не установлена${NC}"
+        return 1
+    fi
+    
+    # Проверка NVIDIA Container Toolkit
+    if ! docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi &>/dev/null; then
+        echo -e "${RED}Ошибка: NVIDIA Container Toolkit не настроен${NC}"
+        return 1
+    fi
+    
+    # Динамическое определение доступной GPU памяти
+    local gpu_memory=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader | head -n1 | cut -d' ' -f1)
+    local gpu_memory_limit=$(( gpu_memory * 90 / 100 )) # 90% от доступной памяти
+    
+    # Создание ConfigMap с динамическими параметрами GPU
+    cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gpu-config
+  namespace: $namespace
+data:
+  NVIDIA_DRIVER_VERSION: "$driver_version"
+  CUDA_VERSION: "$cuda_version"
+  NVIDIA_VISIBLE_DEVICES: "all"
+  NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+  GPU_MEMORY_LIMIT: "${gpu_memory_limit}Mi"
+  GPU_MEMORY_UTILIZATION: "0.9"
+  TENSOR_PARALLEL: "true"
+  FLASH_ATTENTION: "true"
+  KV_CACHE_STRATEGY: "dynamic"
+EOF
+    
+    echo -e "${GREEN}GPU успешно настроен для namespace ${namespace}${NC}"
+    return 0
+}
+
 # Функция установки/обновления чарта
 install_chart() {
 	local action=$1
@@ -212,6 +264,16 @@ install_chart() {
 	local namespace=${3:-$NAMESPACE_PROD}
 	local version=$4
 	local values_file=$5
+	
+	# Setup GPU for charts that need it
+	case "$chart" in
+		"ollama"|"open-webui")
+			if ! setup_gpu "$namespace"; then
+				echo -e "${RED}Ошибка при настройке GPU для чарта ${chart}${NC}"
+				exit 1
+			fi
+			;;
+	esac
 	
 	# Обработка алиасов чартов
 	case "$chart" in
@@ -632,9 +694,7 @@ restart_chart_pods() {
 		"ollama")
 			echo -e "${CYAN}Перезапуск ollama...${NC}"
 			kubectl rollout restart deployment ollama -n $namespace
-			kubectl rollout restart daemonset nvidia-device-plugin-daemonset -n $namespace
 			kubectl rollout status deployment ollama -n $namespace
-			kubectl rollout status daemonset nvidia-device-plugin-daemonset -n $namespace
 			;;
 		"open-webui")
 			echo -e "${CYAN}Перезапуск open-webui...${NC}"
@@ -657,7 +717,6 @@ restart_chart_pods() {
 			
 			# Перезапуск пользовательских приложений
 			kubectl rollout restart deployment ollama -n $namespace
-			kubectl rollout restart daemonset nvidia-device-plugin-daemonset -n $namespace
 			kubectl rollout restart deployment open-webui -n $namespace
 			kubectl rollout restart deployment sidecar-injector -n $namespace
 			
@@ -668,7 +727,6 @@ restart_chart_pods() {
 			kubectl rollout status deployment cert-manager-cainjector -n cert-manager
 			kubectl rollout status deployment kubernetes-dashboard -n kubernetes-dashboard
 			kubectl rollout status deployment ollama -n $namespace
-			kubectl rollout status daemonset nvidia-device-plugin-daemonset -n $namespace
 			kubectl rollout status deployment open-webui -n $namespace
 			kubectl rollout status deployment sidecar-injector -n $namespace
 			;;

@@ -31,14 +31,12 @@ spec:
               value: "/usr/lib/wsl/lib:/usr/local/nvidia/bin:/usr/local/cuda/bin:$(PATH)"
             - name: LD_LIBRARY_PATH
               value: "/usr/lib/wsl/lib:/usr/local/nvidia/lib64:/usr/local/cuda/lib64:$(LD_LIBRARY_PATH)"
-            - name: NVIDIA_VISIBLE_DEVICES
-              value: "all"
-            - name: NVIDIA_DRIVER_CAPABILITIES
-              value: "compute,utility,video"
-            - name: NVIDIA_REQUIRE_CUDA
-              value: "cuda>=12.8"
             {{- with .Values.deployment.env }}
             {{- toYaml . | nindent 12 }}
+            {{- end }}
+          envFrom:
+            {{- if .Values.deployment.envFrom }}
+            {{- toYaml .Values.deployment.envFrom | nindent 12 }}
             {{- end }}
           resources:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
@@ -47,8 +45,6 @@ spec:
               mountPath: /data
             - name: nvidia-wsl
               mountPath: /usr/lib/wsl/lib
-            - name: nvidia-capabilities
-              mountPath: /usr/local/nvidia/capabilities
       volumes:
         - name: ollama-data
           persistentVolumeClaim:
@@ -59,4 +55,3 @@ spec:
         - name: nvidia-capabilities
           hostPath:
             path: /usr/lib/wsl/lib/nvidia/capabilities
-

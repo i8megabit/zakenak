@@ -36,6 +36,13 @@ export SCRIPTS_SETUP_NVIDIA_PATH="${TOOLS_DIR}/setup-nvidia/src/setup-nvidia.sh"
 export NVIDIA_DEVICE_PLUGIN_VERSION="v0.14.1"
 export NVIDIA_NAMESPACE="gpu-operator"
 
+# Переменные для GPU
+export NVIDIA_DRIVER_MIN_VERSION="535.104.05"
+export CUDA_MIN_VERSION="12.8"
+export NVIDIA_CONTAINER_RUNTIME="nvidia"
+export NVIDIA_VISIBLE_DEVICES="all"
+export NVIDIA_DRIVER_CAPABILITIES="compute,utility"
+
 # Цветовые коды для вывода
 export RED='\033[0;31m'
 export GREEN='\033[0;32m'
@@ -155,14 +162,58 @@ wait_for_crds() {
 	done
 }
 
-# Функция проверки наличия GPU
+# Функция проверки GPU и CUDA
 check_gpu_available() {
-	if command -v nvidia-smi &> /dev/null && nvidia-smi &> /dev/null; then
-		return 0
-	else
-		return 1
-	fi
+    echo -e "${CYAN}Проверка GPU и CUDA...${NC}"
+    
+    # Проверка nvidia-smi
+    if ! command -v nvidia-smi &> /dev/null; then
+        echo -e "${RED}nvidia-smi не найден${NC}"
+        return 1
+    fi
+    
+    # Проверка версии драйвера
+    local driver_version=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader)
+    if [ -z "$driver_version" ]; then
+        echo -e "${RED}Не удалось получить версию драйвера${NC}"
+        return 1
+    fi
+    
+    # Сравнение версии драйвера
+    if ! awk -v v1="$driver_version" -v v2="$NVIDIA_DRIVER_MIN_VERSION" 'BEGIN{if (v1 >= v2) exit 0; else exit 1}'; then
+        echo -e "${RED}Версия драйвера $driver_version ниже требуемой $NVIDIA_DRIVER_MIN_VERSION${NC}"
+        return 1
+    fi
+    
+    # Проверка CUDA
+    if ! command -v nvcc &> /dev/null; then
+        echo -e "${RED}CUDA не установлена (nvcc не найден)${NC}"
+        return 1
+    fi
+    
+    # Проверка версии CUDA
+    local cuda_version=$(nvcc --version | grep "release" | awk '{print $5}' | cut -d',' -f1)
+    if [ -z "$cuda_version" ]; then
+        echo -e "${RED}Не удалось получить версию CUDA${NC}"
+        return 1
+    fi
+    
+    # Сравнение версии CUDA
+    if ! awk -v v1="$cuda_version" -v v2="$CUDA_MIN_VERSION" 'BEGIN{if (v1 >= v2) exit 0; else exit 1}'; then
+        echo -e "${RED}Версия CUDA $cuda_version ниже требуемой $CUDA_MIN_VERSION${NC}"
+        return 1
+    fi
+    
+    # Проверка NVIDIA Container Toolkit
+    if ! dpkg -l | grep -q nvidia-container-toolkit; then
+        echo -e "${RED}NVIDIA Container Toolkit не установлен${NC}"
+        return 1
+    fi
+    
+    echo -e "${GREEN}Проверка GPU и CUDA успешно пройдена${NC}"
+    return 0
 }
+
 
 # Функция проверки существования кластера
 check_cluster_exists() {
@@ -308,65 +359,25 @@ setup_cgroup_requirements() {
 	return 0
 }
 
-# Функция проверки и настройки Docker для работы с KIND
-setup_docker_for_kind() {
-	echo -e "${CYAN}Настройка Docker для работы с KIND...${NC}"
-	
-	# Проверка наличия конфигурации daemon.json
-	local daemon_json="/etc/docker/daemon.json"
-	if [ ! -f "$daemon_json" ]; then
-		echo -e "${YELLOW}Создание конфигурации Docker...${NC}"
-		sudo mkdir -p /etc/docker
-		echo '{
-			"exec-opts": ["native.cgroupdriver=systemd"],
-			"log-driver": "json-file",
-			"log-opts": {
-				"max-size": "100m"
-			},
-			"storage-driver": "overlay2"
-		}' | sudo tee $daemon_json > /dev/null
-		
-		# Перезапуск Docker для применения изменений
-		echo -e "${YELLOW}Перезапуск Docker...${NC}"
-		sudo systemctl restart docker
-		sleep 5
-	fi
-	
-	return 0
-}
-
-# Обновленная функция подготовки системы к созданию кластера
+# Функция подготовки системы к созданию кластера
 prepare_system_for_cluster() {
-	echo -e "${CYAN}Подготовка системы к созданию кластера...${NC}"
-	
-	# Проверка наличия необходимых инструментов
-	if ! check_required_tools; then
-		return 1
-	fi
-	
-	# Проверка и настройка cgroup
-	if ! setup_cgroup_requirements; then
-		return 1
-	fi
-	
-	# Проверка и запуск Docker
-	if ! check_docker_status; then
-		return 1
-	fi
-	
-	# Настройка Docker для работы с KIND
-	if ! setup_docker_for_kind; then
-		return 1
-	fi
-	
-	# Очистка системы
-	cleanup_docker_resources
-	
-	# Синхронизация с файловой системой
-	sync
-	
-	echo -e "${GREEN}Система готова к созданию кластера${NC}"
-	return 0
+    echo -e "${CYAN}Подготовка системы к созданию кластера...${NC}"
+    
+    # Проверка наличия необходимых инструментов
+    if ! check_required_tools; then
+        return 1
+    fi
+    
+    # Проверка и настройка cgroup
+    if ! setup_cgroup_requirements; then
+        return 1
+    fi
+    
+    # Синхронизация с файловой системой
+    sync
+    
+    echo -e "${GREEN}Система готова к созданию кластера${NC}"
+    return 0
 }
 
 # Если скрипт запущен напрямую, выводим информацию о переменных

@@ -35,16 +35,20 @@ Should Harbour?	No.
 
 ### Быстрая установка
 ```bash
-git clone https://github.com/i8megabit/zakenak
-cd zakenak
-sudo ./scripts/setup/docker-setup.sh
-```
+# Установка NVIDIA Container Toolkit
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
 
-Скрипт автоматически:
-- Проверяет системные требования
-- Устанавливает зависимости
-- Настраивает NVIDIA Container Toolkit
-- Проверяет корректность установки
+sudo apt-get update
+sudo apt-get install -y nvidia-container-toolkit
+
+# Настройка container runtime
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl restart docker
+```
 
 ### Проверка установки
 ```bash
@@ -53,6 +57,9 @@ docker info
 
 # Проверка GPU поддержки
 docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
+
+# Проверка CUDA в контейнере
+docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi -L
 ```
 
 ## Использование образа
@@ -365,15 +372,15 @@ docker run --gpus all \
 
 ### Диагностика GPU
 ```bash
-# Проверка GPU статуса
-docker run --gpus all \
-    ghcr.io/i8megabit/zakenak:1.0.0 \
-    nvidia-smi -q
+# Проверка статуса GPU
+nvidia-smi
 
-# Проверка конфигурации
-docker run -v $(pwd):/workspace \
-    ghcr.io/i8megabit/zakenak:1.0.0 \
-    validate
+# Проверка NVIDIA Container Toolkit
+docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
+
+# Проверка GPU в кластере
+kubectl get nodes -l nvidia.com/gpu=true
+kubectl describe node -l nvidia.com/gpu=true | grep nvidia.com/gpu
 ```
 
 ```plain text
@@ -386,4 +393,3 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
 PURPOSE AND NONINFRINGEMENT.
 ```
-

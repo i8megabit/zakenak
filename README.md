@@ -31,11 +31,67 @@ Zakenak — профессиональный инструмент GitOps для 
 ### Системные требования
 - Go 1.21+
 - WSL2 (Ubuntu 22.04 LTS)
-- Docker с NVIDIA Container Runtime
-- NVIDIA GPU + драйверы (535+)
-- CUDA Toolkit 12.8
+- NVIDIA GPU (RTX 4080 или выше)
+- NVIDIA Driver 535.104.05+
+- CUDA Toolkit 12.8+
+- Docker Desktop с WSL2 интеграцией
+- NVIDIA Container Toolkit
 - Kind v0.20.0+
 - Helm 3.0+
+
+## Развертывание кластера
+
+### Автоматическая установка
+```bash
+# Запуск полной установки
+./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh
+
+# Процесс включает:
+# 1. Проверку GPU в WSL2:
+#    - Наличие и версию драйвера NVIDIA
+#    - Установку CUDA Toolkit
+#    - Настройку NVIDIA Container Toolkit
+# 2. Проверку GPU в кластере:
+#    - Наличие узлов с GPU
+#    - Работу NVIDIA device plugin
+#    - Тестирование тензорных операций
+# 3. Установку базовых компонентов:
+#    - Ingress NGINX Controller
+#    - Cert Manager и Local CA
+#    - CoreDNS
+# 4. Развертывание приложений:
+#    - Ollama с GPU поддержкой
+#    - Open WebUI
+#    - Kubernetes Dashboard
+```
+
+### Проверка GPU
+```bash
+# Проверка GPU в WSL2
+nvidia-smi
+nvcc --version
+docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
+
+# Проверка GPU в кластере
+kubectl get nodes -l nvidia.com/gpu=true
+kubectl get pods -n kube-system -l k8s-app=nvidia-device-plugin-daemonset
+kubectl describe node -l nvidia.com/gpu=true | grep nvidia.com/gpu
+
+# Проверка тензорных операций
+kubectl run tensor-test --rm -it --image=nvcr.io/nvidia/pytorch:23.12-py3 \
+  --command -- python3 -c "import torch; print(torch.cuda.is_available())"
+```
+
+### Переменные окружения
+| Переменная | Описание | По умолчанию |
+|------------|-----------|--------------|
+| `NVIDIA_DRIVER_MIN_VERSION` | Минимальная версия драйвера | `535.104.05` |
+| `CUDA_MIN_VERSION` | Минимальная версия CUDA | `12.8` |
+| `NVIDIA_VISIBLE_DEVICES` | GPU устройства | `all` |
+| `NVIDIA_DRIVER_CAPABILITIES` | Возможности драйвера | `compute,utility` |
+| `KUBECONFIG` | Путь к kubeconfig | `~/.kube/config` |
+| `REGISTRY_USER` | Пользователь registry | - |
+| `REGISTRY_PASS` | Пароль registry | - |
 
 ### Установка
 ```bash
@@ -59,6 +115,30 @@ deploy:
   namespace: prod
   charts:
     - ./helm/myapp
+```
+
+## Развертывание кластера
+
+### Автоматическая установка
+```bash
+# Запуск полной установки
+./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh
+
+# Процесс включает:
+# 1. Проверку конфигурации кластера и авторизации
+# 2. Валидацию GPU ресурсов и CUDA
+# 3. Установку базовых компонентов (ingress-nginx, cert-manager, etc.)
+# 4. Настройку DNS и TLS
+# 5. Развертывание приложений
+```
+
+### Ручная установка компонентов
+```bash
+# Установка отдельных компонентов
+./tools/k8s-kind-setup/charts/src/charts.sh install cert-manager
+./tools/k8s-kind-setup/charts/src/charts.sh install local-ca
+./tools/k8s-kind-setup/charts/src/charts.sh install ollama
+./tools/k8s-kind-setup/charts/src/charts.sh install open-webui
 ```
 
 ### Основные команды
@@ -179,6 +259,7 @@ zakenak deploy
 | `KUBECONFIG` | Путь к kubeconfig | `~/.kube/config` |
 | `ZAKENAK_DEBUG` | Включение отладки | `false` |
 | `NVIDIA_VISIBLE_DEVICES` | GPU устройства | `all` |
+| `NVIDIA_DRIVER_CAPABILITIES` | Возможности драйвера | `compute,utility` |
 | `REGISTRY_USER` | Пользователь registry | - |
 | `REGISTRY_PASS` | Пароль registry | - |
 

@@ -8,9 +8,18 @@ nodes:
     nodeRegistration:
       kubeletExtraArgs:
         node-labels: "ingress-ready=true"
+        feature-gates: "DevicePlugins=true"
   extraMounts:
-  - hostPath: /usr/local/nvidia
-    containerPath: /usr/local/nvidia
+  - hostPath: /usr/lib/wsl/lib
+    containerPath: /usr/lib/wsl/lib
+  - hostPath: /usr/bin/nvidia-smi
+    containerPath: /usr/bin/nvidia-smi
+  - hostPath: /usr/lib/x86_64-linux-gnu
+    containerPath: /usr/lib/x86_64-linux-gnu
+  - hostPath: /usr/local/cuda/lib64
+    containerPath: /usr/local/cuda/lib64
+  - hostPath: /usr/local/cuda/include
+    containerPath: /usr/local/cuda/include
   extraPortMappings:
   - containerPort: 80
     hostPort: 80
@@ -20,11 +29,20 @@ nodes:
     protocol: TCP
 - role: worker
   extraMounts:
-  - hostPath: /usr/local/nvidia
-    containerPath: /usr/local/nvidia
+  - hostPath: /usr/lib/wsl/lib
+    containerPath: /usr/lib/wsl/lib
+  - hostPath: /usr/bin/nvidia-smi
+    containerPath: /usr/bin/nvidia-smi
+  - hostPath: /usr/lib/x86_64-linux-gnu
+    containerPath: /usr/lib/x86_64-linux-gnu
+  - hostPath: /usr/local/cuda/lib64
+    containerPath: /usr/local/cuda/lib64
+  - hostPath: /usr/local/cuda/include
+    containerPath: /usr/local/cuda/include
   kubeadmConfigPatches:
   - |
     kind: JoinConfiguration
     nodeRegistration:
       kubeletExtraArgs:
-        node-labels: "nvidia.com/gpu=true" 
+        node-labels: "nvidia.com/gpu=true"
+        feature-gates: "DevicePlugins=true"

@@ -12,7 +12,6 @@ image:
 # Настройки развертывания
 deployment:
   replicas: 1
-  useGPU: true  # Флаг для включения/отключения GPU
   resources:
     limits:
       cpu: "8"
@@ -21,31 +20,18 @@ deployment:
     requests:
       cpu: "4"
       memory: "8Gi"
+  envFrom:
+    - configMapRef:
+        name: gpu-config
   env:
-    - name: OLLAMA_MODELS
-      value: "deepseek-r1:14b"
     - name: OLLAMA_HOST
       value: "0.0.0.0"
     - name: OLLAMA_COMPUTE_TYPE
       value: "gpu"
-    - name: OLLAMA_BATCH_SIZE
-      value: "8"
-    - name: OLLAMA_PARALLEL_REQUESTS
-      value: "2"
-    - name: OLLAMA_THREAD_COUNT
-      value: "4"
     - name: OLLAMA_GPU_LAYERS
       value: "43"
     - name: OLLAMA_F16
       value: "true"
-    - name: OLLAMA_TENSOR_PARALLEL
-      value: "true"
-    - name: OLLAMA_GPU_MEMORY_UTILIZATION
-      value: "0.75"
-    - name: OLLAMA_FLASH_ATTENTION
-      value: "true"
-    - name: OLLAMA_KV_CACHE_STRATEGY
-      value: "dynamic"
 
 # Настройки сервиса
 service:
@@ -75,7 +61,6 @@ ingress:
       hosts:
         - ollama.prod.local
 
-
 # Настройки хранилища для моделей
 persistence:
   enabled: true
@@ -95,21 +80,3 @@ networkPolicy:
   enabled: true
   allowedNamespaces:
     - prod
-
-# NVIDIA Device Plugin configuration
-devicePlugin:
-  enabled: true  # Make sure this is set to true
-  image:
-    repository: nvcr.io/nvidia/k8s-device-plugin
-    tag: v0.14.1
-    pullPolicy: IfNotPresent
-  args:
-    migStrategy: "none"
-    failOnInitError: "false"
-    deviceIdStrategy: "uuid"
-    passDeviceSpecs: "true"
-  env:
-    - name: NVIDIA_VISIBLE_DEVICES
-      value: "all"
-    - name: NVIDIA_DRIVER_CAPABILITIES
-      value: "utility,compute"
