@@ -28,50 +28,40 @@ Zakenak — профессиональный инструмент GitOps для 
 
 ## Начало работы
 
-### Системные требования
-- Go 1.21+
-- WSL2 (Ubuntu 22.04 LTS)
-- Docker с NVIDIA Container Runtime
-- NVIDIA GPU + драйверы (535+)
-- CUDA Toolkit 12.8
-- Kind v0.20.0+
+## Требования
+
+- Docker Desktop с включенным Kubernetes
+- kubectl
 - Helm 3.0+
+- NVIDIA GPU (опционально)
+- NVIDIA Container Toolkit (для GPU)
 
-### Установка
-```bash
-# Клонирование репозитория
-git clone https://github.com/i8megabit/zakenak
-cd zakenak
+## Быстрый старт
 
-# Сборка
-make build
+1. Установите Docker Desktop и включите Kubernetes в настройках
+2. Проверьте готовность кластера:
+   ```bash
+   zakenak cluster verify
+   ```
+3. Установите компоненты:
+   ```bash
+   zakenak deploy
+   ```
 
-# Установка
-sudo make install
-```
+## Возможности
 
-### Базовая конфигурация
-```yaml
-project: myapp
-environment: prod
+- Автоматическое развертывание в Docker Desktop Kubernetes
+- Интеграция с NVIDIA GPU
+- Управление сертификатами через cert-manager
+- Локальный центр сертификации
+- Web интерфейс для взаимодействия с LLM
 
-deploy:
-  namespace: prod
-  charts:
-    - ./helm/myapp
-```
+## Документация
 
-### Основные команды
-```bash
-# Конвергенция состояния
-zakenak converge
-
-# Сборка образов
-zakenak build
-
-# Деплой в кластер
-zakenak deploy
-```
+- [Развертывание](docs/DEPLOYMENT.md)
+- [Настройка GPU](docs/GPU-SETUP.md)
+- [Архитектура](docs/ARCHITECTURE.md)
+- [Безопасность](docs/SECURITY.md)
 ## Использование Docker образа
 
 ### Получение образа

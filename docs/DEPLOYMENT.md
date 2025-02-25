@@ -86,17 +86,22 @@ sudo systemctl restart docker
 
 ## Развертывание кластера
 
-### 1. Создание Kind кластера
+### 1. Подготовка Docker Desktop Kubernetes
+
+1. Откройте Docker Desktop
+2. Перейдите в Settings -> Kubernetes
+3. Включите "Enable Kubernetes"
+4. Нажмите "Apply & Restart"
+
+### 2. Проверка готовности кластера
 ```bash
-# Установка Kind
-go install sigs.k8s.io/kind@latest
-
-# Создание кластера с GPU поддержкой
-kind create cluster --config helm-charts/kind-config.yaml
-
-# Проверка статуса
+# Проверка состояния кластера
 kubectl cluster-info
 kubectl get nodes -o wide
+
+# Проверка поддержки GPU
+kubectl create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/master/nvidia-device-plugin.yml
+kubectl -n kube-system get pods | grep nvidia-device-plugin
 ```
 
 ### 2. Установка Core Services

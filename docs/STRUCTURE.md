@@ -85,79 +85,44 @@ zakenak/
     └── network-policies/ # Сетевые политики
 ```
 
-## Компоненты системы
+## Описание компонентов
 
-### Core Services
+### helm-charts/
+Содержит Helm чарты для развертывания компонентов системы:
 
-#### 1. cert-manager
+#### cert-manager/
 - Управление TLS сертификатами
 - Интеграция с локальным CA
-- Автоматическое обновление
-- Конфигурация:
-  - `deployment.yaml`
-  - `service.yaml`
-  - `clusterissuer.yaml`
+- Автоматическое обновление сертификатов
 
-#### 2. local-ca
-- Генерация корневых сертификатов
+#### local-ca/
+- Локальный центр сертификации
 - Управление цепочками доверия
 - Выпуск сертификатов
-- Конфигурация:
-  - `ca.yaml`
-  - `issuer.yaml`
-  - `secrets.yaml`
 
-#### 3. sidecar-injector
-- Инжекция TLS прокси
-- Терминация TLS
-- Мониторинг состояния
-- Конфигурация:
-  - `deployment.yaml`
-  - `service.yaml`
-  - `mutatingwebhook.yaml`
-
-### AI Services
-
-#### 1. ollama
-- LLM сервер с GPU-акселерацией
+#### ollama/
+- LLM сервер
 - Управление моделями
-- Оптимизация GPU
-- Конфигурация:
-  - `deployment.yaml`
-  - `service.yaml`
-  - `ingress.yaml`
-  - `pvc.yaml`
-  - `nvidia-config.yaml`
+- Интеграция с Docker Desktop Kubernetes
 
-#### 2. open-webui
-- Веб-интерфейс
-- Интеграция с Ollama
-- Управление контекстом
-- Конфигурация:
-  - `deployment.yaml`
-  - `service.yaml`
-  - `ingress.yaml`
-  - `configmap.yaml`
+#### open-webui/
+- Веб-интерфейс для Ollama
+- Управление моделями и чатами
+- Пользовательские настройки
 
-### Infrastructure
+### tools/zakenak/
+CLI утилита для управления развертыванием:
 
-#### 1. NVIDIA Integration
-- Device Plugin
-- Runtime Class
-- Мониторинг ресурсов
-- Конфигурация:
-  - `nvidia-device-plugin.yaml`
-  - `runtime-class.yaml`
-  - `gpu-metrics.yaml`
+#### cmd/
+- Команды интерфейса командной строки
+- Управление конфигурацией
+- Взаимодействие с кластером
 
-#### 2. Networking
-- Ingress Controller
-- CoreDNS конфигурация
-- Network Policies
-- Конфигурация:
-  - `ingress-controller.yaml`
-  - `coredns-config.yaml`
-  - `network-policies.yaml`
+#### pkg/
+- cluster/: Управление Docker Desktop Kubernetes
+- helm/: Интеграция с Helm
+- state/: Управление состоянием системы
+- system/: Системные утилиты
 
 ## Структура документации
 

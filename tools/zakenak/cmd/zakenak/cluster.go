@@ -1,91 +1,55 @@
-/*
- * Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
- * 
- * This file is part of Ƶakenak, a GitOps deployment tool.
- * 
- * Ƶakenak is free software: you can redistribute it and/or modify
- * it under the terms of the MIT License with Trademark Protection.
- * 
- * Ƶakenak is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * MIT License for more details.
- * 
- * The name "Ƶakenak" and associated branding are  * Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
- * 
- * This file is part of Zakenak project.
- * https://github.com/i8megabit/zakenak
- *
- * This program is free software and is released under the terms of the MIT License.
- * See LICENSE.md file in the project root for full license information.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.of @eberil
- * and may not be used without express written permission.
- */
-
 package main
 
 import (
     "github.com/spf13/cobra"
-    "github.com/i8megabit/zakenak/pkg/kind"
+    "github.com/i8megabit/zakenak/pkg/cluster"
 )
 
 func newClusterCmd() *cobra.Command {
     cmd := &cobra.Command{
         Use:   "cluster",
-        Short: "Управление Kind кластером",
+        Short: "Управление Docker Desktop Kubernetes",
     }
 
     cmd.AddCommand(
-        newClusterCreateCmd(),
-        newClusterDeleteCmd(),
+        newClusterVerifyCmd(),
+        newClusterEnableCmd(),
     )
 
     return cmd
 }
 
-func newClusterCreateCmd() *cobra.Command {
-    var configPath string
-    var gpuEnabled bool
+func newClusterVerifyCmd() *cobra.Command {
     var clusterName string
 
     cmd := &cobra.Command{
-        Use:   "create",
-        Short: "Создать новый Kind кластер",
+        Use:   "verify",
+        Short: "Проверить состояние Docker Desktop Kubernetes",
         RunE: func(cmd *cobra.Command, args []string) error {
-            cfg := kind.DefaultConfig()
-            cfg.GPUEnabled = gpuEnabled
-
-            if err := cfg.GenerateConfig(configPath); err != nil {
+            manager := cluster.NewManager(clusterName)
+            if err := manager.VerifyCluster(cmd.Context()); err != nil {
                 return err
             }
-
-            manager := kind.NewManager(clusterName, configPath)
-            return manager.CreateCluster(cmd.Context())
+            return manager.WaitForCluster(cmd.Context())
         },
     }
 
-    cmd.Flags().StringVar(&configPath, "config", "kind-config.yaml", "путь к конфигурации Kind")
-    cmd.Flags().BoolVar(&gpuEnabled, "gpu", true, "включить поддержку GPU")
-    cmd.Flags().StringVar(&clusterName, "name", "zakenak", "имя кластера")
-
+    cmd.Flags().StringVar(&clusterName, "name", "docker-desktop", "имя кластера")
     return cmd
 }
 
-func newClusterDeleteCmd() *cobra.Command {
+func newClusterEnableCmd() *cobra.Command {
     var clusterName string
     
     cmd := &cobra.Command{
-        Use:   "delete",
-        Short: "Удалить Kind кластер",
+        Use:   "enable",
+        Short: "Включить Docker Desktop Kubernetes",
         RunE: func(cmd *cobra.Command, args []string) error {
-            manager := kind.NewManager(clusterName, "kind-config.yaml")
-            return manager.DeleteExistingCluster(cmd.Context())
+            manager := cluster.NewManager(clusterName)
+            return manager.EnableKubernetes(cmd.Context())
         },
     }
 
-    cmd.Flags().StringVar(&clusterName, "name", "zakenak", "имя кластера")
+    cmd.Flags().StringVar(&clusterName, "name", "docker-desktop", "имя кластера")
     return cmd
 }

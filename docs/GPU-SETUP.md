@@ -128,45 +128,41 @@ docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
 
 ## Настройка Kubernetes
 
-### 1. Создание Kind кластера
-```bash
-# Создание конфигурации
-cat << EOF > kind-config.yaml
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-- role: control-plane
-  kubeadmConfigPatches:
-  - |
-    kind: InitConfiguration
-    nodeRegistration:
-      kubeletExtraArgs:
-        node-labels: "ingress-ready=true,nvidia.com/gpu=present"
-  extraMounts:
-  - hostPath: /usr/lib/wsl/lib
-    containerPath: /usr/lib/wsl/lib
-  - hostPath: /usr/local/cuda-12.8
-    containerPath: /usr/local/cuda-12.8
-  - hostPath: /usr/local/cuda
-    containerPath: /usr/local/cuda
-  extraPortMappings:
-  - containerPort: 80
-    hostPort: 80
-  - containerPort: 443
-    hostPort: 443
-EOF
-
-# Создание кластера
-kind create cluster --config kind-config.yaml
-```
+### 1. Настройка Docker Desktop Kubernetes
+1. Откройте Docker Desktop Settings
+2. Перейдите в Kubernetes
+3. Включите "Enable Kubernetes"
+4. Нажмите "Apply & Restart"
+5. Дождитесь запуска кластера
 
 ### 2. NVIDIA Device Plugin
 ```bash
 # Установка NVIDIA Device Plugin
-kubectl apply -f helm-charts/ollama/templates/nvidia-device-plugin.yaml
+kubectl create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/master/nvidia-device-plugin.yml
 
 # Проверка статуса
-kubectl -n kube-system get pods -l app=nvidia-device-plugin-daemonset
+kubectl -n kube-system get pods | grep nvidia-device-plugin
+```
+
+### 3. Тестирование GPU в кластере
+```bash
+# Создание тестового пода
+kubectl run gpu-test --image=nvidia/cuda:12.8.0-base-ubuntu22.04 --command -- nvidia-smi
+
+# Проверка результата
+kubectl logs gpu-test
+
+# Удаление тестового пода
+kubectl delete pod gpu-test
+```
+
+### 4. Проверка доступности GPU
+```bash
+# Проверка статуса GPU в кластере
+kubectl describe node | grep nvidia.com/gpu
+
+# Проверка количества доступных GPU
+kubectl get nodes -o custom-columns=NAME:.metadata.name,GPU:.status.allocatable.\'nvidia\.com/gpu\'
 ```
 
 ## Оптимизация производительности
