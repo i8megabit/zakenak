@@ -1,5 +1,5 @@
-# How to use  
-  
-1. **Open a Github issue** and write your request – you don't need to be thorough.  
-2. The agent will open a PR. **Reply to the agent in the PR**.  
-3. When you're happy with the agent's work, **merge**.
+# Как использовать
+
+1. **Создайте issue на Github** и опишите свой запрос – не обязательно быть слишком подробным.
+2. Агент создаст PR. **Отвечайте агенту в PR**.
+3. Когда вы будете довольны работой агента, **выполните merge**.
