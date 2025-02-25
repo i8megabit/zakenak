@@ -6,10 +6,11 @@ export SCRIPTS_ENV_PATH="${TOOLS_DIR}/env/src/env.sh"
 
 # Функция вывода справки
 show_help() {
-    echo "Использование: $0 [--no-wsl]"
+    echo "Использование: $0 [--no-wsl] [--help]"
     echo ""
     echo "Опции:"
     echo "  --no-wsl        Пропустить настройку WSL"
+    echo "  --help          Показать эту справку"
     echo ""
     exit 0
 }
@@ -24,12 +25,13 @@ while [[ $# -gt 0 ]]; do
             SKIP_WSL=true
             shift
             ;;
-        --help)
+        --help|-h)
             show_help
+            exit 0
             ;;
         *)
             echo "Неизвестный параметр: $1"
-            echo "Использование: $0 [--no-wsl]"
+            show_help
             exit 1
             ;;
     esac
@@ -117,6 +119,13 @@ log "Начало полного развертывания кластера..."
 if [ "$SKIP_WSL" = false ]; then
     log "Настройка WSL окружения..."
     source "${SCRIPTS_SETUP_WSL_PATH}"
+    
+    # Добавляем настройку GPU
+    log "Настройка GPU в WSL..."
+    if ! source "${SCRIPTS_SETUP_WSL_GPU_PATH}"; then
+        log "Предупреждение: Ошибка при настройке GPU в WSL"
+        # Продолжаем выполнение, так как GPU может быть необязательным
+    fi
 else
     log "Пропуск настройки WSL (--no-wsl)"
 fi

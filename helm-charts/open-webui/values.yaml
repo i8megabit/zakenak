@@ -6,8 +6,9 @@ release:
 # Основные настройки приложения
 image:
   repository: ghcr.io/open-webui/open-webui
-  tag: latest
-  pullPolicy: IfNotPresent
+  tag: "v0.1.12"  # Changed from v1.0.0 to v0.1.12
+  pullPolicy: Always
+  pullSecrets: []    # Add pull secrets if needed
 
 # Настройки развертывания
 deployment:
@@ -48,12 +49,18 @@ env:
   - name: OLLAMA_API_BASE
     value: "http://ollama.prod.svc.cluster.local:11434/api"
 
+# GPU Configuration
+gpu:
+  enabled: false  # Changed from true to false
+  count: 1
+
+
 
 # Настройки сервиса
 service:
   type: ClusterIP
-  port: 8080
-  targetPort: 8080
+  port: 3000
+  targetPort: 3000
   annotations: {}
   labels: {}
 
@@ -62,22 +69,25 @@ ingress:
   enabled: true
   className: nginx
   annotations:
-    cert-manager.io/cluster-issuer: local-ca-issuer
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "4"
   hosts:
     - host: webui.prod.local
       paths:
         - path: /
           pathType: Prefix
-  tls:
-    - secretName: open-webui-tls
-      hosts:
-        - webui.prod.local
+  tls: []
 
+# TLS Configuration
+tls:
+  enabled: false  # Set to true to enable TLS
+  certificate: "" # Base64 encoded certificate (PEM format)
+  key: ""         # Base64 encoded private key (PEM format)
 
 persistence:
   enabled: true

@@ -8,24 +8,28 @@ data:
     .:53 {
         errors
         health {
-           lameduck 5s
+            lameduck 5s
         }
         ready
         kubernetes cluster.local in-addr.arpa ip6.arpa {
-           pods insecure
-           fallthrough in-addr.arpa ip6.arpa
-           ttl 30
+            pods insecure
+            fallthrough in-addr.arpa ip6.arpa
+            ttl 30
         }
         hosts {
            127.0.0.1 dashboard.prod.local
-           127.0.0.1 webui.prod.local
+           127.0.0.1 dashboard.prod.local
            fallthrough
         }
+        rewrite name dashboard.prod.local dashboard.prod.local.cluster.local
         prometheus :9153
         forward . /etc/resolv.conf {
            max_concurrent 1000
         }
-        cache 30
+        cache {
+           success 10800
+           denial 3600
+        }
         loop
         reload
         loadbalance

@@ -12,5 +12,6 @@ spec:
       targetPort: {{ .Values.service.targetPort }}
       protocol: TCP
       name: http
+      nodePort: 30434
   selector:
     app: ollama

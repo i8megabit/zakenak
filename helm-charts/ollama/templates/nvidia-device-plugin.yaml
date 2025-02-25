@@ -1,3 +1,4 @@
+{{- if .Values.devicePlugin.enabled }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -7,10 +8,6 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/name: nvidia-device-plugin
-    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-  annotations:
-    meta.helm.sh/release-name: {{ .Release.Name }}
-    meta.helm.sh/release-namespace: {{ .Values.release.namespace }}
 spec:
   selector:
     matchLabels:
@@ -19,8 +16,6 @@ spec:
     metadata:
       labels:
         name: nvidia-device-plugin-ds
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       tolerations:
       - key: nvidia.com/gpu
@@ -29,37 +24,38 @@ spec:
       priorityClassName: system-node-critical
       containers:
       - name: nvidia-device-plugin-ctr
-        image: nvcr.io/nvidia/k8s-device-plugin:v0.14.1
-        args: ["--fail-on-init-error=false", "--device-plugin-version=v1beta1"]
+        image: "{{ .Values.devicePlugin.image.repository }}:{{ .Values.devicePlugin.image.tag }}"
+        imagePullPolicy: {{ .Values.devicePlugin.image.pullPolicy }}
+        args:
+        - "--mig-strategy={{ .Values.devicePlugin.args.migStrategy }}"
+        - "--fail-on-init-error={{ .Values.devicePlugin.args.failOnInitError }}"
+        - "--device-id-strategy={{ .Values.devicePlugin.args.deviceIdStrategy }}"
+        - "--pass-device-specs={{ .Values.devicePlugin.args.passDeviceSpecs }}"
         env:
-          - name: NVIDIA_VISIBLE_DEVICES
-            value: all
-          - name: NVIDIA_DRIVER_CAPABILITIES
-            value: "compute,utility,video"
-          - name: NVIDIA_REQUIRE_CUDA
-            value: "cuda>=12.8"
-          - name: PATH
-            value: "/usr/lib/wsl/lib:/usr/local/nvidia/bin:/usr/local/cuda/bin:$(PATH)"
-          - name: LD_LIBRARY_PATH
-            value: "/usr/lib/wsl/lib:/usr/local/nvidia/lib64:/usr/local/cuda/lib64:$(LD_LIBRARY_PATH)"
+        {{- with .Values.devicePlugin.env }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop: ["ALL"]
+          privileged: true
         volumeMounts:
           - name: device-plugin
             mountPath: /var/lib/kubelet/device-plugins
-          - name: nvidia-wsl
-            mountPath: /usr/lib/wsl/lib
-          - name: nvidia-capabilities
-            mountPath: /usr/local/nvidia/capabilities
+          - name: dev
+            mountPath: /dev
+          - name: nvidia-drv
+            mountPath: /usr/local/nvidia
+            readOnly: true
       volumes:
         - name: device-plugin
           hostPath:
             path: /var/lib/kubelet/device-plugins
-        - name: nvidia-wsl
+        - name: dev
+          hostPath:
+            path: /dev
+        - name: nvidia-drv
           hostPath:
             path: /usr/lib/wsl/lib
-        - name: nvidia-capabilities
-          hostPath:
-            path: /usr/lib/wsl/lib/nvidia/capabilities
+{{- end }}
+
+
+

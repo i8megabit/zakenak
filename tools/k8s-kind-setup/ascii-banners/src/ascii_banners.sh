@@ -18,7 +18,12 @@ show_banner_usage() {
 	echo "  ingress    - Show Ingress banner"
 	echo "  dns        - Show DNS banner"
 	echo "  cert       - Show Cert Manager banner"
+	echo "  local-ca   - Show Local CA banner"
 	echo "  dashboard  - Show Dashboard banner"
+	echo "  nginx      - Show NGINX Ingress banner"
+	echo "  coredns    - Show CoreDNS banner"
+	echo "  prometheus - Show Prometheus banner"
+	echo "  grafana    - Show Grafana banner"
 	echo "  k8s        - Show Kubernetes banner"
 	echo "  deploy     - Show Deploy banner"
 	echo "  charts     - Show Charts banner"
@@ -46,8 +51,23 @@ main() {
 		"cert")
 			cert_manager_banner
 			;;
+		"local-ca")
+			local_ca_banner
+			;;
 		"dashboard")
 			dashboard_banner
+			;;
+		"nginx")
+			nginx_ingress_banner
+			;;
+		"coredns")
+			coredns_banner
+			;;
+		"prometheus")
+			prometheus_banner
+			;;
+		"grafana")
+			grafana_banner
 			;;
 		"k8s")
 			k8s_banner
@@ -130,6 +150,67 @@ ingress_banner() {
   ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
 EOF
 	echo -e "${NC}"
+	echo "Route Your Traffic with Style"
+}
+
+# Nginx Ingress Banner
+nginx_ingress_banner() {
+	echo -e "${BLUE}"
+	cat << "EOF"
+  ███╗   ██╗ ██████╗ ██╗███╗   ██╗██╗  ██╗
+  ████╗  ██║██╔════╝ ██║████╗  ██║╚██╗██╔╝
+  ██╔██╗ ██║██║  ███╗██║██╔██╗ ██║ ╚███╔╝ 
+  ██║╚██╗██║██║   ██║██║██║╚██╗██║ ██╔██╗ 
+  ██║ ╚████║╚██████╔╝██║██║ ╚████║██╔╝ ██╗
+  ╚═╝  ╚═══╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝
+EOF
+	echo -e "${NC}"
+	echo "Your Gateway to Kubernetes Services"
+}
+
+# CoreDNS Banner
+coredns_banner() {
+	echo -e "${BLUE}"
+	cat << "EOF"
+   ██████╗ ██████╗ ██████╗ ███████╗██████╗ ███╗   ██╗███████╗
+  ██╔════╝██╔═══██╗██╔══██╗██╔════╝██╔══██╗████╗  ██║██╔════╝
+  ██║     ██║   ██║██████╔╝█████╗  ██║  ██║██╔██╗ ██║███████╗
+  ██║     ██║   ██║██╔══██╗██╔══╝  ██║  ██║██║╚██╗██║╚════██║
+  ╚██████╗╚██████╔╝██║  ██║███████╗██████╔╝██║ ╚████║███████║
+   ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═════╝ ╚═╝  ╚═══╝╚══════╝
+EOF
+	echo -e "${NC}"
+	echo "DNS for Your Kubernetes Cluster"
+}
+
+# Prometheus Banner
+prometheus_banner() {
+	echo -e "${BLUE}"
+	cat << "EOF"
+  ██████╗ ██████╗  ██████╗ ███╗   ███╗███████╗████████╗██╗  ██╗███████╗██╗   ██╗███████╗
+  ██╔══██╗██╔══██╗██╔═══██╗████╗ ████║██╔════╝╚══██╔══╝██║  ██║██╔════╝██║   ██║██╔════╝
+  ██████╔╝██████╔╝██║   ██║██╔████╔██║█████╗     ██║   ███████║█████╗  ██║   ██║███████╗
+  ██╔═══╝ ██╔══██╗██║   ██║██║╚██╔╝██║██╔══╝     ██║   ██╔══██║██╔══╝  ██║   ██║╚════██║
+  ██║     ██║  ██║╚██████╔╝██║ ╚═╝ ██║███████╗   ██║   ██║  ██║███████╗╚██████╔╝███████║
+  ╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚══════╝
+EOF
+	echo -e "${NC}"
+	echo "Time Series Monitoring for Your Infrastructure"
+}
+
+# Grafana Banner
+grafana_banner() {
+	echo -e "${BLUE}"
+	cat << "EOF"
+   ██████╗ ██████╗  █████╗ ███████╗ █████╗ ███╗   ██╗ █████╗ 
+  ██╔════╝ ██╔══██╗██╔══██╗██╔════╝██╔══██╗████╗  ██║██╔══██╗
+  ██║  ███╗██████╔╝███████║█████╗  ███████║██╔██╗ ██║███████║
+  ██║   ██║██╔══██╗██╔══██║██╔══╝  ██╔══██║██║╚██╗██║██╔══██║
+  ╚██████╔╝██║  ██║██║  ██║██║     ██║  ██║██║ ╚████║██║  ██║
+   ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝
+EOF
+	echo -e "${NC}"
+	echo "Visualize Your Metrics"
 }
 
 # Запуск основной логики только если не установлен флаг пропуска
@@ -155,14 +236,30 @@ EOF
 cert_manager_banner() {
 	echo -e "${BLUE}"
 	cat << "EOF"
-   ██████╗███████╗██████╗ ████████╗███████╗
-  ██╔════╝██╔════╝██╔══██╗╚══██╔══╝██╔════╝
-  ██║     █████╗  ██████╔╝   ██║   ███████╗
-  ██║     ██╔══╝  ██╔══██╗   ██║   ╚════██║
-  ╚██████╗███████╗██║  ██║   ██║   ███████║
-   ╚═════╝╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
+   ██████╗███████╗██████╗ ████████╗    ███╗   ███╗ ██████╗ ██████╗ 
+  ██╔════╝██╔════╝██╔══██╗╚══██╔══╝    ████╗ ████║██╔════╝ ██╔══██╗
+  ██║     █████╗  ██████╔╝   ██║       ██╔████╔██║██║  ███╗██████╔╝
+  ██║     ██╔══╝  ██╔══██╗   ██║       ██║╚██╔╝██║██║   ██║██╔══██╗
+  ╚██████╗███████╗██║  ██║   ██║       ██║ ╚═╝ ██║╚██████╔╝██║  ██║
+   ╚═════╝╚══════╝╚═╝  ╚═╝   ╚═╝       ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝
 EOF
 	echo -e "${NC}"
+	echo "Secure your cluster with cert-manager"
+}
+
+# Local CA Banner
+local_ca_banner() {
+	echo -e "${BLUE}"
+	cat << "EOF"
+  ██╗      ██████╗  ██████╗ █████╗ ██╗          ██████╗█████╗ 
+  ██║     ██╔═══██╗██╔════╝██╔══██╗██║         ██╔════╝██╔══██╗
+  ██║     ██║   ██║██║     ███████║██║         ██║     ███████║
+  ██║     ██║   ██║██║     ██╔══██║██║         ██║     ██╔══██║
+  ███████╗╚██████╔╝╚██████╗██║  ██║███████╗    ╚██████╗██║  ██║
+  ╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝╚══════╝     ╚═════╝╚═╝  ╚═╝
+EOF
+	echo -e "${NC}"
+	echo "Your local Certificate Authority"
 }
 
 # Dashboard Banner

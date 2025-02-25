@@ -1,6 +1,8 @@
 # Порядок установки чартов
 charts:
-- sidecar-injector
 - cert-manager
+- local-ca
+- nvidia-device-plugin
+- sidecar-injector
 - ollama
 - open-webui

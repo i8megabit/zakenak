@@ -5,13 +5,16 @@ metadata:
   namespace: {{ .Values.release.namespace }}
   labels:
     app: open-webui
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.service.port }}"
 spec:
-  type: ClusterIP
+  type: {{ .Values.service.type }}
   ports:
-  - port: {{ .Values.service.port }}
-    targetPort: {{ .Values.service.targetPort }}
-    protocol: TCP
-    name: http
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
   selector:
     app: open-webui
 

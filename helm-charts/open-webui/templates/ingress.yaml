@@ -10,15 +10,13 @@ metadata:
   {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}
-  {{- if .Values.ingress.tls }}
+  {{- if and .Values.tls.enabled .Values.tls.certificate .Values.tls.key }}
   tls:
-    {{- range .Values.ingress.tls }}
-    - hosts:
-        {{- range .hosts }}
-        - {{ . | quote }}
-        {{- end }}
-      secretName: {{ .secretName }}
+  - hosts:
+    {{- range .Values.ingress.hosts }}
+    - {{ .host | quote }}
     {{- end }}
+    secretName: {{ .Release.Name }}-tls
   {{- end }}
   rules:
     {{- range .Values.ingress.hosts }}
@@ -36,3 +34,4 @@ spec:
           {{- end }}
     {{- end }}
 {{- end }}
+

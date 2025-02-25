@@ -15,13 +15,33 @@ spec:
       labels:
         app: open-webui
     spec:
-      containers:
+        containers:
+
       - name: open-webui
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
-        - containerPort: {{ .Values.service.targetPort }}
+        - name: http
+          containerPort: {{ .Values.service.targetPort }}
           protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
         envFrom:
         - secretRef:
             name: {{ .Release.Name }}-secrets
@@ -31,11 +51,12 @@ spec:
         {{- end }}
         resources:
           limits:
-            cpu: {{ .Values.deployment.resources.limits.cpu }}
-            memory: {{ .Values.deployment.resources.limits.memory }}
+            cpu: {{ .Values.deployment.resources.limits.cpu | quote }}
+            memory: {{ .Values.deployment.resources.limits.memory | quote }}
+
           requests:
-            cpu: {{ .Values.deployment.resources.requests.cpu }}
-            memory: {{ .Values.deployment.resources.requests.memory }}
+            cpu: {{ .Values.deployment.resources.requests.cpu | quote }}
+            memory: {{ .Values.deployment.resources.requests.memory | quote }}
         {{- if .Values.persistence.enabled }}
         volumeMounts:
         - name: data
@@ -47,4 +68,3 @@ spec:
         persistentVolumeClaim:
           claimName: {{ .Release.Name }}-pvc
       {{- end }}
-

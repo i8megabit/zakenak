@@ -47,15 +47,12 @@ deployment:
     - name: OLLAMA_KV_CACHE_STRATEGY
       value: "dynamic"
 
-
-
-
-
 # Настройки сервиса
 service:
-  type: ClusterIP
+  type: NodePort
   port: 11434
   targetPort: 11434
+  nodePort: 30434
 
 # Настройки Ingress
 ingress:
@@ -98,3 +95,21 @@ networkPolicy:
   enabled: true
   allowedNamespaces:
     - prod
+
+# NVIDIA Device Plugin configuration
+devicePlugin:
+  enabled: true  # Make sure this is set to true
+  image:
+    repository: nvcr.io/nvidia/k8s-device-plugin
+    tag: v0.14.1
+    pullPolicy: IfNotPresent
+  args:
+    migStrategy: "none"
+    failOnInitError: "false"
+    deviceIdStrategy: "uuid"
+    passDeviceSpecs: "true"
+  env:
+    - name: NVIDIA_VISIBLE_DEVICES
+      value: "all"
+    - name: NVIDIA_DRIVER_CAPABILITIES
+      value: "utility,compute"
