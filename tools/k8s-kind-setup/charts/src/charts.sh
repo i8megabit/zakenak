@@ -387,21 +387,6 @@ install_chart() {
 				ingress_banner
 			fi
 			;;
-		"ollama")
-			if declare -F ollama_banner >/dev/null; then
-				ollama_banner
-			fi
-			;;
-		"open-webui")
-			if declare -F open_webui_banner >/dev/null; then
-				open_webui_banner
-			fi
-			;;
-		"sidecar-injector")
-			if declare -F sidecar_injector_banner >/dev/null; then
-				sidecar_injector_banner
-			fi
-			;;
 	esac
 
 	# Удаляем существующий релиз только при install
@@ -1115,21 +1100,6 @@ install_chart() {
 		"coredns")
 			if declare -F coredns_banner >/dev/null; then
 				coredns_banner
-			fi
-			;;
-		"ollama")
-			if declare -F ollama_banner >/dev/null; then
-				ollama_banner
-			fi
-			;;
-		"open-webui")
-			if declare -F open_webui_banner >/dev/null; then
-				open_webui_banner
-			fi
-			;;
-		"sidecar-injector")
-			if declare -F sidecar_injector_banner >/dev/null; then
-				sidecar_injector_banner
 			fi
 			;;
 	esac
