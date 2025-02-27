@@ -1,0 +1,14 @@
+# Default values for coredns chart
+nameOverride: ""
+fullnameOverride: ""
+
+# IP addresses for services
+ollama:
+  ip: "127.0.0.1"
+webui:
+  ip: "127.0.0.1"
+ingress:
+  ip: "127.0.0.1"
+
+# Restart CoreDNS deployment after applying configuration
+restartDeployment: true

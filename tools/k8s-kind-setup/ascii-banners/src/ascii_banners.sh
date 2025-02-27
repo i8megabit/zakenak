@@ -12,7 +12,7 @@
 
 # Функция для вывода справки по использованию
 show_banner_usage() {
-	echo "Usage: $0 [banner_type]"
+	echo "Usage: $0 [banner_type] [message]"
 	echo "Available banner types:"
 	echo "  devops     - Show DevOps banner"
 	echo "  ingress    - Show Ingress banner"
@@ -27,8 +27,12 @@ show_banner_usage() {
 	echo "  k8s        - Show Kubernetes banner"
 	echo "  deploy     - Show Deploy banner"
 	echo "  charts     - Show Charts banner"
-	echo "  error      - Show Error banner"
-	echo "  success    - Show Success banner"
+	echo "  ollama     - Show Ollama banner"
+	echo "  open-webui - Show Open WebUI banner"
+	echo "  sidecar-injector - Show Sidecar Injector banner"
+	echo "  error      - Show Error message with optional custom text"
+	echo "  success    - Show Success message with optional custom text"
+	echo "  warning    - Show Warning message with optional custom text"
 }
 
 # Основная логика обработки аргументов
@@ -79,10 +83,13 @@ main() {
 			charts_banner
 			;;
 		"error")
-			error_banner
+			error_banner "$2"
 			;;
 		"success")
-			success_banner
+			success_banner "$2"
+			;;
+		"warning")
+			warning_banner "$2"
 			;;
 		*)
 			echo -e "${RED}Error: Unknown banner type '$1'${NC}"
@@ -133,8 +140,8 @@ check_color_support() {
 # Инициализация
 check_color_support
 
-# Запуск основной логики только если не установлен флаг пропуска
-if [ -z "$SKIP_BANNER_MAIN" ]; then
+# Запуск основной логики только если не установлен флаг пропуска и скрипт запущен напрямую
+if [ -z "$SKIP_BANNER_MAIN" ] && [ "${BASH_SOURCE[0]}" = "$0" ]; then
 	main "$@"
 fi
 
@@ -213,8 +220,8 @@ EOF
 	echo "Visualize Your Metrics"
 }
 
-# Запуск основной логики только если не установлен флаг пропуска
-if [ -z "$SKIP_BANNER_MAIN" ]; then
+# Запуск основной логики только если не установлен флаг пропуска и скрипт запущен напрямую
+if [ -z "$SKIP_BANNER_MAIN" ] && [ "${BASH_SOURCE[0]}" = "$0" ]; then
 	main "$@"
 fi
 
@@ -322,30 +329,26 @@ EOF
 }
 
 
-# Error Banner
+# Error Banner - replaced with colored message
 error_banner() {
-	echo -e "${RED}"
-	cat << "EOF"
-  ███████╗██████╗ ██████╗  ██████╗ ██████╗ 
-  ██╔════╝██╔══██╗██╔══██╗██╔═══██╗██╔══██╗
-  █████╗  ██████╔╝██████╔╝██║   ██║██████╔╝
-  ██╔══╝  ██╔══██╗██╔══██╗██║   ██║██╔══██╗
-  ███████╗██║  ██║██║  ██║╚██████╔╝██║  ██║
-  ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝
-EOF
-	echo -e "${NC}"
+    local message="${1:-"Произошла ошибка"}"
+    echo -e "\n${RED}┌──────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${RED}│ ОШИБКА: ${message} ${NC}"
+    echo -e "${RED}└──────────────────────────────────────────────────────────────┘${NC}\n"
 }
 
-# Success Banner
+# Success Banner - replaced with colored message
 success_banner() {
-	echo -e "${GREEN}"
-	cat << "EOF"
-  ███████╗██╗   ██╗ ██████╗ ██████╗███████╗███████╗███████╗
-  ██╔════╝██║   ██║██╔════╝██╔════╝██╔════╝██╔════╝██╔════╝
-  ███████╗██║   ██║██║     ██║     █████╗  ███████╗███████╗
-  ╚════██║██║   ██║██║     ██║     ██╔══╝  ╚════██║╚════██║
-  ███████║╚██████╔╝╚██████╗╚██████╗███████╗███████║███████║
-  ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝╚══════╝╚══════╝╚══════╝
-EOF
-	echo -e "${NC}"
+    local message="${1:-"Операция выполнена успешно"}"
+    echo -e "\n${GREEN}┌──────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${GREEN}│ УСПЕХ: ${message} ${NC}"
+    echo -e "${GREEN}└──────────────────────────────────────────────────────────────┘${NC}\n"
+}
+
+# Warning Banner - new function for warnings
+warning_banner() {
+    local message="${1:-"Предупреждение"}"
+    echo -e "\n${YELLOW}┌──────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${YELLOW}│ ПРЕДУПРЕЖДЕНИЕ: ${message} ${NC}"
+    echo -e "${YELLOW}└──────────────────────────────────────────────────────────────┘${NC}\n"
 }

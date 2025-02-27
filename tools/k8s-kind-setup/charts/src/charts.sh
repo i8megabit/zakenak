@@ -25,11 +25,23 @@ source "${K8S_KIND_SETUP_DIR}/env/src/env.sh"
 
 # Загрузка функций из setup-ingress.sh
 if [ -f "${K8S_KIND_SETUP_DIR}/setup-ingress/src/setup-ingress.sh" ]; then
-    # Создаем временную копию скрипта без вызова основной функции
-    grep -v "helm upgrade --install ingress-nginx" "${K8S_KIND_SETUP_DIR}/setup-ingress/src/setup-ingress.sh" > /tmp/setup-ingress-functions.sh
+    # Create a more selective temporary copy of the script
+    # Only include the function definition and export
+    awk '/^toggle_ingress_webhook\(\)/,/^export -f toggle_ingress_webhook/ {print}' "${K8S_KIND_SETUP_DIR}/setup-ingress/src/setup-ingress.sh" > /tmp/setup-ingress-functions.sh
     
-    # Fix the path to env.sh in the temporary file
-    sed -i 's|//tools/k8s-kind-setup/env/src/env.sh|'"${K8S_KIND_SETUP_DIR}/env/src/env.sh"'|g' /tmp/setup-ingress-functions.sh
+    # Add necessary environment variables at the beginning
+    sed -i '1i#!/usr/bin/bash\n' /tmp/setup-ingress-functions.sh
+    sed -i '2i# Environment variables\n' /tmp/setup-ingress-functions.sh
+    sed -i '3iexport NAMESPACE_INGRESS="ingress-nginx"\n' /tmp/setup-ingress-functions.sh
+    sed -i '4i# Color definitions\n' /tmp/setup-ingress-functions.sh
+    sed -i '5iexport RED="\\033[0;31m"\n' /tmp/setup-ingress-functions.sh
+    sed -i '6iexport GREEN="\\033[0;32m"\n' /tmp/setup-ingress-functions.sh
+    sed -i '7iexport YELLOW="\\033[1;33m"\n' /tmp/setup-ingress-functions.sh
+    sed -i '8iexport CYAN="\\033[0;36m"\n' /tmp/setup-ingress-functions.sh
+    sed -i '9iexport NC="\\033[0m"\n' /tmp/setup-ingress-functions.sh
+    
+    # Ensure the temporary file is executable
+    chmod +x /tmp/setup-ingress-functions.sh
     
     # Source the temporary file
     source /tmp/setup-ingress-functions.sh
@@ -179,6 +191,19 @@ check_chart_endpoints() {
 	local ready=false
 
 	echo -e "${CYAN}Проверка эндпоинтов для чарта ${chart} в namespace ${namespace}...${NC}"
+	
+	# Для nvidia-device-plugin не проверяем эндпоинты, так как это DaemonSet
+	if [ "$chart" = "nvidia-device-plugin" ]; then
+		echo -e "${CYAN}Проверка статуса DaemonSet для ${chart}...${NC}"
+		if kubectl rollout status daemonset/nvidia-device-plugin-daemonset -n kube-system --timeout=60s &>/dev/null; then
+			echo -e "${GREEN}DaemonSet ${chart} готов${NC}"
+			return 0
+		else
+			echo -e "${YELLOW}DaemonSet ${chart} запущен, но может быть не полностью готов${NC}"
+			echo -e "${CYAN}Это нормально для GPU-окружений в процессе инициализации${NC}"
+			return 0
+		fi
+	fi
 
 	# Получаем список всех сервисов чарта
 	local services=($(kubectl get services -n "${namespace}" -l "app.kubernetes.io/instance=${chart}" -o name 2>/dev/null))
@@ -302,13 +327,19 @@ install_chart() {
 			chart="coredns"
 			restart_coredns
 			;;
+		"ingress-nginx")
+			chart="ingress-nginx"
+			;;
+		"nvidia-device-plugin")
+			chart="nvidia-device-plugin"
+			;;
 		*)
 			;;
 	esac
 	
 	if [ ! -d "${CHARTS_DIR}/${chart}" ]; then
 		if declare -F error_banner >/dev/null; then
-			error_banner
+			error_banner "Чарт ${chart} не найден"
 		fi
 		echo -e "${RED}Ошибка: Чарт ${chart} не найден${NC}"
 		exit 1
@@ -354,6 +385,21 @@ install_chart() {
 		"ingress")
 			if declare -F ingress_banner >/dev/null; then
 				ingress_banner
+			fi
+			;;
+		"ollama")
+			if declare -F ollama_banner >/dev/null; then
+				ollama_banner
+			fi
+			;;
+		"open-webui")
+			if declare -F open_webui_banner >/dev/null; then
+				open_webui_banner
+			fi
+			;;
+		"sidecar-injector")
+			if declare -F sidecar_injector_banner >/dev/null; then
+				sidecar_injector_banner
 			fi
 			;;
 	esac
@@ -582,7 +628,7 @@ install_chart() {
 
 		echo -e "\n"
 		if declare -F success_banner >/dev/null; then
-			success_banner
+			success_banner "Операция успешно выполнена"
 		else
 			echo -e "${GREEN}Успешно!${NC}"
 		fi
@@ -590,7 +636,7 @@ install_chart() {
 	else
 		echo -e "\n"
 		if declare -F error_banner >/dev/null; then
-			error_banner
+			error_banner "Произошла ошибка при выполнении операции"
 		else
 			echo -e "${RED}Ошибка!${NC}"
 		fi
@@ -690,6 +736,26 @@ reinstall_ingress() {
 		kubectl get events -n ingress-nginx --sort-by=.metadata.creationTimestamp
 		return 1
 	fi
+}
+
+# Функция переустановки nvidia-device-plugin-daemonset
+reinstall_nvidia_device_plugin() {
+	echo -e "${CYAN}Переустановка NVIDIA Device Plugin...${NC}"
+	
+	# Удаление существующего DaemonSet
+	kubectl delete daemonset nvidia-device-plugin-daemonset -n kube-system --ignore-not-found=true
+	
+	# Ожидание удаления
+	echo -e "${CYAN}Ожидание удаления старого DaemonSet...${NC}"
+	while kubectl get daemonset nvidia-device-plugin-daemonset -n kube-system &>/dev/null; do
+		sleep 2
+	done
+	
+	# Установка нового DaemonSet
+	echo -e "${CYAN}Установка нового DaemonSet...${NC}"
+	install_chart "install" "nvidia-device-plugin" "kube-system"
+	
+	echo -e "${GREEN}NVIDIA Device Plugin успешно переустановлен${NC}"
 }
 
 # Функция перезапуска подов чарта
@@ -804,7 +870,7 @@ get_dashboard_token() {
 	# Проверяем установлен ли dashboard
 	if ! helm status kubernetes-dashboard -n $namespace >/dev/null 2>&1; then
 		if declare -F error_banner >/dev/null; then
-			error_banner
+			error_banner "kubernetes-dashboard не установлен"
 		fi
 		echo -e "${RED}Ошибка: kubernetes-dashboard не установлен${NC}"
 		echo -e "${YELLOW}Для установки выполните:${NC}"
@@ -815,7 +881,7 @@ get_dashboard_token() {
 	# Проверяем существование ServiceAccount
 	if ! kubectl get serviceaccount $account -n $namespace >/dev/null 2>&1; then
 		if declare -F error_banner >/dev/null; then
-			error_banner
+			error_banner "ServiceAccount ${account} не найден в namespace ${namespace}"
 		fi
 		echo -e "${RED}Ошибка: ServiceAccount $account не найден в namespace $namespace${NC}"
 		echo -e "${YELLOW}Попробуйте переустановить kubernetes-dashboard:${NC}"
@@ -835,7 +901,7 @@ get_dashboard_token() {
 	
 	if [ -n "$token" ]; then
 		if declare -F success_banner >/dev/null; then
-			success_banner
+			success_banner "Токен для доступа к dashboard получен"
 		fi
 		echo -e "${GREEN}Токен для доступа к dashboard:${NC}"
 		echo -e "${YELLOW}$token${NC}"
@@ -843,7 +909,7 @@ get_dashboard_token() {
 		return 0
 	else
 		if declare -F error_banner >/dev/null; then
-			error_banner
+			error_banner "Не удалось получить токен для dashboard"
 		fi
 		echo -e "${RED}Не удалось получить токен${NC}"
 		return 1
@@ -897,6 +963,7 @@ usage() {
 	echo -e "${GREEN}  restart-dns    ${YELLOW}-${NC} Перезапустить CoreDNS"
 	echo -e "${GREEN}  dashboard-token ${YELLOW}-${NC} Получить токен для доступа к dashboard"
 	echo -e "${GREEN}  reinstall-ingress ${YELLOW}-${NC} Переустановить ingress-контроллер"
+	echo -e "${GREEN}  reinstall-nvidia-device-plugin ${YELLOW}-${NC} Переустановить NVIDIA Device Plugin"
 	echo -e "${GREEN}  restart        ${YELLOW}-${NC} Перезапустить поды чарта"
 	echo ""
 	generate_charts_menu "$(get_charts)"
@@ -911,8 +978,14 @@ usage() {
 
 # Загрузка баннеров с предотвращением автозапуска
 if [ -f "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh" ]; then
+	# Ensure SKIP_BANNER_MAIN is set to prevent ascii_banners.sh from processing arguments
 	export SKIP_BANNER_MAIN=1
+	
+	# Source the ascii_banners.sh script without passing arguments
 	source "${K8S_KIND_SETUP_DIR}/ascii-banners/src/ascii_banners.sh"
+	
+	# Unset SKIP_BANNER_MAIN to allow banner functions to work normally
+	unset SKIP_BANNER_MAIN
 fi
 
 # Показываем баннер charts только если нет аргументов
@@ -1044,6 +1117,21 @@ install_chart() {
 				coredns_banner
 			fi
 			;;
+		"ollama")
+			if declare -F ollama_banner >/dev/null; then
+				ollama_banner
+			fi
+			;;
+		"open-webui")
+			if declare -F open_webui_banner >/dev/null; then
+				open_webui_banner
+			fi
+			;;
+		"sidecar-injector")
+			if declare -F sidecar_injector_banner >/dev/null; then
+				sidecar_injector_banner
+			fi
+			;;
 	esac
 
 	if [ ! -d "${CHARTS_DIR}/${chart}" ]; then
@@ -1119,7 +1207,19 @@ install_chart() {
 					local time_diff=$((current_time - cert_time))
 					
 					if [ $time_diff -lt 10 ]; then
-						echo -e "${GREEN}Сертификат ${cert_name} был успешно удален и автоматически пересоздан cert-manager'ом${NC}"
+						echo -e "${CYAN}Сертификат ${cert_name} был автоматически пересоздан cert-manager'ом, добавляем аннотации Helm...${NC}"
+						# Добавляем аннотации Helm для интеграции с релизом
+						kubectl annotate certificate $cert_name -n ${namespace} \
+							meta.helm.sh/release-name=local-ca \
+							meta.helm.sh/release-namespace=${namespace} \
+							--overwrite || true
+						
+						# Добавляем метку для управления через Helm
+						kubectl label certificate $cert_name -n ${namespace} \
+							app.kubernetes.io/managed-by=Helm \
+							--overwrite || true
+							
+						echo -e "${GREEN}Сертификат ${cert_name} был успешно удален, пересоздан и аннотирован для Helm${NC}"
 						return 0
 					fi
 				else
@@ -1173,7 +1273,19 @@ install_chart() {
 			local time_diff=$((current_time - cert_time))
 			
 			if [ $time_diff -lt 30 ]; then
-				echo -e "${GREEN}Сертификат ollama-tls был успешно пересоздан cert-manager'ом${NC}"
+				echo -e "${CYAN}Сертификат ollama-tls был автоматически пересоздан cert-manager'ом, добавляем аннотации Helm...${NC}"
+				# Добавляем аннотации Helm для интеграции с релизом
+				kubectl annotate certificate ollama-tls -n ${namespace} \
+					meta.helm.sh/release-name=local-ca \
+					meta.helm.sh/release-namespace=${namespace} \
+					--overwrite || true
+				
+				# Добавляем метку для управления через Helm
+				kubectl label certificate ollama-tls -n ${namespace} \
+					app.kubernetes.io/managed-by=Helm \
+					--overwrite || true
+					
+				echo -e "${GREEN}Сертификат ollama-tls был успешно пересоздан и аннотирован для Helm${NC}"
 			else
 				echo -e "${RED}Ошибка: Сертификат ollama-tls все еще существует${NC}"
 				exit 1
@@ -1379,9 +1491,17 @@ install_chart() {
 		# Включаем валидационный вебхук ingress-nginx после установки dashboard
 		if type toggle_ingress_webhook &>/dev/null; then
 			echo -e "${CYAN}Включение валидационного вебхука ingress-nginx после установки dashboard...${NC}"
-			toggle_ingress_webhook "enable" || {
-				echo -e "${YELLOW}Предупреждение: Не удалось включить вебхук${NC}"
-			}
+			
+			# Check if ingress-nginx is installed
+			if kubectl get deployment ingress-nginx-controller -n ingress-nginx &>/dev/null; then
+				toggle_ingress_webhook "enable" || {
+					echo -e "${YELLOW}Предупреждение: Не удалось включить вебхук${NC}"
+				}
+			else
+				echo -e "${YELLOW}Предупреждение: ingress-nginx не установлен, пропускаем включение вебхука${NC}"
+				echo -e "${YELLOW}Для полной функциональности установите ingress-nginx:${NC}"
+				echo -e "${CYAN}$0 install ingress-nginx${NC}"
+			fi
 		else
 			echo -e "${YELLOW}Функция toggle_ingress_webhook не найдена, пропускаем включение вебхука${NC}"
 		fi
@@ -1424,7 +1544,7 @@ install_chart() {
 	if [ $? -eq 0 ]; then
 		echo -e "\n"
 		if declare -F success_banner >/dev/null; then
-			success_banner
+			success_banner "${action^} чарта ${chart} успешно завершен"
 		else
 			echo -e "${GREEN}Успешно!${NC}"
 		fi
@@ -1432,7 +1552,7 @@ install_chart() {
 	else
 		echo -e "\n"
 		if declare -F error_banner >/dev/null; then
-			error_banner
+			error_banner "Ошибка при выполнении ${action} чарта ${chart}"
 		else
 			echo -e "${RED}Ошибка!${NC}"
 		fi
@@ -1444,7 +1564,7 @@ install_chart() {
 # Функция проверки корректности команды
 check_action() {
 	local action=$1
-	local valid_actions=("install" "upgrade" "uninstall" "list" "restart-dns" "dashboard-token" "reinstall-ingress" "restart")
+	local valid_actions=("install" "upgrade" "uninstall" "list" "restart-dns" "dashboard-token" "reinstall-ingress" "reinstall-nvidia-device-plugin" "restart")
 	
 	# Проверяем совпадение с известными командами
 	for valid_action in "${valid_actions[@]}"; do
@@ -1457,7 +1577,7 @@ check_action() {
 	for valid_action in "${valid_actions[@]}"; do
 		if [[ "$valid_action" == *"${action}"* ]] || [[ "${action}" == *"${valid_action}"* ]]; then
 			if declare -F error_banner >/dev/null; then
-				error_banner
+				error_banner "Неизвестное действие '${action}'. Возможно, вы имели в виду: ${valid_action}"
 			fi
 			echo -e "${RED}Ошибка: Неизвестное действие '${action}'${NC}"
 			echo -e "${YELLOW}Возможно, вы имели в виду: ${GREEN}${valid_action}${NC}"
@@ -1467,7 +1587,7 @@ check_action() {
 	
 	# Если команда совсем не похожа на известные
 	if declare -F error_banner >/dev/null; then
-		error_banner
+		error_banner "Неизвестное действие '${action}'"
 	fi
 	echo -e "${RED}Ошибка: Неизвестное действие '${action}'${NC}"
 	echo -e "${YELLOW}Доступные действия: install, upgrade, uninstall, list, restart-dns, dashboard-token, reinstall-ingress${NC}"
@@ -1484,7 +1604,7 @@ get_dashboard_token() {
 	# Проверяем установлен ли dashboard
 	if ! helm status kubernetes-dashboard -n $namespace >/dev/null 2>&1; then
 		if declare -F error_banner >/dev/null; then
-			error_banner
+			error_banner "kubernetes-dashboard не установлен"
 		fi
 		echo -e "${RED}Ошибка: kubernetes-dashboard не установлен${NC}"
 		echo -e "${YELLOW}Для установки выполните:${NC}"
@@ -1529,7 +1649,7 @@ EOF
 	
 	if [ -n "$token" ]; then
 		if declare -F success_banner >/dev/null; then
-			success_banner
+			success_banner "Токен для доступа к dashboard получен"
 		fi
 		echo -e "${GREEN}Токен для доступа к dashboard:${NC}"
 		echo -e "${YELLOW}$token${NC}"
@@ -1537,7 +1657,7 @@ EOF
 		return 0
 	else
 		if declare -F error_banner >/dev/null; then
-			error_banner
+			error_banner "Не удалось получить токен для dashboard"
 		fi
 		echo -e "${RED}Не удалось получить токен${NC}"
 		return 1
@@ -1587,7 +1707,7 @@ if [ "$action" != "list" ] && [ "$action" != "restart-dns" ] && \
    [ "$action" != "dashboard-token" ] && [ "$action" != "reinstall-ingress" ] && \
    [ $# -lt 2 ]; then
 	if declare -F error_banner >/dev/null; then
-		error_banner
+		error_banner "Не указан чарт для действия ${action}"
 	fi
 	echo -e "${RED}Ошибка: Не указан чарт для действия ${action}${NC}"
 	usage
@@ -1596,10 +1716,45 @@ fi
 case $action in
 	install|upgrade|uninstall)
 		if [ "$chart" = "all" ]; then
-			charts=($(get_charts))
-			for c in "${charts[@]}"; do
-				install_chart $action $c "$namespace" "$version" "$values_file"
+			# Disable ingress-nginx admission webhook before upgrading all charts
+			if [ "$action" = "upgrade" ] && type toggle_ingress_webhook &>/dev/null; then
+				echo -e "${CYAN}Отключение валидационного вебхука ingress-nginx перед обновлением всех чартов...${NC}"
+				toggle_ingress_webhook "disable" || {
+					echo -e "${YELLOW}Предупреждение: Не удалось отключить вебхук, продолжаем установку...${NC}"
+				}
+			fi
+			
+			# Define the order of installation to handle dependencies
+			ordered_charts=("cert-manager" "ingress-nginx" "kubernetes-dashboard")
+			
+			# Get all available charts
+			all_charts=($(get_charts))
+			
+			# Install charts in the specified order first
+			for c in "${ordered_charts[@]}"; do
+				if [[ " ${all_charts[*]} " =~ " ${c} " ]]; then
+					echo -e "${CYAN}Installing ${c} (ordered installation)...${NC}"
+					install_chart $action $c "$namespace" "$version" "$values_file"
+					# Remove from all_charts to avoid installing twice
+					all_charts=(${all_charts[@]/$c/})
+				fi
 			done
+			
+			# Install remaining charts
+			for c in "${all_charts[@]}"; do
+				if [ -n "$c" ]; then  # Skip empty entries
+					echo -e "${CYAN}Installing ${c}...${NC}"
+					install_chart $action $c "$namespace" "$version" "$values_file"
+				fi
+			done
+			
+			# Re-enable ingress-nginx admission webhook after upgrading all charts
+			if [ "$action" = "upgrade" ] && type toggle_ingress_webhook &>/dev/null; then
+				echo -e "${CYAN}Включение валидационного вебхука ingress-nginx после обновления всех чартов...${NC}"
+				toggle_ingress_webhook "enable" || {
+					echo -e "${YELLOW}Предупреждение: Не удалось включить вебхук...${NC}"
+				}
+			fi
 		else
 			install_chart $action $chart "$namespace" "$version" "$values_file"
 		fi
@@ -1622,6 +1777,9 @@ case $action in
 		;;
 	reinstall-ingress)
 		reinstall_ingress
+		;;
+	reinstall-nvidia-device-plugin)
+		reinstall_nvidia_device_plugin
 		;;
 	restart)
 		restart_chart_pods "$chart" "$namespace"

@@ -56,9 +56,31 @@ fi
 
 # Проверка DNS резолвинга
 echo -e "${CYAN}Проверка DNS резолвинга...${NC}"
-if ! kubectl run -it --rm --restart=Never --image=busybox:1.28 dns-test -- nslookup dashboard.prod.local; then
-    echo -e "${YELLOW}Предупреждение: Проблемы с резолвингом dashboard.prod.local${NC}"
-    echo -e "${YELLOW}Проверьте конфигурацию CoreDNS и IP-адреса в переменных окружения${NC}"
+
+# Определение режима сети WSL2
+NETWORK_MODE=$(detect_wsl_network_mode 2>/dev/null || echo "NAT")
+echo -e "${CYAN}Обнаружен режим сети WSL2: ${NETWORK_MODE}${NC}"
+echo -e "${CYAN}Используемый IP для DNS: ${OLLAMA_IP}${NC}"
+
+# Проверка резолвинга для всех сервисов
+for service in dashboard ollama webui; do
+    echo -e "${CYAN}Проверка резолвинга ${service}.prod.local...${NC}"
+    if ! kubectl run -it --rm --restart=Never --image=busybox:1.28 dns-test-${service} -- nslookup ${service}.prod.local; then
+        echo -e "${YELLOW}Предупреждение: Проблемы с резолвингом ${service}.prod.local${NC}"
+    else
+        echo -e "${GREEN}Резолвинг ${service}.prod.local успешен${NC}"
+    fi
+done
+
+# Проверка доступа к сервисам через curl
+echo -e "${CYAN}Проверка доступа к сервисам...${NC}"
+if kubectl run -it --rm --restart=Never --image=curlimages/curl curl-test -- curl -s -o /dev/null -w "%{http_code}" -m 5 http://${INGRESS_IP}; then
+    echo -e "${GREEN}Доступ к сервисам через IP успешен${NC}"
+else
+    echo -e "${YELLOW}Предупреждение: Проблемы с доступом к сервисам через IP${NC}"
+    echo -e "${YELLOW}Это нормально, если сервисы еще не развернуты${NC}"
 fi
+
+echo -e "${CYAN}Проверка DNS завершена${NC}"
 
 echo -e "${GREEN}CoreDNS успешно настроен!${NC}"

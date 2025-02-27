@@ -52,6 +52,23 @@ if grep -q "microsoft" /proc/version || grep -q "WSL" /proc/version; then
     IS_WSL=true
     echo -e "${CYAN}Обнаружено WSL2 окружение. Применяем специальные настройки...${NC}"
     
+    # Определение режима сети WSL2
+    NETWORK_MODE="NAT"  # По умолчанию NAT
+    if [ "$IS_WSL" = true ]; then
+        if command -v detect_wsl_network_mode &>/dev/null; then
+            NETWORK_MODE=$(detect_wsl_network_mode)
+        else
+            # Проверка наличия файла .wslconfig в Windows
+            WSL_CONFIG_PATH="/mnt/c/Users/$USER/.wslconfig"
+            if [ -f "$WSL_CONFIG_PATH" ]; then
+                if grep -q "networkingMode=mirrored" "$WSL_CONFIG_PATH"; then
+                    NETWORK_MODE="mirrored"
+                fi
+            fi
+        fi
+        echo -e "${CYAN}Обнаружен режим сети WSL2: ${NETWORK_MODE}${NC}"
+    fi
+    
     # Проверка Docker Desktop
     if is_docker_desktop; then
         USING_DOCKER_DESKTOP=true
@@ -209,6 +226,28 @@ echo -e "${CYAN}Флаги KIND: ${KIND_FLAGS}${NC}"
 if ! kind create cluster --name "${CLUSTER_NAME}" \
     --config="$CONFIG_FILE" \
     ${KIND_FLAGS}; then
+    
+# Дополнительная настройка для режима mirrored
+if [ "$IS_WSL" = true ] && [ "$NETWORK_MODE" = "mirrored" ]; then
+    echo -e "${CYAN}Применение специальных настроек для режима mirrored...${NC}"
+    
+    # Получение IP-адреса хоста Windows
+    HOST_IP=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | head -n 1)
+    if [ -z "$HOST_IP" ] || [ "$HOST_IP" = "127.0.0.1" ]; then
+        # Альтернативный способ получения IP хоста
+        HOST_IP=$(ip route | grep default | awk '{print $3}')
+    fi
+    
+    echo -e "${CYAN}IP-адрес хоста Windows: ${HOST_IP}${NC}"
+    
+    # Проверка доступности API сервера через IP хоста
+    echo -e "${CYAN}Проверка доступности API сервера через IP хоста...${NC}"
+    if curl -k -s "https://${HOST_IP}:6443" &>/dev/null; then
+        echo -e "${GREEN}API сервер доступен через IP хоста${NC}"
+    else
+        echo -e "${YELLOW}API сервер недоступен через IP хоста. Это может быть нормально на данном этапе.${NC}"
+    fi
+fi
     echo -e "${RED}Ошибка при создании кластера${NC}"
     
     # Дополнительная диагностика при ошибке
@@ -237,6 +276,28 @@ if ! kind create cluster --name "${CLUSTER_NAME}" \
     echo -e "4. Попробуйте запустить тестовый скрипт: ${TOOLS_DIR}/test-kind-wsl.sh"
     
     exit 1
+fi
+
+# Дополнительная настройка для режима mirrored
+if [ "$IS_WSL" = true ] && [ "$NETWORK_MODE" = "mirrored" ]; then
+    echo -e "${CYAN}Применение специальных настроек для режима mirrored...${NC}"
+    
+    # Получение IP-адреса хоста Windows
+    HOST_IP=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | head -n 1)
+    if [ -z "$HOST_IP" ] || [ "$HOST_IP" = "127.0.0.1" ]; then
+        # Альтернативный способ получения IP хоста
+        HOST_IP=$(ip route | grep default | awk '{print $3}')
+    fi
+    
+    echo -e "${CYAN}IP-адрес хоста Windows: ${HOST_IP}${NC}"
+    
+    # Проверка доступности API сервера через IP хоста
+    echo -e "${CYAN}Проверка доступности API сервера через IP хоста...${NC}"
+    if curl -k -s "https://${HOST_IP}:6443" &>/dev/null; then
+        echo -e "${GREEN}API сервер доступен через IP хоста${NC}"
+    else
+        echo -e "${YELLOW}API сервер недоступен через IP хоста. Это может быть нормально на данном этапе.${NC}"
+    fi
 fi
 
 # Ожидание готовности API сервера с увеличенным таймаутом

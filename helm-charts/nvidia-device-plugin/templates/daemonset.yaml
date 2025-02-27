@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "nvidia-device-plugin.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "nvidia-device-plugin.labels" . | nindent 4 }}
+    k8s-app: nvidia-device-plugin-daemonset
+spec:
+  selector:
+    matchLabels:
+      {{- include "nvidia-device-plugin.selectorLabels" . | nindent 6 }}
+      name: nvidia-device-plugin-ds
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        {{- include "nvidia-device-plugin.selectorLabels" . | nindent 8 }}
+        name: nvidia-device-plugin-ds
+    spec:
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      priorityClassName: "system-node-critical"
+      containers:
+      - image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        name: nvidia-device-plugin-ctr
+        command: ["/bin/nvidia-device-plugin"]
+        args: ["--mig-strategy={{ .Values.migStrategy }}"]
+        env:
+          - name: NVIDIA_VISIBLE_DEVICES
+            value: {{ .Values.env.visibleDevices | quote }}
+          - name: NVIDIA_DRIVER_CAPABILITIES
+            value: {{ .Values.env.driverCapabilities | quote }}
+          - name: NVIDIA_MIG_STRATEGY
+            value: {{ .Values.migStrategy | quote }}
+          - name: FAIL_ON_INIT_ERROR
+            value: {{ .Values.env.failOnInitError | quote }}
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - name: device-plugin
+            mountPath: /var/lib/kubelet/device-plugins
+          - name: nvidia-libraries
+            mountPath: /usr/lib/x86_64-linux-gnu
+          - name: wsl-lib
+            mountPath: /usr/lib/wsl/lib
+          - name: dev
+            mountPath: /dev
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+        - name: nvidia-libraries
+          hostPath:
+            path: /usr/lib/x86_64-linux-gnu
+        - name: wsl-lib
+          hostPath:
+            path: /usr/lib/wsl/lib
+        - name: dev
+          hostPath:
+            path: /dev

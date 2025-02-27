@@ -81,6 +81,32 @@ docker run --rm --gpus all nvidia/cuda:12.6.1-base-ubuntu22.04 nvidia-smi
    kubectl logs -n prod -l app=ollama
    ```
 
+### Проблемы с CPU-only режимом
+1. Проверьте, что переменная окружения GPU_ENABLED установлена правильно:
+   ```bash
+   echo $GPU_ENABLED
+   ```
+2. Если вы хотите использовать CPU-only режим, установите:
+   ```bash
+   export GPU_ENABLED=false
+   ```
+3. Если вы хотите использовать GPU, установите:
+   ```bash
+   export GPU_ENABLED=true
+   ```
+4. Проверьте, что скрипт deploy-all.sh запускается с правильными параметрами:
+   ```bash
+   # Для CPU-only режима
+   ./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --skip-gpu-check --skip-tensor-check
+   
+   # Для режима с GPU
+   ./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh
+   ```
+5. Если под зависает при проверке тензорных операций, перезапустите скрипт с параметром --skip-tensor-check:
+   ```bash
+   ./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --skip-tensor-check
+   ```
+
 ## Проблемы с сертификатами
 
 ### Проверка состояния сертификатов
@@ -163,6 +189,64 @@ kubectl logs -n kube-system -l k8s-app=kube-dns
    ```bash
    kubectl delete networkpolicy -n prod policy-name
    ```
+
+### Проблема: DNS не работает в подах при использовании режима mirrored в WSL2
+1. Проверьте текущий режим сети WSL2:
+   ```powershell
+   # В PowerShell на Windows
+   Get-Content "$env:USERPROFILE\.wslconfig" | Select-String "networkingMode"
+   ```
+2. Проверьте IP-адреса, используемые для DNS резолвинга:
+   ```bash
+   # В WSL2
+   source /tmp/tmpqzgh4nhl_run_i8megabit_k8s_issue_72_fa470057/tools/k8s-kind-setup/env/src/env.sh
+   echo "Режим сети: $(detect_wsl_network_mode)"
+   echo "IP для DNS: $(get_dns_ip)"
+   ```
+3. Проверьте конфигурацию CoreDNS:
+   ```bash
+   kubectl get configmap -n kube-system coredns -o yaml
+   kubectl get configmap -n kube-system coredns-custom -o yaml
+   ```
+4. Проверьте DNS резолвинг внутри пода:
+   ```bash
+   kubectl run -it --rm --restart=Never --image=busybox:1.28 dns-test -- nslookup ollama.prod.local
+   ```
+5. Если проблема сохраняется, попробуйте переключиться на режим NAT:
+   ```powershell
+   # В PowerShell на Windows (от имени администратора)
+   $wslconfig = Get-Content "$env:USERPROFILE\.wslconfig"
+   $wslconfig = $wslconfig -replace "networkingMode=mirrored", "networkingMode=NAT"
+   Set-Content -Path "$env:USERPROFILE\.wslconfig" -Value $wslconfig
+   wsl --shutdown
+   ```
+   После перезапуска WSL2 повторите развертывание кластера.
+
+### Проблема: API сервер Kubernetes недоступен на порту 6443 при использовании режима mirrored
+1. Проверьте доступность API сервера через localhost:
+   ```bash
+   curl -k https://localhost:6443
+   ```
+2. Проверьте доступность API сервера через IP-адрес хоста:
+   ```bash
+   # Получение IP-адреса хоста
+   HOST_IP=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | head -n 1)
+   curl -k https://${HOST_IP}:6443
+   ```
+3. Проверьте настройки брандмауэра Windows:
+   ```powershell
+   # В PowerShell на Windows (от имени администратора)
+   New-NetFirewallRule -DisplayName "Kubernetes API" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 6443
+   ```
+4. Если проблема сохраняется, попробуйте переключиться на режим NAT:
+   ```powershell
+   # В PowerShell на Windows (от имени администратора)
+   $wslconfig = Get-Content "$env:USERPROFILE\.wslconfig"
+   $wslconfig = $wslconfig -replace "networkingMode=mirrored", "networkingMode=NAT"
+   Set-Content -Path "$env:USERPROFILE\.wslconfig" -Value $wslconfig
+   wsl --shutdown
+   ```
+   После перезапуска WSL2 повторите развертывание кластера.
 
 ## Проблемы с WSL2
 

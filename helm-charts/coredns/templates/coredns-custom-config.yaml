@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+  labels:
+    {{- include "coredns.labels" . | nindent 4 }}
+data:
+  prod.local.server: |
+    prod.local {
+        hosts {
+          {{ .Values.ollama.ip }} ollama.prod.local
+          {{ .Values.webui.ip }} webui.prod.local
+          {{ .Values.ingress.ip }} dashboard.prod.local
+          fallthrough
+        }
+        forward . {{ .Values.ollama.ip }}
+    }

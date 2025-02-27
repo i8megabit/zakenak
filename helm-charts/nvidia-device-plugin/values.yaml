@@ -1,0 +1,23 @@
+# Default values for nvidia-device-plugin chart
+nameOverride: ""
+fullnameOverride: "nvidia-device-plugin-daemonset"
+
+image:
+  repository: "nvcr.io/nvidia/k8s-device-plugin"
+  tag: "v0.14.1"
+  pullPolicy: IfNotPresent
+
+migStrategy: "none"
+
+env:
+  visibleDevices: "all"
+  driverCapabilities: "compute,utility"
+  failOnInitError: "false"
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

@@ -109,3 +109,5 @@ fi
 echo -e "${GREEN}Установка библиотек NVIDIA для WSL2 завершена успешно${NC}"
 echo -e "${YELLOW}Теперь вы можете запустить скрипт настройки кластера KIND:${NC}"
 echo -e "${CYAN}./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --auto-install${NC}"
+echo -e "${CYAN}или${NC}"
+echo -e "${CYAN}./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --autoinstall${NC}"

@@ -116,6 +116,25 @@ kubectl run tensor-test --rm -it \
   "import torch; print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0))"
 ```
 
+### Проблемы с CPU-only режимом
+1. Убедитесь, что переменная окружения установлена:
+```bash
+export GPU_ENABLED=false
+```
+
+2. Запустите скрипт с параметрами:
+```bash
+./src/deploy-all.sh --skip-gpu-check --skip-tensor-check
+```
+
+3. Если под зависает при проверке тензоров:
+```bash
+# Принудительное удаление зависшего пода
+kubectl delete pod tensor-test --force --grace-period=0
+# Перезапуск с пропуском проверки тензоров
+./src/deploy-all.sh --skip-tensor-check
+```
+
 ### Kubernetes проблемы
 1. Проверьте доступ к API:
 ```bash

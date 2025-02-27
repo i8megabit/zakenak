@@ -21,6 +21,10 @@ certificates:
     commonName: "webui.prod.local"
     dnsNames:
       - "webui.prod.local"
+  - name: kubernetes-dashboard-tls
+    commonName: "dashboard.prod.local"
+    dnsNames:
+      - "dashboard.prod.local"
   - name: sidecar-injector-tls
     commonName: "sidecar-injector.prod.svc"
     dnsNames:

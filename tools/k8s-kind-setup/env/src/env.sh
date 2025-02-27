@@ -95,11 +95,47 @@ export OLLAMA_HOST="ollama.prod.local"
 export WEBUI_HOST="webui.prod.local"
 export DASHBOARD_HOST="dashboard.prod.local"
 
+# Функция для определения режима сети WSL2
+detect_wsl_network_mode() {
+    # Проверка наличия файла .wslconfig в Windows
+    local wsl_config_path="/mnt/c/Users/$USER/.wslconfig"
+    local network_mode="NAT"  # По умолчанию NAT
+    
+    if [ -f "$wsl_config_path" ]; then
+        if grep -q "networkingMode=mirrored" "$wsl_config_path"; then
+            network_mode="mirrored"
+        fi
+    fi
+    
+    echo "$network_mode"
+}
+
+# Функция для получения IP-адреса для DNS резолвинга
+get_dns_ip() {
+    local network_mode=$(detect_wsl_network_mode)
+    local dns_ip="127.0.0.1"  # По умолчанию localhost
+    
+    if [ "$network_mode" = "mirrored" ]; then
+        # В режиме mirrored используем IP-адрес хоста WSL2
+        # Получаем IP-адрес хоста WSL2 (Windows)
+        local host_ip=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | head -n 1)
+        if [ -n "$host_ip" ] && [ "$host_ip" != "127.0.0.1" ]; then
+            dns_ip="$host_ip"
+        else
+            # Альтернативный способ получения IP хоста
+            dns_ip=$(ip route | grep default | awk '{print $3}')
+        fi
+    fi
+    
+    echo "$dns_ip"
+}
+
 # Добавляем переменные для IP-адресов сервисов
 # Эти переменные будут использоваться в CoreDNS для резолвинга доменов
-export OLLAMA_IP="127.0.0.1"
-export WEBUI_IP="127.0.0.1"
-export INGRESS_IP="127.0.0.1"
+DNS_IP=$(get_dns_ip)
+export OLLAMA_IP="$DNS_IP"
+export WEBUI_IP="$DNS_IP"
+export INGRESS_IP="$DNS_IP"
 
 # Функция проверки ошибок
 check_error() {

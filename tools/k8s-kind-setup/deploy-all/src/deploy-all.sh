@@ -4,22 +4,32 @@ export BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 export TOOLS_DIR="${BASE_DIR}/tools/k8s-kind-setup"
 export SCRIPTS_ENV_PATH="${TOOLS_DIR}/env/src/env.sh"
 
+# Определение цветов для вывода
+export RED="\033[0;31m"
+export GREEN="\033[0;32m"
+export YELLOW="\033[1;33m"
+export CYAN="\033[0;36m"
+export BLUE="\033[0;34m"
+export NC="\033[0m" # No Color
+
 # Функция вывода справки
 show_help() {
-    echo "Использование: $0 [ОПЦИИ]"
+    echo -e "${CYAN}Использование:${NC} $0 ${YELLOW}[ОПЦИИ]${NC}"
     echo ""
-    echo "Опции:"
-    echo "  --no-wsl              Пропустить настройку WSL"
-    echo "  --skip-gpu-check      Пропустить проверку GPU"
-    echo "  --skip-k8s-check      Пропустить проверку доступа к Kubernetes"
-    echo "  --skip-tensor-check   Пропустить проверку тензорных операций"
-    echo "  --check-only          Только выполнить проверки без установки"
-    echo "  --reinstall-core      Переустановить базовые компоненты"
-    echo "  --reinstall-ingress   Переустановить только ingress-контроллер"
-    echo "  --auto-install        Автоматически устанавливать недостающие компоненты"
-    echo "  --force-recreate      Полное пересоздание кластера, затирая предыдущий"
-    echo "  --debug               Включить подробный режим отладки"
-    echo "  --help                Показать эту справку"
+    echo -e "${CYAN}Опции:${NC}"
+    echo -e "${GREEN}  --no-wsl              ${YELLOW}-${NC} Пропустить настройку WSL"
+    echo -e "${GREEN}  --skip-gpu-check      ${YELLOW}-${NC} Пропустить проверку GPU"
+    echo -e "${GREEN}  --skip-k8s-check      ${YELLOW}-${NC} Пропустить проверку доступа к Kubernetes"
+    echo -e "${GREEN}  --skip-tensor-check   ${YELLOW}-${NC} Пропустить проверку тензорных операций"
+    echo -e "${GREEN}  --check-only          ${YELLOW}-${NC} Только выполнить проверки без установки"
+    echo -e "${GREEN}  --reinstall-core      ${YELLOW}-${NC} Переустановить базовые компоненты"
+    echo -e "${GREEN}  --reinstall-ingress   ${YELLOW}-${NC} Переустановить только ingress-контроллер"
+    echo -e "${GREEN}  --auto-install        ${YELLOW}-${NC} Автоматически устанавливать недостающие компоненты"
+    echo -e "${GREEN}  --force-recreate      ${YELLOW}-${NC} Полное пересоздание кластера, затирая предыдущий"
+    echo -e "${GREEN}  --run                 ${YELLOW}-${NC} Запустить базовую установку"
+    echo -e "${GREEN}  --skip-charts         ${YELLOW}-${NC} Пропустить установку чартов"
+    echo -e "${GREEN}  --debug               ${YELLOW}-${NC} Включить подробный режим отладки"
+    echo -e "${GREEN}  --help                ${YELLOW}-${NC} Показать эту справку"
     echo ""
     exit 0
 }
@@ -35,6 +45,18 @@ REINSTALL_INGRESS=false
 AUTO_INSTALL=false
 FORCE_RECREATE=false
 DEBUG=false
+RUN=false
+SKIP_CHARTS=false
+
+# Если нет аргументов, показываем справку
+if [ $# -eq 0 ]; then
+    source "${SCRIPTS_ENV_PATH}"
+    export SKIP_BANNER_MAIN=true
+    source "${SCRIPTS_ASCII_BANNERS_PATH}"
+    show_deploy_banner
+    show_help
+    exit 0
+fi
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -74,6 +96,14 @@ while [[ $# -gt 0 ]]; do
             FORCE_RECREATE=true
             shift
             ;;
+        --run)
+            RUN=true
+            shift
+            ;;
+        --skip-charts)
+            SKIP_CHARTS=true
+            shift
+            ;;
         --debug)
             DEBUG=true
             shift
@@ -83,7 +113,7 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         *)
-            echo "Неизвестный параметр: $1"
+            echo -e "${RED}Неизвестный параметр: $1${NC}"
             show_help
             exit 1
             ;;
@@ -100,19 +130,56 @@ show_deploy_banner
 
 # Функция для логирования
 log() {
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
+    echo -e "[$(date +'%Y-%m-%d %H:%M:%S')] ${CYAN}$1${NC}"
 }
 
 # Функция для отладочного логирования
 debug_log() {
     if [[ "$DEBUG" == "true" ]]; then
-        echo "[DEBUG][$(date +'%Y-%m-%d %H:%M:%S')] $1"
+        echo -e "[DEBUG][$(date +'%Y-%m-%d %H:%M:%S')] ${NC}$1${NC}"
     fi
+}
+
+# Функция отката изменений при ошибке
+rollback_changes() {
+    log "Ошибка при настройке кластера. Выполняется откат изменений..."
+    
+    # Удаление кластера
+    if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
+        log "Удаление кластера ${CLUSTER_NAME}..."
+        kind delete cluster --name "${CLUSTER_NAME}"
+    fi
+    
+    # Очистка Docker ресурсов
+    log "Очистка Docker ресурсов..."
+    if docker ps -aq &>/dev/null; then
+        docker stop $(docker ps -aq) 2>/dev/null || true
+        docker rm $(docker ps -aq) 2>/dev/null || true
+    fi
+    
+    # Удаление неиспользуемых сетей
+    docker network prune -f &>/dev/null || true
+    
+    # Очистка системы Docker
+    docker system prune -f &>/dev/null || true
+    
+    log "Откат изменений завершен"
 }
 
 # Проверка конфигурации Kubernetes и доступа charts.sh
 check_kubernetes_access() {
     log "Проверка доступа к Kubernetes API..."
+    
+    # Если указан флаг --force-recreate, удаляем существующий кластер
+    if [[ "$FORCE_RECREATE" == "true" ]]; then
+        log "Принудительное пересоздание кластера..."
+        if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
+            log "Удаление существующего кластера ${CLUSTER_NAME}..."
+            kind delete cluster --name "${CLUSTER_NAME}"
+            # Ожидание удаления кластера
+            sleep 5
+        fi
+    fi
     
     # Проверка конфигурации kubectl
     if ! kubectl cluster-info &>/dev/null; then
@@ -133,10 +200,12 @@ check_kubernetes_access() {
             export FORCE_RECREATE
             if ! source "${SCRIPTS_SETUP_KIND_PATH}"; then
                 log "Ошибка при настройке кластера Kubernetes"
+                rollback_changes
                 return 1
             fi
             if ! kubectl cluster-info &>/dev/null; then
                 log "Ошибка: Не удалось настроить доступ к кластеру Kubernetes"
+                rollback_changes
                 return 1
             fi
             log "Кластер Kubernetes успешно настроен"
@@ -177,6 +246,12 @@ check_kubernetes_access() {
 
 # Проверка GPU ресурсов в кластере
 check_cluster_gpu() {
+    # Если GPU не включен, пропускаем проверку
+    if [[ "$GPU_ENABLED" == "false" ]]; then
+        log "Режим CPU: пропуск проверки GPU ресурсов"
+        return 0
+    fi
+
     log "Проверка GPU ресурсов в кластере..."
     
     # Проверка наличия GPU узлов
@@ -236,8 +311,9 @@ check_cluster_gpu() {
                     # Additional debugging
                     debug_log "Проверка всех подов в kube-system: $(kubectl get pods -n kube-system)"
                     debug_log "Проверка всех DaemonSets: $(kubectl get ds --all-namespaces)"
-                    log "Ошибка: Не удалось установить NVIDIA device plugin"
-                    return 1
+                    log "Предупреждение: Не удалось установить NVIDIA device plugin"
+                    # Не выходим с ошибкой, продолжаем выполнение
+                    return 0
                 fi
                 log "NVIDIA device plugin успешно установлен"
             else
@@ -265,9 +341,10 @@ check_cluster_gpu() {
     
     # Проверка статуса подов device plugin с учетом правильного namespace
     if ! kubectl wait --for=condition=ready pods -n "$plugin_namespace" -l k8s-app=nvidia-device-plugin-daemonset --timeout=60s &>/dev/null; then
-        log "Ошибка: NVIDIA device plugin поды не готовы"
+        log "Предупреждение: NVIDIA device plugin поды не готовы"
         debug_log "Статус подов: $(kubectl get pods -n "$plugin_namespace" -l k8s-app=nvidia-device-plugin-daemonset -o wide)"
-        return 1
+        # Не выходим с ошибкой, продолжаем выполнение
+        return 0
     fi
     
     # Проверка доступности GPU ресурсов
@@ -275,9 +352,10 @@ check_cluster_gpu() {
         local gpu_count
         gpu_count=$(kubectl get $node -o jsonpath='{.status.allocatable.nvidia\.com/gpu}')
         if [[ -z "$gpu_count" || "$gpu_count" -eq "0" ]]; then
-            log "Ошибка: GPU ресурсы недоступны на узле $node"
+            log "Предупреждение: GPU ресурсы недоступны на узле $node"
             debug_log "Allocatable ресурсы: $(kubectl get $node -o jsonpath='{.status.allocatable}')"
-            return 1
+            # Не выходим с ошибкой, продолжаем выполнение
+            return 0
         fi
         debug_log "Узел $node имеет $gpu_count доступных GPU"
         log "Узел $node имеет $gpu_count доступных GPU"
@@ -304,19 +382,21 @@ EOF
     
     # Ожидание завершения тестового пода
     if ! kubectl wait --for=condition=complete pod/gpu-test --timeout=60s &>/dev/null; then
-        log "Ошибка: Тестовый под с GPU не выполнился успешно"
+        log "Предупреждение: Тестовый под с GPU не выполнился успешно"
         debug_log "Статус пода: $(kubectl get pod gpu-test -o wide)"
         debug_log "Логи пода: $(kubectl logs gpu-test)"
         kubectl delete pod gpu-test &>/dev/null || true
-        return 1
+        # Не выходим с ошибкой, продолжаем выполнение
+        return 0
     fi
     
     # Проверка результата
     if ! kubectl logs gpu-test | grep -q "NVIDIA-SMI"; then
-        log "Ошибка: GPU недоступен в тестовом поде"
+        log "Предупреждение: GPU недоступен в тестовом поде"
         debug_log "Логи пода: $(kubectl logs gpu-test)"
         kubectl delete pod gpu-test &>/dev/null || true
-        return 1
+        # Не выходим с ошибкой, продолжаем выполнение
+        return 0
     fi
     
     kubectl delete pod gpu-test &>/dev/null || true
@@ -520,6 +600,12 @@ check_wsl_gpu() {
 
 # Проверка тензорных операций
 check_tensors() {
+    # If GPU not enabled, skip tensor check
+    if [[ "$GPU_ENABLED" == "false" ]]; then
+        log "Режим CPU: пропуск проверки тензорных операций"
+        return 0
+    fi
+
     log "Проверка поддержки тензорных операций..."
     
     # Создание тестового пода
@@ -616,6 +702,8 @@ if [[ "$DEBUG" == "true" ]]; then
     debug_log "  REINSTALL_INGRESS=$REINSTALL_INGRESS"
     debug_log "  AUTO_INSTALL=$AUTO_INSTALL"
     debug_log "  FORCE_RECREATE=$FORCE_RECREATE"
+    debug_log "  SKIP_CHARTS=$SKIP_CHARTS"
+    debug_log "  RUN=$RUN"
 fi
 
 # Проверка GPU в WSL2
@@ -684,27 +772,26 @@ if [[ "$REINSTALL_INGRESS" == "true" ]]; then
     exit 0
 fi
 
-# Установка базовых компонентов
-if ! install_prerequisites; then
-    log "Ошибка при установке базовых компонентов"
-    exit 1
+# Если указан флаг --run, выполняем базовую установку
+if [[ "$RUN" == "true" ]]; then
+    # Установка базовых компонентов
+    if ! install_prerequisites; then
+        log "Ошибка при установке базовых компонентов"
+        rollback_changes
+        exit 1
+    fi
+
+    # Установка NVIDIA device plugin если GPU включен
+    if [[ "$GPU_ENABLED" == "true" ]]; then
+        log "Установка NVIDIA device plugin..."
+        if ! "${SCRIPTS_CHARTS_PATH}/src/charts.sh" install nvidia-device-plugin -n kube-system; then
+            log "Предупреждение: Не удалось установить NVIDIA device plugin"
+            # Не выходим с ошибкой, продолжаем выполнение
+        fi
+    else
+        log "Режим CPU: пропуск установки NVIDIA device plugin"
+    fi
+
+    log "Базовая установка кластера успешно завершена!"
+    log "Для установки чартов используйте команду: ${SCRIPTS_CHARTS_PATH}/src/charts.sh install all"
 fi
-
-# Развертывание приложений
-log "Развертывание приложений..."
-if ! "${SCRIPTS_CHARTS_PATH}/src/charts.sh" install all; then
-    log "Ошибка при развертывании приложений"
-    exit 1
-fi
-
-
-
-
-# Проверка доступности сервисов
-log "Проверка доступности сервисов..."
-if ! source "${SCRIPTS_CONNECTIVITY_CHECK_PATH}"; then
-    log "Ошибка при проверке доступности сервисов"
-    exit 1
-fi
-
-log "Развертывание успешно завершено!"

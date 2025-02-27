@@ -1,6 +1,8 @@
 # Порядок установки чартов
 charts:
 - cert-manager
+- ingress-nginx
+- coredns
 - local-ca
 - nvidia-device-plugin
 - sidecar-injector

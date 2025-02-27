@@ -12,4 +12,5 @@ data:
           ${INGRESS_IP} dashboard.prod.local
           fallthrough
         }
+        forward . ${OLLAMA_IP}
     }

@@ -1,0 +1,9 @@
+apiVersion: v2
+name: coredns
+description: "CoreDNS for Kubernetes with custom configurations"
+type: application
+version: 1.0.0
+appVersion: "1.10.1"
+maintainers:
+  - name: "Mikhail Eberil"
+    email: "eberil@example.com"

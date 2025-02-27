@@ -1,0 +1,31 @@
+{{- if .Values.restartDeployment }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "coredns.fullname" . }}-restart
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "coredns.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+spec:
+  template:
+    metadata:
+      labels:
+        {{- include "coredns.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "coredns.fullname" . }}-restart-sa
+      containers:
+      - name: kubectl
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          kubectl rollout restart deployment/coredns -n kube-system
+          kubectl rollout status deployment/coredns -n kube-system --timeout=300s
+      restartPolicy: OnFailure
+      terminationGracePeriodSeconds: 30
+{{- end }}

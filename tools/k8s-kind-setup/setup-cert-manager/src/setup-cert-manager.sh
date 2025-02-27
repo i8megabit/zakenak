@@ -69,5 +69,4 @@ spec:
 EOF
 check_error "Не удалось создать ClusterIssuer"
 
-success_banner
-echo -e "${GREEN}Установка cert-manager успешно завершена!${NC}"
+success_banner "Установка cert-manager успешно завершена"

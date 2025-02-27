@@ -51,7 +51,7 @@ notepad "$env:USERPROFILE\.wslconfig"
 memory=8GB
 processors=4
 localhostForwarding=true
-networkingMode=mirrored
+networkingMode=mirrored  # Или NAT
 dnsTunneling=true
 firewall=true
 ```
@@ -63,6 +63,11 @@ firewall=true
 - `networkingMode`: Режим сети (mirrored - рекомендуемый для Windows 11)
 - `dnsTunneling`: Улучшает разрешение DNS
 - `firewall`: Интеграция с брандмауэром Windows
+
+> **Важно о режимах сети**: Zakenak поддерживает оба режима сети WSL2 - `mirrored` и `NAT`.
+> - Режим `mirrored` (рекомендуемый для Windows 11) обеспечивает лучшую интеграцию между Windows и WSL2.
+> - Режим `NAT` (по умолчанию) может быть предпочтительнее в некоторых сценариях, особенно при проблемах с доступом к API Kubernetes на порту 6443.
+> - Zakenak автоматически определяет используемый режим и настраивает DNS соответствующим образом.
 
 После изменения конфигурации перезапустите WSL:
 
@@ -264,6 +269,70 @@ $commonEntries | ForEach-Object {
 ipconfig /flushdns
 wsl -d Ubuntu -u root systemd-resolve --flush-caches
 ```
+
+## DNS в Kubernetes с разными режимами сети WSL2
+
+При работе с Kubernetes в WSL2, важно учитывать особенности DNS-резолвинга в зависимости от выбранного режима сети WSL2 (`mirrored` или `NAT`).
+
+### Особенности режимов сети WSL2
+
+#### Режим NAT (по умолчанию)
+В режиме NAT:
+- WSL2 использует виртуальный сетевой адаптер с NAT для связи с хост-системой Windows
+- Localhost (127.0.0.1) в WSL2 относится только к самой WSL2
+- Для доступа к сервисам WSL2 из Windows используется IP-адрес WSL2
+
+#### Режим Mirrored (Windows 11)
+В режиме Mirrored:
+- Сеть "зеркалируется" между Windows и WSL2
+- Localhost (127.0.0.1) в WSL2 может ссылаться на сервисы как в WSL2, так и в Windows
+- Порты, открытые в WSL2, автоматически доступны в Windows и наоборот
+
+### DNS-резолвинг в Kubernetes подах
+
+При работе с Kubernetes в WSL2, поды внутри кластера должны корректно разрешать DNS-имена независимо от режима сети WSL2. Для этого в Zakenak реализован следующий подход:
+
+1. **Автоматическое определение режима сети**:
+   ```bash
+   # Определение режима сети из файла .wslconfig
+   network_mode=$(detect_wsl_network_mode)
+   ```
+
+2. **Динамическое определение IP-адреса для DNS**:
+   - В режиме NAT: используется 127.0.0.1
+   - В режиме Mirrored: используется IP-адрес хоста Windows (из /etc/resolv.conf)
+
+3. **Настройка CoreDNS**:
+   - Для доменов в зоне prod.local используется полученный IP-адрес
+   - Добавлен forward для запросов, которые не разрешаются через hosts
+
+### Пример конфигурации CoreDNS
+
+```yaml
+prod.local {
+    hosts {
+      192.168.1.100 ollama.prod.local  # IP динамически определяется
+      192.168.1.100 webui.prod.local
+      192.168.1.100 dashboard.prod.local
+      fallthrough
+    }
+    forward . 192.168.1.100  # Перенаправление на хост
+}
+```
+
+### Проверка DNS-резолвинга в подах
+
+Для проверки корректности DNS-резолвинга в подах можно использовать:
+
+```bash
+# Создание тестового пода
+kubectl run -it --rm --restart=Never --image=busybox:1.28 dns-test -- nslookup ollama.prod.local
+
+# Проверка доступа к сервису
+kubectl run -it --rm --restart=Never --image=curlimages/curl curl-test -- curl -v http://ollama.prod.local:11434/api/version
+```
+
+Эта конфигурация обеспечивает корректную работу DNS-резолвинга в Kubernetes подах независимо от выбранного режима сети WSL2.
 
 ## Решение проблем с сетью
 

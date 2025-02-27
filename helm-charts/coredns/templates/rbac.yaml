@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "coredns.fullname" . }}-restart-sa
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "coredns.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "coredns.fullname" . }}-restart-role
+  labels:
+    {{- include "coredns.labels" . | nindent 4 }}
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "patch", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "coredns.fullname" . }}-restart-rolebinding
+  labels:
+    {{- include "coredns.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "coredns.fullname" . }}-restart-role
+subjects:
+- kind: ServiceAccount
+  name: {{ include "coredns.fullname" . }}-restart-sa
+  namespace: {{ .Release.Namespace }}
