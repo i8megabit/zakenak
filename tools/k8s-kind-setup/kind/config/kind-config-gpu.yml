@@ -1,5 +1,8 @@
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+# Add ulimit settings to address "too many open files" issue
+featureGates:
+  EphemeralContainers: true
 nodes:
 - role: control-plane
   kubeadmConfigPatches:
@@ -7,7 +10,14 @@ nodes:
     kind: InitConfiguration
     nodeRegistration:
       kubeletExtraArgs:
-        node-labels: "ingress-ready=true"
+        node-labels: "ingress-ready=true,nvidia.com/gpu=true"
+        feature-gates: "DevicePlugins=true"
+    skipPhases:
+      - preflight
+  - |
+    kind: ClusterConfiguration
+    apiServer:
+      extraArgs:
         feature-gates: "DevicePlugins=true"
   extraMounts:
   - hostPath: /usr/lib/wsl/lib
@@ -18,8 +28,12 @@ nodes:
     containerPath: /usr/lib/x86_64-linux-gnu
   - hostPath: /usr/local/cuda/lib64
     containerPath: /usr/local/cuda/lib64
+    readOnly: true
+    propagation: None
   - hostPath: /usr/local/cuda/include
     containerPath: /usr/local/cuda/include
+    readOnly: true
+    propagation: None
   extraPortMappings:
   - containerPort: 80
     hostPort: 80
@@ -28,6 +42,15 @@ nodes:
     hostPort: 443
     protocol: TCP
 - role: worker
+  kubeadmConfigPatches:
+  - |
+    kind: JoinConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "nvidia.com/gpu=true"
+        feature-gates: "DevicePlugins=true"
+    skipPhases:
+      - preflight
   extraMounts:
   - hostPath: /usr/lib/wsl/lib
     containerPath: /usr/lib/wsl/lib
@@ -37,12 +60,9 @@ nodes:
     containerPath: /usr/lib/x86_64-linux-gnu
   - hostPath: /usr/local/cuda/lib64
     containerPath: /usr/local/cuda/lib64
+    readOnly: true
+    propagation: None
   - hostPath: /usr/local/cuda/include
     containerPath: /usr/local/cuda/include
-  kubeadmConfigPatches:
-  - |
-    kind: JoinConfiguration
-    nodeRegistration:
-      kubeletExtraArgs:
-        node-labels: "nvidia.com/gpu=true"
-        feature-gates: "DevicePlugins=true"
+    readOnly: true
+    propagation: None

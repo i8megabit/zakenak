@@ -6,23 +6,76 @@ export SCRIPTS_ENV_PATH="${TOOLS_DIR}/env/src/env.sh"
 
 # Функция вывода справки
 show_help() {
-    echo "Использование: $0 [--no-wsl] [--help]"
+    echo "Использование: $0 [ОПЦИИ]"
     echo ""
     echo "Опции:"
-    echo "  --no-wsl        Пропустить настройку WSL"
-    echo "  --help          Показать эту справку"
+    echo "  --no-wsl              Пропустить настройку WSL"
+    echo "  --skip-gpu-check      Пропустить проверку GPU"
+    echo "  --skip-k8s-check      Пропустить проверку доступа к Kubernetes"
+    echo "  --skip-tensor-check   Пропустить проверку тензорных операций"
+    echo "  --check-only          Только выполнить проверки без установки"
+    echo "  --reinstall-core      Переустановить базовые компоненты"
+    echo "  --reinstall-ingress   Переустановить только ingress-контроллер"
+    echo "  --auto-install        Автоматически устанавливать недостающие компоненты"
+    echo "  --force-recreate      Полное пересоздание кластера, затирая предыдущий"
+    echo "  --debug               Включить подробный режим отладки"
+    echo "  --help                Показать эту справку"
     echo ""
     exit 0
 }
 
-
 # Парсинг аргументов командной строки
 SKIP_WSL=false
+SKIP_GPU_CHECK=false
+SKIP_K8S_CHECK=false
+SKIP_TENSOR_CHECK=false
+CHECK_ONLY=false
+REINSTALL_CORE=false
+REINSTALL_INGRESS=false
+AUTO_INSTALL=false
+FORCE_RECREATE=false
+DEBUG=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         --no-wsl)
             SKIP_WSL=true
+            shift
+            ;;
+        --skip-gpu-check)
+            SKIP_GPU_CHECK=true
+            shift
+            ;;
+        --skip-k8s-check)
+            SKIP_K8S_CHECK=true
+            shift
+            ;;
+        --skip-tensor-check)
+            SKIP_TENSOR_CHECK=true
+            shift
+            ;;
+        --check-only)
+            CHECK_ONLY=true
+            shift
+            ;;
+        --reinstall-core)
+            REINSTALL_CORE=true
+            shift
+            ;;
+        --reinstall-ingress)
+            REINSTALL_INGRESS=true
+            shift
+            ;;
+        --auto-install)
+            AUTO_INSTALL=true
+            shift
+            ;;
+        --force-recreate)
+            FORCE_RECREATE=true
+            shift
+            ;;
+        --debug)
+            DEBUG=true
             shift
             ;;
         --help|-h)
@@ -40,6 +93,7 @@ done
 
 
 source "${SCRIPTS_ENV_PATH}"
+export SKIP_BANNER_MAIN=true
 source "${SCRIPTS_ASCII_BANNERS_PATH}"
 
 show_deploy_banner
@@ -49,6 +103,13 @@ log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
 }
 
+# Функция для отладочного логирования
+debug_log() {
+    if [[ "$DEBUG" == "true" ]]; then
+        echo "[DEBUG][$(date +'%Y-%m-%d %H:%M:%S')] $1"
+    fi
+}
+
 # Проверка конфигурации Kubernetes и доступа charts.sh
 check_kubernetes_access() {
     log "Проверка доступа к Kubernetes API..."
@@ -56,8 +117,35 @@ check_kubernetes_access() {
     # Проверка конфигурации kubectl
     if ! kubectl cluster-info &>/dev/null; then
         log "Ошибка: Нет доступа к кластеру Kubernetes"
-        return 1
+        if [[ "$AUTO_INSTALL" == "true" ]]; then
+            log "Попытка настройки кластера Kubernetes..."
+            
+            # Установка необходимых бинарных компонентов (kubectl, kind, helm)
+            log "Установка необходимых бинарных компонентов..."
+            if ! source "${SCRIPTS_SETUP_BINS_PATH}"; then
+                log "Ошибка при установке необходимых компонентов"
+                return 1
+            fi
+            
+            debug_log "Запуск скрипта настройки kind"
+            # Ensure AUTO_INSTALL is exported to setup-kind.sh
+            export AUTO_INSTALL
+            export FORCE_RECREATE
+            if ! source "${SCRIPTS_SETUP_KIND_PATH}"; then
+                log "Ошибка при настройке кластера Kubernetes"
+                return 1
+            fi
+            if ! kubectl cluster-info &>/dev/null; then
+                log "Ошибка: Не удалось настроить доступ к кластеру Kubernetes"
+                return 1
+            fi
+            log "Кластер Kubernetes успешно настроен"
+        else
+            return 1
+        fi
     fi
+    
+    debug_log "Информация о кластере: $(kubectl cluster-info)"
     
     # Проверка прав доступа для charts.sh
     if ! kubectl auth can-i create deployments &>/dev/null; then
@@ -68,8 +156,20 @@ check_kubernetes_access() {
     # Проверка доступа к Helm
     if ! helm list &>/dev/null; then
         log "Ошибка: Нет доступа к Helm"
-        return 1
+        if [[ "$AUTO_INSTALL" == "true" ]]; then
+            log "Установка Helm..."
+            curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+            if ! helm list &>/dev/null; then
+                log "Ошибка: Не удалось установить Helm"
+                return 1
+            fi
+            log "Helm успешно установлен"
+        else
+            return 1
+        fi
     fi
+    
+    debug_log "Список релизов Helm: $(helm list -A)"
     
     log "Проверка доступа к Kubernetes API успешно пройдена"
     return 0
@@ -84,21 +184,89 @@ check_cluster_gpu() {
     gpu_nodes=$(kubectl get nodes -l nvidia.com/gpu=true -o name)
     if [[ -z "$gpu_nodes" ]]; then
         log "Ошибка: GPU узлы не найдены в кластере"
-        return 1
+        if [[ "$AUTO_INSTALL" == "true" ]]; then
+            log "Попытка настройки GPU в кластере..."
+            debug_log "Установка NVIDIA device plugin"
+            kubectl create namespace gpu-operator || true
+            helm repo add nvidia https://helm.ngc.nvidia.com/nvidia || true
+            helm repo update
+            helm install --wait --generate-name \
+                -n gpu-operator \
+                nvidia/gpu-operator \
+                --set driver.enabled=false
+            
+            # Проверка установки
+            gpu_nodes=$(kubectl get nodes -l nvidia.com/gpu=true -o name)
+            if [[ -z "$gpu_nodes" ]]; then
+                log "Ошибка: Не удалось настроить GPU узлы в кластере"
+                return 1
+            fi
+            log "GPU узлы успешно настроены в кластере"
+        else
+            return 1
+        fi
     fi
+    debug_log "Найдены GPU узлы: $gpu_nodes"
     log "Найдены GPU узлы: $gpu_nodes"
     
     # Проверка статуса NVIDIA device plugin
     local plugin_pods
-    plugin_pods=$(kubectl get pods -n kube-system -l k8s-app=nvidia-device-plugin-daemonset -o name)
+    # First check in kube-system namespace (default location)
+    plugin_pods=$(kubectl get pods -n kube-system -l k8s-app=nvidia-device-plugin-daemonset -o name 2>/dev/null || true)
     if [[ -z "$plugin_pods" ]]; then
-        log "Ошибка: NVIDIA device plugin не запущен"
-        return 1
+        # If not found in kube-system, check in all namespaces
+        debug_log "NVIDIA device plugin не найден в kube-system, проверка во всех namespace..."
+        plugin_pods=$(kubectl get pods --all-namespaces -l k8s-app=nvidia-device-plugin-daemonset -o name 2>/dev/null || true)
+        
+        if [[ -z "$plugin_pods" ]]; then
+            log "Ошибка: NVIDIA device plugin не запущен"
+            if [[ "$AUTO_INSTALL" == "true" ]]; then
+                log "Установка NVIDIA device plugin..."
+                # Delete existing DaemonSet if it exists to ensure the new configuration is applied
+                kubectl delete daemonset nvidia-device-plugin-daemonset -n kube-system --ignore-not-found=true
+                # Apply our custom manifest instead of the one from GitHub
+                kubectl apply -f "${TOOLS_DIR}/nvidia-device-plugin-custom.yml"
+                
+                # Wait a moment for the pods to be created
+                sleep 5
+                
+                # Check again in all namespaces
+                plugin_pods=$(kubectl get pods --all-namespaces -l k8s-app=nvidia-device-plugin-daemonset -o name 2>/dev/null || true)
+                if [[ -z "$plugin_pods" ]]; then
+                    # Additional debugging
+                    debug_log "Проверка всех подов в kube-system: $(kubectl get pods -n kube-system)"
+                    debug_log "Проверка всех DaemonSets: $(kubectl get ds --all-namespaces)"
+                    log "Ошибка: Не удалось установить NVIDIA device plugin"
+                    return 1
+                fi
+                log "NVIDIA device plugin успешно установлен"
+            else
+                return 1
+            fi
+        else
+            debug_log "NVIDIA device plugin найден в другом namespace"
+        fi
     fi
+    debug_log "NVIDIA device plugin поды: $plugin_pods"
     
-    # Проверка статуса подов device plugin
-    if ! kubectl wait --for=condition=ready pods -n kube-system -l k8s-app=nvidia-device-plugin-daemonset --timeout=60s &>/dev/null; then
+    # Get the namespace from the pod name
+    local plugin_namespace
+    if [[ "$plugin_pods" == pod/* ]]; then
+        # If the format is pod/name
+        plugin_namespace="default"
+    elif [[ "$plugin_pods" == */pod/* ]]; then
+        # If the format is namespace/pod/name
+        plugin_namespace=$(echo "$plugin_pods" | cut -d'/' -f1)
+    else
+        # Default to kube-system
+        plugin_namespace="kube-system"
+    fi
+    debug_log "NVIDIA device plugin namespace: $plugin_namespace"
+    
+    # Проверка статуса подов device plugin с учетом правильного namespace
+    if ! kubectl wait --for=condition=ready pods -n "$plugin_namespace" -l k8s-app=nvidia-device-plugin-daemonset --timeout=60s &>/dev/null; then
         log "Ошибка: NVIDIA device plugin поды не готовы"
+        debug_log "Статус подов: $(kubectl get pods -n "$plugin_namespace" -l k8s-app=nvidia-device-plugin-daemonset -o wide)"
         return 1
     fi
     
@@ -108,8 +276,10 @@ check_cluster_gpu() {
         gpu_count=$(kubectl get $node -o jsonpath='{.status.allocatable.nvidia\.com/gpu}')
         if [[ -z "$gpu_count" || "$gpu_count" -eq "0" ]]; then
             log "Ошибка: GPU ресурсы недоступны на узле $node"
+            debug_log "Allocatable ресурсы: $(kubectl get $node -o jsonpath='{.status.allocatable}')"
             return 1
         fi
+        debug_log "Узел $node имеет $gpu_count доступных GPU"
         log "Узел $node имеет $gpu_count доступных GPU"
     done
     
@@ -135,6 +305,8 @@ EOF
     # Ожидание завершения тестового пода
     if ! kubectl wait --for=condition=complete pod/gpu-test --timeout=60s &>/dev/null; then
         log "Ошибка: Тестовый под с GPU не выполнился успешно"
+        debug_log "Статус пода: $(kubectl get pod gpu-test -o wide)"
+        debug_log "Логи пода: $(kubectl logs gpu-test)"
         kubectl delete pod gpu-test &>/dev/null || true
         return 1
     fi
@@ -142,6 +314,7 @@ EOF
     # Проверка результата
     if ! kubectl logs gpu-test | grep -q "NVIDIA-SMI"; then
         log "Ошибка: GPU недоступен в тестовом поде"
+        debug_log "Логи пода: $(kubectl logs gpu-test)"
         kubectl delete pod gpu-test &>/dev/null || true
         return 1
     fi
@@ -209,6 +382,31 @@ reinstall_prerequisites() {
     fi
     
     log "Переустановка предустановочных компонентов завершена успешно"
+    return 0
+}
+
+# Функция переустановки ingress-контроллера
+reinstall_ingress() {
+    log "Переустановка ingress-контроллера..."
+    
+    # Удаление существующего ingress-контроллера
+    log "Удаление существующего ingress-контроллера..."
+    kubectl delete namespace ingress-nginx &>/dev/null || true
+    
+    # Ожидание удаления namespace
+    while kubectl get namespace ingress-nginx &>/dev/null; do
+        log "Ожидание удаления namespace ingress-nginx..."
+        sleep 5
+    done
+    
+    # Установка нового ingress-контроллера
+    log "Установка нового ingress-контроллера..."
+    if ! source "${SCRIPTS_SETUP_INGRESS_PATH}"; then
+        log "Ошибка при установке ingress-контроллера"
+        return 1
+    fi
+    
+    log "Переустановка ingress-контроллера завершена успешно"
     return 0
 }
 
@@ -280,30 +478,40 @@ check_wsl_gpu() {
     log "Проверка GPU в WSL2..."
     
     # Проверка nvidia-smi
-    if ! command -v nvidia-smi &> /dev/null; then
+    if ! nvidia-smi &> /dev/null; then
         log "Ошибка: nvidia-smi не найден"
-        return 1
+        if [[ "$AUTO_INSTALL" == "true" ]]; then
+            log "Попытка установки драйверов NVIDIA..."
+            debug_log "Установка драйверов NVIDIA для WSL2"
+            sudo apt-get update && sudo apt-get install -y nvidia-driver-535 nvidia-utils-535
+            if ! nvidia-smi &> /dev/null; then
+                log "Ошибка: Не удалось установить драйверы NVIDIA"
+                return 1
+            fi
+            log "Драйверы NVIDIA успешно установлены"
+        else
+            return 1
+        fi
     fi
     
     # Проверка версии драйвера
     local driver_version
     driver_version=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader)
+    debug_log "Текущая версия драйвера NVIDIA: $driver_version"
     if ! awk -v v1="$driver_version" -v v2="535.104.05" 'BEGIN{if (v1 >= v2) exit 0; else exit 1}'; then
         log "Ошибка: Версия драйвера NVIDIA ($driver_version) ниже требуемой (535.104.05)"
-        return 1
-    fi
-    
-    # Проверка CUDA
-    if ! command -v nvcc &> /dev/null; then
-        log "Ошибка: CUDA toolkit не установлен"
-        return 1
-    fi
-    
-    local cuda_version
-    cuda_version=$(nvcc --version | grep "release" | awk '{print $5}' | cut -d',' -f1)
-    if ! awk -v v1="$cuda_version" -v v2="12.8" 'BEGIN{if (v1 >= v2) exit 0; else exit 1}'; then
-        log "Ошибка: Версия CUDA ($cuda_version) ниже требуемой (12.8)"
-        return 1
+        if [[ "$AUTO_INSTALL" == "true" ]]; then
+            log "Попытка обновления драйверов NVIDIA..."
+            sudo apt-get update && sudo apt-get install -y --only-upgrade nvidia-driver-535 nvidia-utils-535
+            driver_version=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader)
+            if ! awk -v v1="$driver_version" -v v2="535.104.05" 'BEGIN{if (v1 >= v2) exit 0; else exit 1}'; then
+                log "Ошибка: Не удалось обновить драйверы NVIDIA до требуемой версии"
+                return 1
+            fi
+            log "Драйверы NVIDIA успешно обновлены до версии $driver_version"
+        else
+            return 1
+        fi
     fi
     
     log "Проверка GPU в WSL2 успешно пройдена"
@@ -395,42 +603,84 @@ EOF
 # Основной процесс
 log "Начало проверки и развертывания..."
 
+# Вывод информации о режиме отладки
+if [[ "$DEBUG" == "true" ]]; then
+    debug_log "Режим отладки включен"
+    debug_log "Параметры запуска:"
+    debug_log "  SKIP_WSL=$SKIP_WSL"
+    debug_log "  SKIP_GPU_CHECK=$SKIP_GPU_CHECK"
+    debug_log "  SKIP_K8S_CHECK=$SKIP_K8S_CHECK"
+    debug_log "  SKIP_TENSOR_CHECK=$SKIP_TENSOR_CHECK"
+    debug_log "  CHECK_ONLY=$CHECK_ONLY"
+    debug_log "  REINSTALL_CORE=$REINSTALL_CORE"
+    debug_log "  REINSTALL_INGRESS=$REINSTALL_INGRESS"
+    debug_log "  AUTO_INSTALL=$AUTO_INSTALL"
+    debug_log "  FORCE_RECREATE=$FORCE_RECREATE"
+fi
+
 # Проверка GPU в WSL2
-if ! check_wsl_gpu; then
-    log "Ошибка: Проверка GPU в WSL2 не пройдена"
-    exit 1
+if [[ "$SKIP_GPU_CHECK" != "true" ]]; then
+    if ! check_wsl_gpu; then
+        log "Ошибка: Проверка GPU в WSL2 не пройдена"
+        exit 1
+    fi
+else
+    log "Проверка GPU в WSL2 пропущена"
 fi
 
 # Проверка доступа к Kubernetes
-if ! check_kubernetes_access; then
-    log "Ошибка: Проверка доступа к Kubernetes не пройдена"
-    exit 1
+if [[ "$SKIP_K8S_CHECK" != "true" ]]; then
+    if ! check_kubernetes_access; then
+        log "Ошибка: Проверка доступа к Kubernetes не пройдена"
+        exit 1
+    fi
+else
+    log "Проверка доступа к Kubernetes пропущена"
 fi
 
 # Проверка GPU в кластере
-if ! check_cluster_gpu; then
-    log "Ошибка: Проверка GPU в кластере не пройдена"
-    exit 1
+if [[ "$SKIP_GPU_CHECK" != "true" ]]; then
+    if ! check_cluster_gpu; then
+        log "Ошибка: Проверка GPU в кластере не пройдена"
+        exit 1
+    fi
+else
+    log "Проверка GPU в кластере пропущена"
 fi
 
 # Проверка тензоров
-if ! check_tensors; then
-    log "Ошибка: Проверка тензорных операций не пройдена"
-    exit 1
+if [[ "$SKIP_TENSOR_CHECK" != "true" ]]; then
+    if ! check_tensors; then
+        log "Ошибка: Проверка тензорных операций не пройдена"
+        exit 1
+    fi
+else
+    log "Проверка тензорных операций пропущена"
 fi
 
 # Если указан флаг --check-only, завершаем работу
-if [ "$CHECK_ONLY" = true ]; then
+if [[ "$CHECK_ONLY" == "true" ]]; then
     log "Все проверки успешно пройдены"
     exit 0
 fi
 
 # Если указан флаг --reinstall-core, переустанавливаем базовые компоненты
-if [ "$REINSTALL_CORE" = true ]; then
+if [[ "$REINSTALL_CORE" == "true" ]]; then
     if ! reinstall_prerequisites; then
         log "Ошибка при переустановке базовых компонентов"
         exit 1
     fi
+    log "Базовые компоненты успешно переустановлены"
+    exit 0
+fi
+
+# Если указан флаг --reinstall-ingress, переустанавливаем только ingress-контроллер
+if [[ "$REINSTALL_INGRESS" == "true" ]]; then
+    if ! reinstall_ingress; then
+        log "Ошибка при переустановке ingress-контроллера"
+        exit 1
+    fi
+    log "Ingress-контроллер успешно переустановлен"
     exit 0
 fi
 

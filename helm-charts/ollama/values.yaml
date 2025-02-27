@@ -14,12 +14,12 @@ deployment:
   replicas: 1
   resources:
     limits:
-      cpu: "8"
-      memory: "16Gi"
+      cpu: "12"
+      memory: "24Gi"
       nvidia.com/gpu: "1"
     requests:
-      cpu: "4"
-      memory: "8Gi"
+      cpu: "8"
+      memory: "16Gi"
   envFrom:
     - configMapRef:
         name: gpu-config
@@ -29,9 +29,17 @@ deployment:
     - name: OLLAMA_COMPUTE_TYPE
       value: "gpu"
     - name: OLLAMA_GPU_LAYERS
-      value: "43"
+      value: "99"  # Use all layers on GPU for maximum performance
     - name: OLLAMA_F16
       value: "true"
+    - name: OLLAMA_MODEL
+      value: "deepseek-r1:32b-q4_0"  # Use 4-bit quantization for better performance
+    - name: OLLAMA_QUANTIZATION
+      value: "q4_0"  # 4-bit quantization
+    - name: OLLAMA_CUDA_MEMORY_FRACTION
+      value: "0.95"  # Use 95% of GPU memory
+    - name: OLLAMA_CUDA_FORCE_ALLOCATION
+      value: "true"  # Force memory allocation
 
 # Настройки сервиса
 service:
@@ -64,7 +72,7 @@ ingress:
 # Настройки хранилища для моделей
 persistence:
   enabled: true
-  size: 50Gi
+  size: 100Gi  # Increased storage for larger models
   storageClass: ""
   accessModes:
     - ReadWriteOnce

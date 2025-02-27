@@ -16,12 +16,7 @@ data:
             fallthrough in-addr.arpa ip6.arpa
             ttl 30
         }
-        hosts {
-           127.0.0.1 dashboard.prod.local
-           127.0.0.1 dashboard.prod.local
-           fallthrough
-        }
-        rewrite name dashboard.prod.local dashboard.prod.local.cluster.local
+        import /etc/coredns/prod.local.server
         prometheus :9153
         forward . /etc/resolv.conf {
            max_concurrent 1000
@@ -34,4 +29,3 @@ data:
         reload
         loadbalance
     }
-

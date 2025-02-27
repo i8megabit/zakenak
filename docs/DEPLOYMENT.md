@@ -11,6 +11,20 @@
 Should Harbour?	No.
 ```
 
+## Навигация
+- [Главная страница](../README.md)
+- Документация
+  - [Руководство по развертыванию](DEPLOYMENT.md) (текущий документ)
+  - [GitOps подход](GITOPS.md)
+  - [API Reference](api.md)
+  - [Устранение неполадок](troubleshooting.md)
+  - [GPU в WSL2](GPU-WSL.md)
+  - [Использование Docker](DOCKER-USAGE.md)
+  - [Настройка KUBECONFIG](KUBECONFIG.md)
+  - [Мониторинг](MONITORING.md)
+  - [Настройка сети](NETWORK-CONFIGURATION.md)
+- [Примеры](../examples/README.md)
+
 ## Требования к системе
 
 ### Hardware
@@ -25,7 +39,7 @@ Should Harbour?	No.
 - WSL2 с Ubuntu 22.04 LTS
 - Docker Desktop с WSL2 интеграцией
 - NVIDIA драйвер версии 535.104.05 или выше
-- CUDA Toolkit 12.8
+- CUDA Toolkit 12.6
 - Kubernetes 1.25+
 - Helm 3.x
 - Go 1.21+
@@ -39,21 +53,25 @@ wsl --install
 wsl --set-default-version 2
 wsl --install -d Ubuntu-22.04
 
-# Настройка лимитов памяти
-cat << EOF > %UserProfile%\.wslconfig
-[wsl2]
-memory=40GB
-processors=12
-swap=16GB
-localhostForwarding=true
-kernelCommandLine=systemd.unified_cgroup_hierarchy=1
-nestedVirtualization=true
-guiApplications=true
-debugConsole=false
-[experimental]
-hostAddressLoopback=true
-bestEffortDnsParsing=true
-EOF
+# Настройка WSL2 (выполнить в PowerShell на Windows)
+# Создайте или отредактируйте файл .wslconfig
+notepad "$env:USERPROFILE\.wslconfig"
+
+# Добавьте следующие настройки в .wslconfig:
+# [boot]
+# systemd=true
+# [wsl2]
+# memory=40GB
+# processors=12
+# swap=16GB
+# localhostForwarding=true
+# kernelCommandLine=cgroup_no_v1=all cgroup_enable=memory swapaccount=1
+# nestedVirtualization=true
+# guiApplications=true
+# debugConsole=false
+# [experimental]
+# hostAddressLoopback=true
+# bestEffortDnsParsing=true
 ```
 
 ### 2. Установка CUDA
@@ -70,11 +88,11 @@ fi
 # Установка CUDA Toolkit
 wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
 sudo mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600
-wget https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda-repo-wsl-ubuntu-12-8-local_12.8.0-1_amd64.deb
-sudo dpkg -i cuda-repo-wsl-ubuntu-12-8-local_12.8.0-1_amd64.deb
-sudo cp /var/cuda-repo-wsl-ubuntu-12-8-local/cuda-*-keyring.gpg /usr/share/keyrings/
+wget https://developer.download.nvidia.com/compute/cuda/12.6.0/local_installers/cuda-repo-wsl-ubuntu-12-6-local_12.6.0-1_amd64.deb
+sudo dpkg -i cuda-repo-wsl-ubuntu-12-6-local_12.6.0-1_amd64.deb
+sudo cp /var/cuda-repo-wsl-ubuntu-12-6-local/cuda-*-keyring.gpg /usr/share/keyrings/
 sudo apt-get update
-sudo apt-get -y install cuda-toolkit-12-8
+sudo apt-get -y install cuda-toolkit-12-6
 
 # Проверка установки
 nvidia-smi
@@ -98,14 +116,14 @@ sudo apt-get install -y nvidia-container-toolkit
 sudo nvidia-ctk runtime configure --runtime=docker
 
 # Проверка GPU в контейнере
-docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
+docker run --rm --gpus all nvidia/cuda:12.6.0-base-ubuntu22.04 nvidia-smi
 ```
 
 ## Развертывание кластера
 
 ### 1. Автоматическое развертывание
 ```bash
-# Полное развертывание с проверками
+# Полное развертывание с проверками и безопасным откатом
 ./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh
 
 # Только проверка конфигурации
@@ -113,6 +131,12 @@ docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
 
 # Переустановка базовых компонентов
 ./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --reinstall-core
+
+# Пропуск настройки WSL
+./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --no-wsl
+
+# Принудительное выполнение (игнорирование идемпотентности)
+./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --force
 ```
 
 ### 2. Проверка GPU в кластере
@@ -137,7 +161,7 @@ kubectl run tensor-test --rm -it --image=nvcr.io/nvidia/pytorch:23.12-py3 \
 go install sigs.k8s.io/kind@latest
 
 # Создание кластера с GPU поддержкой
-kind create cluster --config helm-charts/kind-config.yaml
+kind create cluster --config tools/k8s-kind-setup/kind/config/kind-config-gpu.yml
 
 # Проверка статуса
 kubectl cluster-info
@@ -229,6 +253,8 @@ kubectl exec -it deployment/ollama -n prod -- nvidia-smi dmon -s pucvmet
 kubectl exec -it deployment/ollama -n prod -- python3 -c "import torch; print(torch.cuda.is_available())"
 ```
 
+Для более подробной информации об использовании Docker с GPU см. [Руководство по использованию Docker](DOCKER-USAGE.md).
+
 ## Настройка безопасности
 
 ### 1. Network Policies
@@ -293,15 +319,18 @@ kubectl exec -it -n monitoring dcgm-exporter-xxx -- curl localhost:9400/metrics
 
 ### 1. Обновление компонентов
 ```bash
-# Обновление всех компонентов
-make deploy
+# Безопасное обновление всех компонентов
+./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --force
 
-# Обновление отдельного компонента
-helm upgrade ollama ./helm-charts/ollama -n prod
+# Безопасное обновление отдельного компонента
+./tools/k8s-kind-setup/charts/src/charts.sh upgrade ollama
 ```
 
 ### 2. Резервное копирование
 ```bash
+# Автоматическое резервное копирование (выполняется перед каждой операцией)
+# Резервные копии хранятся в директории /tools/k8s-kind-setup/.backup/
+
 # Бэкап etcd
 kubectl exec -it -n kube-system etcd-control-plane -- \
     etcdctl snapshot save snapshot.db
@@ -312,6 +341,9 @@ kubectl get all --all-namespaces -o yaml > cluster-backup.yaml
 
 ### 3. Восстановление
 ```bash
+# Автоматическое восстановление при сбоях
+./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --rollback
+
 # Восстановление из бэкапа
 kubectl apply -f cluster-backup.yaml
 
@@ -323,7 +355,6 @@ helm rollback ollama 1 -n prod
 
 ### 1. Проблемы с GPU
 - Проверка драйверов: `nvidia-smi`
-- Проверка CUDA: `nvcc --version`
 - Логи NVIDIA: `journalctl -u nvidia-persistenced`
 - Device Plugin логи: `kubectl logs -n kube-system nvidia-device-plugin`
 
@@ -336,6 +367,12 @@ helm rollback ollama 1 -n prod
 - Проверка DNS: `kubectl exec -it busybox -- nslookup kubernetes.default`
 - Проверка сервисов: `kubectl get endpoints -n prod`
 - Проверка политик: `kubectl describe networkpolicy -n prod`
+
+### 4. Проблемы с развертыванием
+- Проверка состояния: `ls -la /tools/k8s-kind-setup/.state/`
+- Просмотр истории развертывания: `cat /tools/k8s-kind-setup/.state/deploy_history.log`
+- Восстановление из бэкапа: `./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --rollback`
+- Очистка состояния: `./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --cleanup`
 
 ```plain text
 Copyright (c) 2025 Mikhail Eberil

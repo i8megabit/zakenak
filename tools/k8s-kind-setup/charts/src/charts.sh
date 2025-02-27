@@ -23,6 +23,21 @@ CHARTS_DIR="${TOOLS_DIR}/../helm-charts"
 # Загрузка общих переменных
 source "${K8S_KIND_SETUP_DIR}/env/src/env.sh"
 
+# Загрузка функций из setup-ingress.sh
+if [ -f "${K8S_KIND_SETUP_DIR}/setup-ingress/src/setup-ingress.sh" ]; then
+    # Создаем временную копию скрипта без вызова основной функции
+    grep -v "helm upgrade --install ingress-nginx" "${K8S_KIND_SETUP_DIR}/setup-ingress/src/setup-ingress.sh" > /tmp/setup-ingress-functions.sh
+    
+    # Fix the path to env.sh in the temporary file
+    sed -i 's|//tools/k8s-kind-setup/env/src/env.sh|'"${K8S_KIND_SETUP_DIR}/env/src/env.sh"'|g' /tmp/setup-ingress-functions.sh
+    
+    # Source the temporary file
+    source /tmp/setup-ingress-functions.sh
+    
+    # Clean up
+    rm -f /tmp/setup-ingress-functions.sh
+fi
+
 # Функция получения списка чартов
 get_charts() {
 	local charts=()
@@ -78,7 +93,17 @@ restart_coredns() {
 
 	# Применение обновленной конфигурации
 	echo -e "${CYAN}Применение конфигурации CoreDNS...${NC}"
-	kubectl apply -f "${K8S_KIND_SETUP_DIR}/setup-dns/src/coredns-custom.yaml"
+	# First check if the ConfigMap exists
+	if kubectl get configmap coredns -n kube-system &>/dev/null; then
+		# If it exists, get the current ConfigMap and save it to a temporary file
+		kubectl get configmap coredns -n kube-system -o yaml > /tmp/coredns-current.yaml
+		
+		# Apply the new configuration with --force flag to replace the existing ConfigMap
+		kubectl apply -f "${K8S_KIND_SETUP_DIR}/setup-dns/src/coredns-custom.yaml" --force
+	else
+		# If it doesn't exist, create it with --save-config to ensure the annotation is set
+		kubectl apply -f "${K8S_KIND_SETUP_DIR}/setup-dns/src/coredns-custom.yaml" --save-config
+	fi
 
 	# Перезапуск CoreDNS
 	kubectl rollout restart deployment/coredns -n kube-system
@@ -217,15 +242,8 @@ setup_gpu() {
         return 1
     fi
     
-    # Динамическое определение версии CUDA
-    local cuda_version=$(nvcc --version 2>/dev/null | grep "release" | awk '{print $5}' | cut -d',' -f1)
-    if [ -z "$cuda_version" ]; then
-        echo -e "${RED}Ошибка: CUDA не установлена${NC}"
-        return 1
-    fi
-    
     # Проверка NVIDIA Container Toolkit
-    if ! docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi &>/dev/null; then
+    if ! docker run --rm --gpus all nvidia/cuda:12.6.1-base-ubuntu22.04 nvidia-smi &>/dev/null; then
         echo -e "${RED}Ошибка: NVIDIA Container Toolkit не настроен${NC}"
         return 1
     fi
@@ -243,7 +261,7 @@ metadata:
   namespace: $namespace
 data:
   NVIDIA_DRIVER_VERSION: "$driver_version"
-  CUDA_VERSION: "$cuda_version"
+  CUDA_VERSION: "12.6.1"
   NVIDIA_VISIBLE_DEVICES: "all"
   NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
   GPU_MEMORY_LIMIT: "${gpu_memory_limit}Mi"
@@ -502,6 +520,16 @@ install_chart() {
 
 		# Устанавливаем в правильный namespace
 		namespace="kubernetes-dashboard"
+
+		# Отключаем валидационный вебхук ingress-nginx перед установкой dashboard
+		if type toggle_ingress_webhook &>/dev/null; then
+			echo -e "${CYAN}Отключение валидационного вебхука ingress-nginx перед установкой dashboard...${NC}"
+			toggle_ingress_webhook "disable" || {
+				echo -e "${YELLOW}Предупреждение: Не удалось отключить вебхук, продолжаем установку...${NC}"
+			}
+		else
+			echo -e "${YELLOW}Функция toggle_ingress_webhook не найдена, пропускаем отключение вебхука${NC}"
+		fi
 		
 		# Применяем конфигурацию admin-user для доступа к дашборду
 		if [ "$action" = "install" ]; then
@@ -909,7 +937,17 @@ restart_coredns() {
 
 	# Применение обновленной конфигурации
 	echo -e "${CYAN}Применение конфигурации CoreDNS...${NC}"
-	kubectl apply -f "${K8S_KIND_SETUP_DIR}/setup-dns/src/coredns-custom.yaml"
+	# First check if the ConfigMap exists
+	if kubectl get configmap coredns -n kube-system &>/dev/null; then
+		# If it exists, get the current ConfigMap and save it to a temporary file
+		kubectl get configmap coredns -n kube-system -o yaml > /tmp/coredns-current.yaml
+		
+		# Apply the new configuration with --force flag to replace the existing ConfigMap
+		kubectl apply -f "${K8S_KIND_SETUP_DIR}/setup-dns/src/coredns-custom.yaml" --force
+	else
+		# If it doesn't exist, create it with --save-config to ensure the annotation is set
+		kubectl apply -f "${K8S_KIND_SETUP_DIR}/setup-dns/src/coredns-custom.yaml" --save-config
+	fi
 
 	# Перезапуск CoreDNS
 	kubectl rollout restart deployment/coredns -n kube-system
@@ -1298,6 +1336,13 @@ install_chart() {
 		# Устанавливаем в правильный namespace
 		namespace="kubernetes-dashboard"
 
+		# Добавляем сборку зависимостей перед установкой
+		echo -e "${CYAN}Проверка и сборка зависимостей чарта ${chart}...${NC}"
+		helm dependency build "${CHARTS_DIR}/${chart}" || {
+			echo -e "${RED}Ошибка при сборке зависимостей чарта ${chart}${NC}"
+			exit 1
+		}
+
 		# Выполняем установку чарта
 		local helm_cmd="helm ${action} ${chart} ${CHARTS_DIR}/${chart}"
 		helm_cmd+=" --namespace ${namespace} --create-namespace"
@@ -1329,6 +1374,16 @@ install_chart() {
 				echo -e "${CYAN}Проверьте статус сервиса: ${GREEN}kubectl get pods -n kubernetes-dashboard${NC}"
 				echo -e "${CYAN}Доступ: ${GREEN}https://dashboard.prod.local${NC}"
 			fi
+		fi
+		
+		# Включаем валидационный вебхук ingress-nginx после установки dashboard
+		if type toggle_ingress_webhook &>/dev/null; then
+			echo -e "${CYAN}Включение валидационного вебхука ingress-nginx после установки dashboard...${NC}"
+			toggle_ingress_webhook "enable" || {
+				echo -e "${YELLOW}Предупреждение: Не удалось включить вебхук${NC}"
+			}
+		else
+			echo -e "${YELLOW}Функция toggle_ingress_webhook не найдена, пропускаем включение вебхука${NC}"
 		fi
 		
 		return

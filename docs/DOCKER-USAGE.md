@@ -11,6 +11,20 @@
 Should Harbour?	No.
 ```
 
+## Навигация
+- [Главная страница](../README.md)
+- Документация
+  - [Руководство по развертыванию](DEPLOYMENT.md)
+  - [GitOps подход](GITOPS.md)
+  - [API Reference](api.md)
+  - [Устранение неполадок](troubleshooting.md)
+  - [GPU в WSL2](GPU-WSL.md)
+  - [Использование Docker](DOCKER-USAGE.md) (текущий документ)
+  - [Настройка KUBECONFIG](KUBECONFIG.md)
+  - [Мониторинг](MONITORING.md)
+  - [Настройка сети](NETWORK-CONFIGURATION.md)
+- [Примеры](../examples/README.md)
+
 ## Содержание
 1. [Подготовка окружения](#подготовка-окружения)
 2. [Использование образа](#использование-образа)
@@ -148,6 +162,8 @@ security:
 ```
 
 ## GPU оптимизация
+
+> Для подробной информации о настройке и использовании GPU в WSL2 см. [GPU в WSL2](GPU-WSL.md).
 
 ### Настройка производительности
 ```bash
@@ -376,7 +392,7 @@ docker run --gpus all \
 nvidia-smi
 
 # Проверка NVIDIA Container Toolkit
-docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
+docker run --rm --gpus all nvidia/cuda:12.6.0-base-ubuntu22.04 nvidia-smi
 
 # Проверка GPU в кластере
 kubectl get nodes -l nvidia.com/gpu=true

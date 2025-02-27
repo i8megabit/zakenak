@@ -73,7 +73,7 @@
 # В WSL2
 nvidia-smi
 nvcc --version
-docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
+docker run --rm --gpus all nvidia/cuda:12.6.0-base-ubuntu22.04 nvidia-smi
 
 # В кластере
 kubectl get nodes -l nvidia.com/gpu=true
@@ -103,14 +103,9 @@ kubectl get pods -n prod
 nvidia-smi
 ```
 
-2. Проверьте CUDA:
+2. Проверьте NVIDIA Container Toolkit:
 ```bash
-nvcc --version
-```
-
-3. Проверьте NVIDIA Container Toolkit:
-```bash
-docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
+docker run --rm --gpus all nvidia/cuda:12.6.1-base-ubuntu22.04 nvidia-smi
 ```
 
 4. Проверьте тензорные операции:

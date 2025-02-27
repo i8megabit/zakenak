@@ -32,17 +32,14 @@
 # Проверка NVIDIA драйвера
 nvidia-smi
 
-# Проверка CUDA
-nvcc --version
-
 # Проверка NVIDIA Container Toolkit
-docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
+docker run --rm --gpus all nvidia/cuda:12.6.1-base-ubuntu22.04 nvidia-smi
 ```
 
 ## Конфигурация
 | Параметр | Описание | По умолчанию |
 |----------|----------|--------------|
-| `CUDA_VERSION` | Версия CUDA | `12.8` |
+| `CUDA_VERSION` | Версия CUDA | `12.6.1` |
 | `REQUIRED_MEMORY` | Минимальный объем RAM (GB) | `16` |
 | `WSL_DISTRO` | Дистрибутив WSL | `Ubuntu-22.04` |
 
@@ -56,6 +53,9 @@ docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
 ├── CHANGELOG.md       # История изменений
 └── README.md         # Документация
 ```
+
+## Документация
+Подробная документация по работе с GPU и тензорными операциями доступна в [GPU-WSL.md](/docs/GPU-WSL.md).
 
 ## Поддержка
 - Email: i8megabit@gmail.com

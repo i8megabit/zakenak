@@ -33,7 +33,7 @@ Zakenak — профессиональный инструмент GitOps для 
 - WSL2 (Ubuntu 22.04 LTS)
 - NVIDIA GPU (RTX 4080 или выше)
 - NVIDIA Driver 535.104.05+
-- CUDA Toolkit 12.8+
+- CUDA Toolkit 12.6.1+
 - Docker Desktop с WSL2 интеграцией
 - NVIDIA Container Toolkit
 - Kind v0.20.0+
@@ -65,12 +65,45 @@ Zakenak — профессиональный инструмент GitOps для 
 #    - Kubernetes Dashboard
 ```
 
+### Настройка WSL2 для KIND с GPU
+```bash
+# Настройка cgroup для WSL2 (выполнить на Windows в PowerShell)
+# Создайте или отредактируйте файл %UserProfile%\.wslconfig
+notepad "$env:USERPROFILE\.wslconfig"
+
+# Добавьте следующие настройки в .wslconfig:
+# [boot]
+# systemd=true
+# [wsl2]
+# kernelCommandLine = cgroup_no_v1=all cgroup_enable=memory swapaccount=1
+
+# Настройка Docker внутри WSL2 для работы с cgroup v2
+# Эти настройки применяются к Docker daemon внутри WSL2, а не к Docker Desktop
+sudo mkdir -p /etc/docker
+sudo tee /etc/docker/daemon.json > /dev/null << EOF
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  }
+}
+EOF
+
+# Перезапуск Docker внутри WSL2
+sudo systemctl restart docker || sudo service docker restart
+
+# Перезапуск WSL (выполнить в PowerShell на Windows)
+# wsl --shutdown
+```
+
+Эти настройки необходимы для корректной работы KIND с GPU в WSL2, особенно при использовании cgroup v2. Они решают проблему с ошибкой "could not find a log line that matches 'Reached target .*Multi-User System.*|detected cgroup v1'" при создании кластера.
+
 ### Проверка GPU
 ```bash
 # Проверка GPU в WSL2
 nvidia-smi
-nvcc --version
-docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
+docker run --rm --gpus all nvidia/cuda:12.6.1-base-ubuntu22.04 nvidia-smi
 
 # Проверка GPU в кластере
 kubectl get nodes -l nvidia.com/gpu=true
@@ -86,7 +119,7 @@ kubectl run tensor-test --rm -it --image=nvcr.io/nvidia/pytorch:23.12-py3 \
 | Переменная | Описание | По умолчанию |
 |------------|-----------|--------------|
 | `NVIDIA_DRIVER_MIN_VERSION` | Минимальная версия драйвера | `535.104.05` |
-| `CUDA_MIN_VERSION` | Минимальная версия CUDA | `12.8` |
+| `CUDA_MIN_VERSION` | Минимальная версия CUDA | `12.6.1` |
 | `NVIDIA_VISIBLE_DEVICES` | GPU устройства | `all` |
 | `NVIDIA_DRIVER_CAPABILITIES` | Возможности драйвера | `compute,utility` |
 | `KUBECONFIG` | Путь к kubeconfig | `~/.kube/config` |
@@ -266,7 +299,7 @@ zakenak deploy
 ## Архитектура
 ```mermaid
 graph TD
-    A[Git Repository] --> B[Ƶakanak]
+    A[Git Repository] --> B[Zakenak]
     B --> C[Container Registry]
     B --> D[Kubernetes Cluster]
     B --> E[State Manager]
@@ -290,9 +323,16 @@ Zakenak распространяется под MIT лицензией.
 
 ## Поддержка
 - 📚 [Документация](docs/)
+  - [Руководство по развертыванию](docs/DEPLOYMENT.md)
+  - [GitOps подход](docs/GITOPS.md)
+  - [API Reference](docs/api.md)
+  - [Устранение неполадок](docs/troubleshooting.md)
+  - [GPU в WSL2](docs/GPU-WSL.md)
+  - [Использование Docker](docs/DOCKER-USAGE.md)
+  - [Настройка KUBECONFIG](docs/KUBECONFIG.md)
+  - [Мониторинг](docs/MONITORING.md)
+  - [Настройка сети](docs/NETWORK-CONFIGURATION.md)
 - 💡 [Примеры](examples/)
-- 🔧 [Устранение неполадок](docs/troubleshooting.md)
-- 📖 [API Reference](docs/api.md)
 
 ## Авторы
 - [@eberil](https://github.com/eberil) - Основной разработчик

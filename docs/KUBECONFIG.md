@@ -9,6 +9,19 @@
 /_____\__,_|_|\_\__,||_| |_|\__,_||_|\_\
 ```
 
+## Навигация
+- [Главная страница](../README.md)
+- Документация
+  - [Руководство по развертыванию](DEPLOYMENT.md)
+  - [GitOps подход](GITOPS.md)
+  - [API Reference](api.md)
+  - [Устранение неполадок](troubleshooting.md)
+  - [GPU в WSL2](GPU-WSL.md)
+  - [Использование Docker](DOCKER-USAGE.md)
+  - [Настройка KUBECONFIG](KUBECONFIG.md) (текущий документ)
+  - [Мониторинг](MONITORING.md)
+  - [Настройка сети](NETWORK-CONFIGURATION.md)
+- [Примеры](../examples/README.md)
 
 ## GitHub Actions Secrets
 

@@ -11,6 +11,20 @@
 Should Harbour?	No.
 ```
 
+## Навигация
+- [Главная страница](../README.md)
+- Документация
+  - [Руководство по развертыванию](DEPLOYMENT.md)
+  - [GitOps подход](GITOPS.md)
+  - [API Reference](api.md)
+  - [Устранение неполадок](troubleshooting.md)
+  - [GPU в WSL2](GPU-WSL.md)
+  - [Использование Docker](DOCKER-USAGE.md)
+  - [Настройка KUBECONFIG](KUBECONFIG.md)
+  - [Мониторинг](MONITORING.md) (текущий документ)
+  - [Настройка сети](NETWORK-CONFIGURATION.md)
+- [Примеры](../examples/README.md)
+
 ## Архитектура мониторинга
 
 ### Компоненты системы
@@ -36,6 +50,8 @@ graph TD
 | DCGM Exporter | 3.1.7 | Метрики NVIDIA GPU |
 
 ## GPU Мониторинг
+
+> Для подробной информации о настройке и использовании GPU в WSL2 см. [GPU в WSL2](GPU-WSL.md).
 
 ### NVIDIA System Management Interface
 ```bash
@@ -112,7 +128,7 @@ groups:
     "component": "ollama",
     "message": "Model loaded successfully",
     "metadata": {
-        "model": "deepseek-r1:14b",
+        "model": "deepseek-r1:32b-q4_0",
         "gpu_id": "0",
         "memory_allocated": "8GiB",
         "batch_size": 32,
@@ -308,7 +324,7 @@ spec:
         spec:
           containers:
           - name: nvidia-smi
-            image: nvidia/cuda:12.8.0-base-ubuntu22.04
+            image: nvidia/cuda:12.6.0-base-ubuntu22.04
             command:
             - /bin/sh
             - -c
@@ -355,7 +371,7 @@ nvidia-smi pmon -s um -o DT
 nvidia-smi --query-compute-apps=pid,used_memory,gpu_uuid --format=csv
 
 # Очистка памяти
-sudo nvidia-smi --gpu-reset
+nvidia-smi --gpu-reset
 
 # Мониторинг утечек
 watch -n 1 "nvidia-smi --query-compute-apps=pid,used_memory --format=csv"

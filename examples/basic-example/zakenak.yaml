@@ -1,0 +1,22 @@
+project: basic-app
+environment: prod
+
+registry:
+  url: registry.local
+  username: ${REGISTRY_USER}
+  password: ${REGISTRY_PASS}
+
+deploy:
+  namespace: prod
+  charts:
+    - ./helm-charts/cert-manager
+    - ./helm-charts/local-ca
+    - ./helm-charts/basic-app
+  values:
+    - values.yaml
+
+build:
+  context: .
+  dockerfile: Dockerfile
+  args:
+    VERSION: v1.0.0

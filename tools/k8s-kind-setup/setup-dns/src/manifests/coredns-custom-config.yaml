@@ -9,6 +9,7 @@ data:
         hosts {
           ${OLLAMA_IP} ollama.prod.local
           ${WEBUI_IP} webui.prod.local
+          ${INGRESS_IP} dashboard.prod.local
           fallthrough
         }
     }
