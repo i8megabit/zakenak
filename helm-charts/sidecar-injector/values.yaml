@@ -81,11 +81,11 @@ sidecar:
     containerPort: 8444
     resources:
       limits:
-        cpu: 50m
-        memory: 64Mi
-      requests:
         cpu: 25m
         memory: 32Mi
+      requests:
+        cpu: 10m
+        memory: 16Mi
     config: |
       server {
           listen 8444;
@@ -101,4 +101,3 @@ sidecar:
     - name: nginx-config
       mountPath: /etc/nginx/conf.d/default.conf
       subPath: default.conf
-

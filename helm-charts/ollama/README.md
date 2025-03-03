@@ -42,7 +42,9 @@ helm install ollama ./helm-charts/ollama \
 | Параметр | Описание | По умолчанию |
 |----------|-----------|--------------|
 | `deployment.replicas` | Количество реплик | `1` |
-| `deployment.useGPU` | Использование GPU | `true` |
+| `deployment.gpuNodeSelector.enabled` | Включить селектор GPU узлов | `false` |
+| `deployment.gpuNodeSelector.labelKey` | Ключ метки для GPU узлов | `nvidia.com/gpu` |
+| `deployment.gpuNodeSelector.labelValue` | Значение метки для GPU узлов | `present` |
 | `deployment.resources.limits.nvidia.com/gpu` | Количество GPU | `1` |
 
 ### Переменные окружения
@@ -70,6 +72,16 @@ kubectl logs -n prod -l app=ollama
 ```bash
 kubectl exec -it -n prod $(kubectl get pods -n prod -l app=ollama -o name) -- nvidia-smi
 ```
+
+### Проблемы с селектором узлов
+Если под не может быть запланирован из-за ошибки "node(s) didn't match Pod's node affinity/selector", попробуйте:
+
+1. Отключить селектор GPU узлов, установив `deployment.gpuNodeSelector.enabled=false` в values.yaml
+2. Проверить метки узлов в кластере:
+```bash
+kubectl get nodes --show-labels
+```
+3. Настроить `deployment.gpuNodeSelector.labelKey` и `deployment.gpuNodeSelector.labelValue` в соответствии с метками ваших узлов
 
 ```plain text
 Copyright (c) 2023-2025 Mikhail Eberil (@eberil)

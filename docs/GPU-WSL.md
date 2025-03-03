@@ -12,6 +12,7 @@
   - [Настройка KUBECONFIG](KUBECONFIG.md)
   - [Мониторинг](MONITORING.md)
   - [Настройка сети](NETWORK-CONFIGURATION.md)
+  - [Миграция и настройка WSL и Docker](WSL-DOCKER-MIGRATION.md)
 - [Примеры](../examples/README.md)
 
 ## Содержание
@@ -253,7 +254,7 @@ nodes:
 kubectl create namespace gpu-operator
 
 # Установка NVIDIA Device Plugin
-kubectl apply -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/v0.14.1/nvidia-device-plugin.yml
+kubectl apply -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/v0.17.0/nvidia-device-plugin.yml
 
 # Проверка статуса (DaemonSet будет установлен в namespace kube-system)
 kubectl get pods -A -l k8s-app=nvidia-device-plugin-daemonset
@@ -270,6 +271,18 @@ kubectl get pods -A -l k8s-app=nvidia-device-plugin-daemonset
 3. Имеет параметр `FAIL_ON_INIT_ERROR: "false"`, который позволяет продолжить работу даже при некоторых ошибках инициализации
 
 Этот манифест находится в репозитории по пути `tools/k8s-kind-setup/nvidia-device-plugin-custom.yml` и автоматически применяется скриптами настройки.
+
+### Отличия от официального NVIDIA Device Plugin
+
+Наша реализация NVIDIA Device Plugin имеет следующие отличия от официальной:
+
+1. Дополнительные точки монтирования для библиотек NVIDIA в WSL2
+2. Расширенные переменные окружения для конфигурации GPU
+3. Явное указание команды и аргументов для совместимости с WSL2
+4. Использование `privileged: true` в securityContext для доступа к устройствам GPU
+5. Использование правильного пути к бинарному файлу (`/usr/bin/nvidia-device-plugin`)
+
+Эти изменения необходимы для корректной работы с потребительскими GPU (GeForce RTX серии) в среде WSL2.
 
 Если вы столкнулись с ошибкой `libnvidia-ml.so.1: cannot open shared object file: No such file or directory`, это означает, что NVIDIA Device Plugin не может найти библиотеки NVIDIA. Убедитесь, что:
 
@@ -290,6 +303,47 @@ ls -l /usr/lib/wsl/lib/libnvidia-ml.so*
 sudo apt-get update
 sudo apt-get install -y nvidia-container-toolkit
 ```
+
+### Решение проблемы "ERROR_LIBRARY_NOT_FOUND"
+
+Если вы видите ошибку `Failed to initialize NVML: ERROR_LIBRARY_NOT_FOUND` в логах NVIDIA Device Plugin, это означает, что библиотека NVML (libnvidia-ml.so.1) не найдена в контейнере.
+
+Для решения этой проблемы:
+
+1. Убедитесь, что драйвер NVIDIA правильно установлен в WSL2:
+   ```bash
+   nvidia-smi
+   ```
+
+2. Проверьте наличие библиотеки libnvidia-ml.so.1:
+   ```bash
+   find /usr -name "libnvidia-ml.so*"
+   ```
+
+3. Если библиотека не найдена, установите пакет NVIDIA Container Toolkit:
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y nvidia-container-toolkit
+   ```
+
+4. Проверьте, что используется наша кастомизированная версия NVIDIA Device Plugin с дополнительными точками монтирования и переменными окружения.
+
+5. Перезапустите NVIDIA Device Plugin:
+   ```bash
+   kubectl delete -f tools/k8s-kind-setup/nvidia-device-plugin-custom.yml
+   kubectl apply -f tools/k8s-kind-setup/nvidia-device-plugin-custom.yml
+   ```
+
+6. Проверьте логи NVIDIA Device Plugin:
+   ```bash
+   kubectl logs -n kube-system -l name=nvidia-device-plugin-ds
+   ```
+
+7. Убедитесь, что используется правильный путь к бинарному файлу NVIDIA Device Plugin в манифесте:
+   ```yaml
+   command: ["/usr/bin/nvidia-device-plugin"]
+   ```
+   Бинарный файл находится в директории `/usr/bin/` контейнера.
 
 ## Устранение неполадок
 

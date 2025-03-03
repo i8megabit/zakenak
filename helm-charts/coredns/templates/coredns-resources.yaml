@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-resources
+  namespace: kube-system
+  labels:
+    {{- include "coredns.labels" . | nindent 4 }}
+data:
+  patch-coredns.sh: |
+    #!/bin/bash
+    kubectl patch deployment coredns -n kube-system --type=json -p='[
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/resources",
+        "value": {
+          "limits": {
+            "cpu": "100m",
+            "memory": "170Mi"
+          },
+          "requests": {
+            "cpu": "50m",
+            "memory": "70Mi"
+          }
+        }
+      }
+    ]'
+---
+{{- if .Values.restartDeployment }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "coredns.fullname" . }}-patch-resources
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "coredns.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+spec:
+  template:
+    metadata:
+      labels:
+        {{- include "coredns.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "coredns.fullname" . }}-restart-sa
+      containers:
+      - name: kubectl
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          /patch-coredns.sh
+        volumeMounts:
+        - name: scripts
+          mountPath: /patch-coredns.sh
+          subPath: patch-coredns.sh
+      volumes:
+      - name: scripts
+        configMap:
+          name: coredns-resources
+          defaultMode: 0755
+      restartPolicy: OnFailure
+      terminationGracePeriodSeconds: 30
+{{- end }}

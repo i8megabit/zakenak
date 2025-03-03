@@ -100,7 +100,7 @@
 ./charts.sh upgrade all
 
 # Получение доступа к dashboard
-./charts.sh dashboard-token
+./charts.sh token
 
 # Перезапуск определённых сервисов
 ./charts.sh restart ollama -n prod

@@ -1,0 +1,33 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - /mnt/o:/root/.ollama  # Изменено на путь к смонтированному диску
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_COMPUTE_TYPE=gpu
+      - OLLAMA_GPU_LAYERS=99
+      - OLLAMA_F16=true
+      - OLLAMA_QUANTIZATION=q4_0
+      - OLLAMA_CUDA_MEMORY_FRACTION=0.95
+      - OLLAMA_CUDA_FORCE_ALLOCATION=true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - ollama-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  ollama-network:
+    name: ollama-network
+    driver: bridge

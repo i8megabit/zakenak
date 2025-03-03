@@ -21,6 +21,7 @@
   - [Настройка KUBECONFIG](KUBECONFIG.md) (текущий документ)
   - [Мониторинг](MONITORING.md)
   - [Настройка сети](NETWORK-CONFIGURATION.md)
+  - [Миграция и настройка WSL и Docker](WSL-DOCKER-MIGRATION.md)
 - [Примеры](../examples/README.md)
 
 ## GitHub Actions Secrets

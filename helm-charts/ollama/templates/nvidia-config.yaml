@@ -1,16 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-nvidia-config
+  name: gpu-config
   namespace: {{ .Values.release.namespace }}
 data:
-  config: |
-    {
-      "default-runtime": "nvidia",
-      "runtimes": {
-        "nvidia": {
-          "path": "/usr/bin/nvidia-container-runtime",
-          "runtimeArgs": []
-        }
-      }
-    }
+  NVIDIA_VISIBLE_DEVICES: "all"
+  NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+  MAX_PARALLEL_REQUESTS: "4"
+  CUDA_MEMORY_FRACTION: "0.95"

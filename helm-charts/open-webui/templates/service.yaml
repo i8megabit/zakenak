@@ -8,8 +8,14 @@ metadata:
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "{{ .Values.service.port }}"
+    # Add additional annotations for better service discovery
 spec:
   type: {{ .Values.service.type }}
+  # Add session affinity to ensure consistent connections
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800  # 3 hours
   ports:
     - port: {{ .Values.service.port }}
       targetPort: http
@@ -17,4 +23,3 @@ spec:
       name: http
   selector:
     app: open-webui
-

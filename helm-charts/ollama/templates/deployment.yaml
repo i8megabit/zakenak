@@ -15,10 +15,15 @@ spec:
       labels:
         app: ollama
     spec:
+      {{- if .Values.deployment.gpuNodeSelector.enabled }}
       nodeSelector:
-        nvidia.com/gpu: "present"
+        {{ .Values.deployment.gpuNodeSelector.labelKey }}: {{ .Values.deployment.gpuNodeSelector.labelValue | quote }}
+      {{- end }}
       tolerations:
         - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
           operator: Exists
           effect: NoSchedule
 
@@ -42,13 +47,13 @@ spec:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
           volumeMounts:
             - name: ollama-data
-              mountPath: /data
+              mountPath: /mnt/o
             - name: nvidia-wsl
               mountPath: /usr/lib/wsl/lib
       volumes:
         - name: ollama-data
-          persistentVolumeClaim:
-            claimName: {{ .Release.Name }}-pvc
+          hostPath:
+            path: /mnt/o
         - name: nvidia-wsl
           hostPath:
             path: /usr/lib/wsl/lib

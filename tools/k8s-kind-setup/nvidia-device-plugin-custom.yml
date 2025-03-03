@@ -24,10 +24,10 @@ spec:
       # See https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
       priorityClassName: "system-node-critical"
       containers:
-      - image: nvcr.io/nvidia/k8s-device-plugin:v0.14.1
+      - image: nvcr.io/nvidia/k8s-device-plugin:v0.17.0
         name: nvidia-device-plugin-ctr
-        command: ["/bin/nvidia-device-plugin"]
-        args: ["--mig-strategy=none"]
+        command: ["/usr/bin/nvidia-device-plugin"]
+        args: ["--mig-strategy=none", "--device-discovery-strategy=nvml"]
         env:
           - name: NVIDIA_VISIBLE_DEVICES
             value: all
@@ -37,6 +37,10 @@ spec:
             value: "none"
           - name: FAIL_ON_INIT_ERROR
             value: "false"
+          - name: DEVICE_DISCOVERY_STRATEGY
+            value: "nvml"
+          - name: NVIDIA_DRIVER_ROOT
+            value: "/run/nvidia/driver"
         securityContext:
           privileged: true
         volumeMounts:
@@ -48,6 +52,17 @@ spec:
             mountPath: /usr/lib/wsl/lib
           - name: dev
             mountPath: /dev
+          - name: nvidia-smi
+            mountPath: /usr/bin/nvidia-smi
+          - name: nvidia-lib64
+            mountPath: /usr/lib64
+          - name: nvidia-lib
+            mountPath: /usr/lib
+          - name: cuda-libraries
+            mountPath: /usr/local/cuda/lib64
+          - name: nvidia-driver-root
+            mountPath: /run/nvidia/driver
+            mountPropagation: HostToContainer
       volumes:
         - name: device-plugin
           hostPath:
@@ -61,3 +76,18 @@ spec:
         - name: dev
           hostPath:
             path: /dev
+        - name: nvidia-smi
+          hostPath:
+            path: /usr/bin/nvidia-smi
+        - name: nvidia-lib64
+          hostPath:
+            path: /usr/lib64
+        - name: nvidia-lib
+          hostPath:
+            path: /usr/lib
+        - name: cuda-libraries
+          hostPath:
+            path: /usr/local/cuda/lib64
+        - name: nvidia-driver-root
+          hostPath:
+            path: /run/nvidia/driver

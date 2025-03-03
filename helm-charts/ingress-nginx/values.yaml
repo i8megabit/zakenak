@@ -15,6 +15,13 @@ ingress-nginx:
       ingress-ready: "true"
     publishService:
       enabled: true
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
     admissionWebhooks:
       enabled: true
       port: 8443
@@ -22,6 +29,16 @@ ingress-nginx:
         ports:
           webhook: 8443
         nodePort: 30444
+      certManager:
+        enabled: true
+        rootCert:
+          issuerRef:
+            name: prod-local-issuer
+            kind: ClusterIssuer
+        admissionCert:
+          issuerRef:
+            name: prod-local-issuer
+            kind: ClusterIssuer
     extraArgs:
       publish-status-address: localhost
       enable-ssl-passthrough: "true"

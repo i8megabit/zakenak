@@ -30,6 +30,7 @@ Should Harbour?	No.
 2. [Пример с GPU](#пример-с-gpu)
 3. [Пример с GitOps](#пример-с-gitops)
 4. [Пример с мониторингом](#пример-с-мониторингом)
+5. [Пример монтирования из WSL](#пример-монтирования-из-wsl)
 
 ## Базовый пример
 
@@ -380,6 +381,42 @@ zakenak monitoring dashboard
 ```
 
 > Для более подробной информации о мониторинге см. [Мониторинг](../docs/MONITORING.md).
+
+## Пример монтирования из WSL
+
+В этом примере показано, как настроить OpenWebUI для использования физического диска, проброшенного из Windows в WSL.
+
+### Структура проекта
+```
+wsl-mount-example/
+├── README.md
+└── values.yaml
+```
+
+### values.yaml
+```yaml
+# Основные настройки
+release:
+  name: open-webui
+  namespace: prod
+
+# Настройки хранилища - использование hostPath для WSL
+persistence:
+  enabled: true
+  useHostPath: true  # Включить использование hostPath вместо PVC
+  hostPath: "/mnt/u"  # Путь на хосте для монтирования
+```
+
+### Использование
+```bash
+# Применение конфигурации
+helm upgrade --install open-webui ./helm-charts/open-webui -f ./examples/wsl-mount-example/values.yaml -n prod
+
+# Проверка монтирования
+kubectl exec -it -n prod $(kubectl get pods -n prod -l app=open-webui -o name) -- ls -la /app/backend/data
+```
+
+> Для более подробной информации см. [README.md](wsl-mount-example/README.md) в директории примера.
 
 ```plain text
 Copyright (c) 2025 Mikhail Eberil

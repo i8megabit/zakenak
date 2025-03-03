@@ -5,7 +5,7 @@ metadata:
   namespace: kube-system
 data:
   prod.local.server: |
-    prod.local {
+    prod.local:53 {
         hosts {
           ${OLLAMA_IP} ollama.prod.local
           ${WEBUI_IP} webui.prod.local

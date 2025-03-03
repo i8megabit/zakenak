@@ -44,9 +44,11 @@ if systemctl is-system-running &>/dev/null; then
     echo -e "${GREEN}systemd активен${NC}"
 else
     echo -e "${YELLOW}systemd не активен${NC}"
-    echo -e "${YELLOW}Рекомендуется добавить в /etc/wsl.conf:${NC}"
+    echo -e "${YELLOW}Рекомендуется добавить в Windows файл %UserProfile%\\.wslconfig:${NC}"
     echo -e "${YELLOW}[boot]${NC}"
     echo -e "${YELLOW}systemd=true${NC}"
+    echo -e "${YELLOW}[wsl2]${NC}"
+    echo -e "${YELLOW}kernelCommandLine = cgroup_no_v1=all cgroup_enable=memory swapaccount=1${NC}"
 fi
 
 # Проверка Docker cgroup driver

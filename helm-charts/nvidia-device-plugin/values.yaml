@@ -4,15 +4,33 @@ fullnameOverride: "nvidia-device-plugin-daemonset"
 
 image:
   repository: "nvcr.io/nvidia/k8s-device-plugin"
-  tag: "v0.14.1"
+  tag: "v0.17.0"
   pullPolicy: IfNotPresent
 
+resources:
+  limits:
+    cpu: 150m
+    memory: 192Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+# MIG strategy - set to "none" for consumer GPUs
 migStrategy: "none"
+
+# Device discovery strategy - set to "nvml" for better compatibility with consumer GPUs
+deviceDiscoveryStrategy: "nvml"
 
 env:
   visibleDevices: "all"
   driverCapabilities: "compute,utility"
   failOnInitError: "false"
+
+# Paths for NVIDIA libraries
+libraryPaths:
+  nvidia: "/usr/lib/x86_64-linux-gnu"
+  wsl: "/usr/lib/wsl/lib"
+  cuda: "/usr/local/cuda/lib64"
 
 resources: {}
 

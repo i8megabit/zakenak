@@ -23,6 +23,7 @@ Should Harbour?	No.
   - [Настройка KUBECONFIG](KUBECONFIG.md)
   - [Мониторинг](MONITORING.md)
   - [Настройка сети](NETWORK-CONFIGURATION.md)
+  - [Миграция и настройка WSL и Docker](WSL-DOCKER-MIGRATION.md)
 - [Примеры](../examples/README.md)
 
 ## Содержание

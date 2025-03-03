@@ -1,7 +1,10 @@
+{{- if .Values.enabled }}
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
 metadata:
-  name: high-priority
-value: 1000000
-globalDefault: false
-description: "This priority class should be used for Ollama service only."
+  name: ollama-priority
+spec:
+  value: 1000000
+  globalDefault: false
+  description: "Priority class for Ollama pods"
+{{- end }}

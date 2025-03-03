@@ -23,31 +23,38 @@ CHARTS_DIR="${TOOLS_DIR}/../helm-charts"
 # Загрузка общих переменных
 source "${K8S_KIND_SETUP_DIR}/env/src/env.sh"
 
+# Define NAMESPACE_INGRESS with a default value
+export NAMESPACE_INGRESS="${NAMESPACE_INGRESS:-ingress-nginx}"
+
 # Загрузка функций из setup-ingress.sh
 if [ -f "${K8S_KIND_SETUP_DIR}/setup-ingress/src/setup-ingress.sh" ]; then
-    # Create a more selective temporary copy of the script
-    # Only include the function definition and export
-    awk '/^toggle_ingress_webhook\(\)/,/^export -f toggle_ingress_webhook/ {print}' "${K8S_KIND_SETUP_DIR}/setup-ingress/src/setup-ingress.sh" > /tmp/setup-ingress-functions.sh
+    # Define the ingress namespace if not already defined
+    export NAMESPACE_INGRESS="${NAMESPACE_INGRESS:-ingress-nginx}"
     
-    # Add necessary environment variables at the beginning
-    sed -i '1i#!/usr/bin/bash\n' /tmp/setup-ingress-functions.sh
-    sed -i '2i# Environment variables\n' /tmp/setup-ingress-functions.sh
-    sed -i '3iexport NAMESPACE_INGRESS="ingress-nginx"\n' /tmp/setup-ingress-functions.sh
-    sed -i '4i# Color definitions\n' /tmp/setup-ingress-functions.sh
-    sed -i '5iexport RED="\\033[0;31m"\n' /tmp/setup-ingress-functions.sh
-    sed -i '6iexport GREEN="\\033[0;32m"\n' /tmp/setup-ingress-functions.sh
-    sed -i '7iexport YELLOW="\\033[1;33m"\n' /tmp/setup-ingress-functions.sh
-    sed -i '8iexport CYAN="\\033[0;36m"\n' /tmp/setup-ingress-functions.sh
-    sed -i '9iexport NC="\\033[0m"\n' /tmp/setup-ingress-functions.sh
+    # Define a wrapper function that sources the original script and calls the function
+    toggle_ingress_webhook() {
+        local action=$1
+        
+        # Source the setup-ingress.sh script to ensure we have the latest version of the function
+        # We use a subshell to avoid polluting the current environment
+        (
+            # Set necessary environment variables
+            export BASE_DIR="${BASE_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)}"
+            export TOOLS_DIR="${TOOLS_DIR:-${BASE_DIR}/tools/k8s-kind-setup}"
+            
+            # Source the setup-ingress.sh script
+            source "${K8S_KIND_SETUP_DIR}/setup-ingress/src/setup-ingress.sh" >/dev/null 2>&1
+            
+            # Call the function with the provided action
+            toggle_ingress_webhook "$action"
+        )
+        
+        # Return the exit status of the subshell
+        return $?
+    }
     
-    # Ensure the temporary file is executable
-    chmod +x /tmp/setup-ingress-functions.sh
-    
-    # Source the temporary file
-    source /tmp/setup-ingress-functions.sh
-    
-    # Clean up
-    rm -f /tmp/setup-ingress-functions.sh
+    # Export the function for use in other scripts
+    export -f toggle_ingress_webhook
 fi
 
 # Функция получения списка чартов
@@ -195,6 +202,7 @@ check_chart_endpoints() {
 	# Для nvidia-device-plugin не проверяем эндпоинты, так как это DaemonSet
 	if [ "$chart" = "nvidia-device-plugin" ]; then
 		echo -e "${CYAN}Проверка статуса DaemonSet для ${chart}...${NC}"
+		# Always check in kube-system namespace for nvidia-device-plugin
 		if kubectl rollout status daemonset/nvidia-device-plugin-daemonset -n kube-system --timeout=60s &>/dev/null; then
 			echo -e "${GREEN}DaemonSet ${chart} готов${NC}"
 			return 0
@@ -222,7 +230,7 @@ check_chart_endpoints() {
 			echo -e "${CYAN}Проверка сервиса ${service_name}...${NC}"
 
 			# Проверяем наличие эндпоинтов
-			if ! kubectl get endpoints -n "${namespace}" "${service_name}" -o json | grep -q '"addresses":\[{'; then
+			if [ -z "$(kubectl get endpoints -n "${namespace}" "${service_name}" -o jsonpath='{.subsets[0].addresses[0].ip}' 2>/dev/null)" ]; then
 				echo -e "${YELLOW}Эндпоинты для ${service_name} не готовы${NC}"
 				ready=false
 				break
@@ -332,10 +340,84 @@ install_chart() {
 			;;
 		"nvidia-device-plugin")
 			chart="nvidia-device-plugin"
+			# Always use kube-system namespace for nvidia-device-plugin
+			namespace="kube-system"
+			# Set a flag to ensure namespace is not overridden
+			is_nvidia_plugin=true
+			echo -e "${CYAN}Установка nvidia-device-plugin в namespace kube-system...${NC}"
 			;;
 		*)
 			;;
 	esac
+	
+	# Специальная обработка для ingress-nginx
+	if [ "$chart" = "ingress-nginx" ]; then
+		# Force the namespace to be NAMESPACE_INGRESS for ingress-nginx
+		namespace="${NAMESPACE_INGRESS}"
+		echo -e "${CYAN}Установка ingress-nginx в namespace ${namespace}...${NC}"
+		
+		# Ensure the namespace exists
+		if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
+			echo -e "${CYAN}Создание namespace ${namespace}...${NC}"
+			kubectl create namespace "$namespace"
+			# Wait for namespace to be fully created
+			sleep 5
+		fi
+		
+		# Remove old webhook if it exists
+		kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission 2>/dev/null || true
+		
+		# Wait for webhook deletion
+		sleep 5
+		
+		# Force remove any existing ingress-nginx installations in other namespaces
+		for ns in $(kubectl get ns -o name | grep -v "^namespace/${namespace}$" | cut -d/ -f2); do
+			if kubectl get deployment -n "$ns" ingress-nginx-controller &>/dev/null; then
+				echo -e "${YELLOW}Обнаружена установка ingress-nginx в namespace ${ns}. Удаляем...${NC}"
+				helm uninstall ingress-nginx -n "$ns" || true
+				kubectl delete all -l app.kubernetes.io/instance=ingress-nginx -n "$ns" --force --grace-period=0 || true
+				sleep 10
+			fi
+		done
+	fi
+	
+	# For ingress-nginx, use the updated configuration file
+	if [ "$chart" = "ingress-nginx" ] && [ "$action" != "uninstall" ]; then
+		echo -e "${CYAN}Использование обновленной конфигурации для ingress-nginx...${NC}"
+		
+		# Use the helm repo directly with our custom values
+		helm_cmd="helm ${action} ${chart} ingress-nginx/ingress-nginx --namespace ${namespace} --create-namespace --values ${K8S_KIND_SETUP_DIR}/setup-ingress/src/ingress-config.yaml"
+		
+		[ -n "$version" ] && helm_cmd+=" --version ${version}"
+		[ -n "$values_file" ] && helm_cmd+=" -f ${values_file}"
+		
+		echo -e "${CYAN}Выполняется команда: ${helm_cmd}${NC}"
+		eval $helm_cmd
+		
+		# Skip the regular installation since we've already done it
+		return
+	fi
+	
+	# Специальная обработка для kubernetes-dashboard
+	if [ "$chart" = "kubernetes-dashboard" ]; then
+		# Проверяем, установлен ли ingress-nginx в правильном namespace
+		if ! kubectl get deployment -n "${NAMESPACE_INGRESS:-ingress-nginx}" ingress-nginx-controller >/dev/null 2>&1; then
+			echo -e "${RED}Ошибка: ingress-nginx не найден в namespace ${NAMESPACE_INGRESS:-ingress-nginx}${NC}"
+			echo -e "${YELLOW}Выполняется переустановка ingress-nginx...${NC}"
+			
+			# Удаляем ingress-nginx из всех namespace
+			for ns in $(kubectl get ns -o name); do
+				ns=${ns#namespace/}
+				if kubectl get deployment -n "$ns" ingress-nginx-controller >/dev/null 2>&1; then
+					echo -e "${CYAN}Удаление ingress-nginx из namespace ${ns}...${NC}"
+					helm uninstall ingress-nginx -n "$ns" || true
+				fi
+			done
+			
+			# Устанавливаем ingress-nginx в правильный namespace
+			install_chart install ingress-nginx "${NAMESPACE_INGRESS:-ingress-nginx}"
+		fi
+	fi
 	
 	if [ ! -d "${CHARTS_DIR}/${chart}" ]; then
 		if declare -F error_banner >/dev/null; then
@@ -392,7 +474,15 @@ install_chart() {
 	# Удаляем существующий релиз только при install
 	if [ "$action" = "install" ]; then
 		echo -e "${CYAN}Проверка существующего релиза ${chart}...${NC}"
-		helm uninstall ${chart} -n ${namespace} 2>/dev/null || true
+		
+		# Special handling for nvidia-device-plugin to always use kube-system namespace
+		local uninstall_namespace=${namespace}
+		if [ "$chart" = "nvidia-device-plugin" ]; then
+			uninstall_namespace="kube-system"
+			echo -e "${CYAN}Удаление nvidia-device-plugin из namespace kube-system...${NC}"
+		fi
+		
+		helm uninstall ${chart} -n ${uninstall_namespace} 2>/dev/null || true
 		# Ждем удаления релиза
 		sleep 5
 	fi
@@ -577,24 +667,121 @@ install_chart() {
 		exit 1
 	}
 	
-	local helm_cmd="helm ${action} ${chart} ${CHARTS_DIR}/${chart}"
-	helm_cmd+=" --namespace ${namespace}"
-	# Add --create-namespace flag only for install and upgrade actions
-	if [ "$action" = "install" ] || [ "$action" = "upgrade" ]; then
-		helm_cmd+=" --create-namespace"
+	local helm_cmd=""
+	if [ "$action" = "uninstall" ]; then
+		# Ensure nvidia-device-plugin is always uninstalled from kube-system
+		if [ "$chart" = "nvidia-device-plugin" ] || [ "${is_nvidia_plugin}" = "true" ]; then
+			namespace="kube-system"
+		fi
+		
+		# Check if the release exists before trying to uninstall it
+		echo -e "${CYAN}Проверка существования релиза ${chart} в namespace ${namespace}...${NC}"
+		if ! helm status ${chart} -n ${namespace} &>/dev/null; then
+			if declare -F error_banner >/dev/null; then
+				error_banner "Релиз ${chart} не найден в namespace ${namespace}"
+			else
+				echo -e "${RED}Ошибка: Релиз ${chart} не найден в namespace ${namespace}${NC}"
+			fi
+			return 1
+		fi
+		
+		helm_cmd="helm ${action} ${chart} --namespace ${namespace}"
+	else
+		# For ingress-nginx, explicitly set the namespace again to ensure consistency
+		if [ "$chart" = "ingress-nginx" ]; then
+			namespace="${NAMESPACE_INGRESS}"
+			echo -e "${CYAN}Принудительное использование namespace ${namespace} для ingress-nginx${NC}"
+		# Ensure nvidia-device-plugin is always installed in kube-system
+		elif [ "$chart" = "nvidia-device-plugin" ] || [ "${is_nvidia_plugin}" = "true" ]; then
+			namespace="kube-system"
+			echo -e "${CYAN}Принудительное использование namespace ${namespace} для nvidia-device-plugin${NC}"
+		fi
+		
+		helm_cmd="helm ${action} ${chart} ${CHARTS_DIR}/${chart} --namespace ${namespace}"
+		
+		# Add --create-namespace flag only for install and upgrade actions
+		if [ "$action" = "install" ] || [ "$action" = "upgrade" ]; then
+			helm_cmd+=" --create-namespace"
+		fi
+		
+		[ -n "$version" ] && helm_cmd+=" --version ${version}"
+		[ -n "$values_file" ] && helm_cmd+=" -f ${values_file}"
+
+		# Для cert-manager добавляем таймаут установки
+		if [ "$chart" = "cert-manager" ]; then
+			helm_cmd+=" --timeout 5m"
+		fi
 	fi
 	
-	[ -n "$version" ] && helm_cmd+=" --version ${version}"
-	[ -n "$values_file" ] && helm_cmd+=" -f ${values_file}"
-
-	# Для cert-manager добавляем таймаут установки
-	if [ "$chart" = "cert-manager" ]; then
-		helm_cmd+=" --timeout 5m"
+	# Выводим полную команду для отладки при установке ingress-nginx
+	if [ "$chart" = "ingress-nginx" ]; then
+		echo -e "${CYAN}Выполняется команда: ${helm_cmd}${NC}"
 	fi
 
+	
+	# Final check to ensure nvidia-device-plugin is always installed in kube-system
+	if [ "$chart" = "nvidia-device-plugin" ] || [ "${is_nvidia_plugin}" = "true" ]; then
+		namespace="kube-system"
+		echo -e "${CYAN}Финальная проверка: установка nvidia-device-plugin в namespace kube-system...${NC}"
+	fi
 	
 	echo -e "${CYAN}Выполняется ${action} чарта ${chart}...${NC}"
+	write_debug "Right before executing helm command: chart=${chart}, namespace=${namespace}, helm_cmd=${helm_cmd}"
+	echo -e "\n${RED}DEBUG: INSTALLING CHART ${chart} IN NAMESPACE ${namespace}${NC}\n"
+	# Debug output to see what namespace is being used
+	echo -e "${CYAN}DEBUG: Installing chart ${chart} in namespace ${namespace}${NC}"
+	echo -e "${CYAN}DEBUG: Helm command: ${helm_cmd}${NC}"
 	eval $helm_cmd
+	
+	# Debug output before final check
+	echo -e "${CYAN}DEBUG BEFORE FINAL CHECK: chart=${chart}, namespace=${namespace}, is_nvidia_plugin=${is_nvidia_plugin}${NC}"
+	
+	# Final check to ensure nvidia-device-plugin is always installed in kube-system
+	if [ "$chart" = "nvidia-device-plugin" ] || [ "${is_nvidia_plugin}" = "true" ]; then
+		namespace="kube-system"
+		echo -e "${CYAN}DEBUG FINAL CHECK: Setting namespace to kube-system for nvidia-device-plugin${NC}"
+		echo -e "${CYAN}Финальная проверка: установка nvidia-device-plugin в namespace kube-system...${NC}"
+	fi
+	
+	# После выполнения команды, проверяем результат для ingress-nginx
+	if [ "$chart" = "ingress-nginx" ] && [ "$action" != "uninstall" ]; then
+		echo -e "${CYAN}Проверка установки ingress-nginx...${NC}"
+		
+		# Wait for the installation to settle
+		sleep 10
+		
+		# Check which namespace the chart was actually installed in
+		local deployed_namespace=$(helm status ingress-nginx -o json 2>/dev/null | grep -o '"namespace":"[^"]*"' | cut -d'"' -f4)
+		
+		if [ -z "$deployed_namespace" ]; then
+			echo -e "${RED}Ошибка: Не удалось определить namespace установки ingress-nginx${NC}"
+			return 1
+		elif [ "$deployed_namespace" != "$namespace" ]; then
+			echo -e "${RED}ВНИМАНИЕ: ingress-nginx установлен в namespace ${deployed_namespace}, а не в ${namespace}${NC}"
+			echo -e "${YELLOW}Попытка исправления...${NC}"
+			
+			# Uninstall from wrong namespace
+			helm uninstall ingress-nginx -n "$deployed_namespace" || true
+			kubectl delete all -l app.kubernetes.io/instance=ingress-nginx -n "$deployed_namespace" --force --grace-period=0 || true
+			sleep 15
+			
+			# Reinstall with explicit namespace
+			echo -e "${CYAN}Повторная установка ingress-nginx в правильный namespace ${namespace}...${NC}"
+			helm install ingress-nginx ${CHARTS_DIR}/${chart} --namespace ${namespace} --create-namespace
+			
+			# Verify the reinstallation
+			sleep 10
+			deployed_namespace=$(helm status ingress-nginx -o json 2>/dev/null | grep -o '"namespace":"[^"]*"' | cut -d'"' -f4)
+			if [ "$deployed_namespace" != "$namespace" ]; then
+				echo -e "${RED}Не удалось установить ingress-nginx в правильный namespace. Установлен в ${deployed_namespace}${NC}"
+				return 1
+			else
+				echo -e "${GREEN}ingress-nginx успешно установлен в namespace ${namespace}${NC}"
+			fi
+		else
+			echo -e "${GREEN}ingress-nginx успешно установлен в namespace ${namespace}${NC}"
+		fi
+	fi
 	
 	# Дополнительное ожидание готовности CRD для cert-manager
 	if [ "$chart" = "cert-manager" ] && [ $? -eq 0 ]; then
@@ -638,23 +825,80 @@ reinstall_ingress() {
 	echo -e "${CYAN}Удаление существующего ingress-контроллера...${NC}"
 	helm uninstall ingress-nginx -n ingress-nginx 2>/dev/null || true
 	
-	# Удаляем namespace и ждем его полного удаления
+	# Удаляем namespace с таймаутом
 	echo -e "${CYAN}Удаление namespace ingress-nginx...${NC}"
 	kubectl delete namespace ingress-nginx --timeout=60s 2>/dev/null || true
-	
-	# Ждем полного удаления namespace
+
+	# Ждем полного удаления namespace с таймаутом
 	echo -e "${CYAN}Ожидание удаления namespace...${NC}"
+	local ns_delete_timeout=60
+	local max_total_wait=180  # Максимальное общее время ожидания в секундах
+	local ns_delete_start_time=$(date +%s)
+	local force_delete_applied=false
+	local absolute_start_time=$(date +%s)
+
 	while kubectl get namespace ingress-nginx >/dev/null 2>&1; do
-		echo -e "${YELLOW}Namespace все еще удаляется, ожидание...${NC}"
+		local current_time=$(date +%s)
+		local elapsed_time=$((current_time - ns_delete_start_time))
+		local total_elapsed_time=$((current_time - absolute_start_time))
+		
+		# Проверка на превышение максимального общего времени ожидания
+		if [ $total_elapsed_time -gt $max_total_wait ]; then
+			echo -e "${YELLOW}Превышено максимальное время ожидания удаления namespace (${max_total_wait}с). Продолжаем установку...${NC}"
+			echo -e "${YELLOW}Будет создан новый namespace с тем же именем.${NC}"
+			break
+		fi
+		
+		# Если прошло больше времени, чем таймаут, и еще не применяли принудительное удаление
+		if [ $elapsed_time -gt $ns_delete_timeout ] && [ "$force_delete_applied" = false ]; then
+			echo -e "${YELLOW}Превышено время ожидания удаления namespace. Применение принудительного удаления...${NC}"
+			
+			# Получаем список всех ресурсов в namespace
+			echo -e "${CYAN}Поиск ресурсов, блокирующих удаление namespace...${NC}"
+			kubectl get all -n ingress-nginx 2>/dev/null || true
+			
+			# Удаляем финализаторы из namespace
+			echo -e "${CYAN}Удаление финализаторов из namespace...${NC}"
+			kubectl patch namespace ingress-nginx -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null || true
+			
+			# Принудительно удаляем все ресурсы в namespace
+			echo -e "${CYAN}Принудительное удаление всех ресурсов в namespace...${NC}"
+			for resource in $(kubectl api-resources --verbs=list --namespaced -o name); do
+				kubectl delete $resource --all --force --grace-period=0 -n ingress-nginx 2>/dev/null || true
+			done
+			
+			# Дополнительная проверка и удаление конкретных ресурсов, которые могут блокировать удаление
+			echo -e "${CYAN}Проверка и удаление специфичных ресурсов...${NC}"
+			kubectl delete deployment,service,configmap,secret,ingress,validatingwebhookconfiguration -n ingress-nginx --all --force --grace-period=0 2>/dev/null || true
+			
+			force_delete_applied=true
+			ns_delete_start_time=$(date +%s)  # Сбрасываем таймер для дополнительного ожидания
+			continue
+		fi
+		
+		# Если прошло больше времени, чем таймаут после принудительного удаления
+		if [ $elapsed_time -gt $ns_delete_timeout ] && [ "$force_delete_applied" = true ]; then
+			echo -e "${YELLOW}Namespace все еще не удален после принудительного удаления. Продолжаем установку...${NC}"
+			break
+		fi
+		
+		echo -e "${YELLOW}Namespace все еще удаляется, ожидание... (прошло ${elapsed_time}с из ${ns_delete_timeout}с, общее время: ${total_elapsed_time}с из ${max_total_wait}с)${NC}"
 		sleep 5
 	done
 
-	# Дополнительная пауза для уверенности
-	sleep 10
-
-	# Создание нового namespace
-	echo -e "${CYAN}Создание namespace ingress-nginx...${NC}"
-	kubectl create namespace ingress-nginx
+	# Дополнительная проверка и создание namespace, если он все еще существует
+	if kubectl get namespace ingress-nginx >/dev/null 2>&1; then
+		echo -e "${YELLOW}Не удалось полностью удалить namespace. Попытка продолжить установку...${NC}"
+		# Пытаемся очистить namespace вместо удаления
+		echo -e "${CYAN}Очистка ресурсов в namespace...${NC}"
+		for resource in $(kubectl api-resources --verbs=list --namespaced -o name); do
+			kubectl delete $resource --all --force --grace-period=0 -n ingress-nginx 2>/dev/null || true
+		done
+	else
+		# Создание нового namespace
+		echo -e "${CYAN}Создание namespace ingress-nginx...${NC}"
+		kubectl create namespace ingress-nginx
+	fi
 
 	# Добавление репозитория если его нет
 	if ! helm repo list | grep -q "ingress-nginx"; then
@@ -692,7 +936,7 @@ reinstall_ingress() {
 			# Проверка доступности сервиса
 			if kubectl get service ingress-nginx-controller -n ingress-nginx >/dev/null 2>&1; then
 				# Проверка наличия endpoints
-				if kubectl get endpoints ingress-nginx-controller -n ingress-nginx -o json | grep -q '"addresses":\[{'; then
+				if [ -n "$(kubectl get endpoints ingress-nginx-controller -n ingress-nginx -o jsonpath='{.subsets[0].addresses[0].ip}' 2>/dev/null)" ]; then
 					ready=true
 					break
 				fi
@@ -741,6 +985,38 @@ reinstall_nvidia_device_plugin() {
 	install_chart "install" "nvidia-device-plugin" "kube-system"
 	
 	echo -e "${GREEN}NVIDIA Device Plugin успешно переустановлен${NC}"
+}
+
+# Функция удаления nvidia-device-plugin из всех неймспейсов
+uninstall_nvidia_device_plugin() {
+	echo -e "${CYAN}Удаление NVIDIA Device Plugin из всех неймспейсов...${NC}"
+	
+	# Получаем список всех неймспейсов
+	local namespaces=$(kubectl get namespaces -o name | cut -d/ -f2)
+	local found=false
+	
+	for ns in $namespaces; do
+		# Проверяем наличие DaemonSet nvidia-device-plugin-daemonset в текущем неймспейсе
+		if kubectl get daemonset nvidia-device-plugin-daemonset -n $ns &>/dev/null; then
+			echo -e "${CYAN}Найден NVIDIA Device Plugin в неймспейсе ${ns}, удаляем...${NC}"
+			kubectl delete daemonset nvidia-device-plugin-daemonset -n $ns --force --grace-period=0
+			found=true
+		fi
+		
+		# Проверяем наличие других DaemonSet с меткой nvidia-device-plugin
+		local other_ds=$(kubectl get daemonset -n $ns -l "app.kubernetes.io/name=nvidia-device-plugin" -o name 2>/dev/null)
+		if [ -n "$other_ds" ]; then
+			echo -e "${CYAN}Найдены дополнительные DaemonSet NVIDIA Device Plugin в неймспейсе ${ns}, удаляем...${NC}"
+			kubectl delete daemonset -n $ns -l "app.kubernetes.io/name=nvidia-device-plugin" --force --grace-period=0
+			found=true
+		fi
+	done
+	
+	if [ "$found" = true ]; then
+		echo -e "${GREEN}NVIDIA Device Plugin успешно удален из всех неймспейсов${NC}"
+	else
+		echo -e "${YELLOW}NVIDIA Device Plugin не найден ни в одном неймспейсе${NC}"
+	fi
 }
 
 # Функция перезапуска подов чарта
@@ -891,6 +1167,20 @@ get_dashboard_token() {
 		echo -e "${GREEN}Токен для доступа к dashboard:${NC}"
 		echo -e "${YELLOW}$token${NC}"
 		echo -e "\n${CYAN}Доступ к dashboard: ${GREEN}https://dashboard.prod.local${NC}"
+		
+		# Check if running in WSL
+		if grep -q "microsoft" /proc/version || grep -q "WSL" /proc/version; then
+			echo -e "${YELLOW}ВАЖНО: Для доступа к dashboard из Windows необходимо настроить DNS.${NC}"
+			echo -e "${YELLOW}В Windows домен dashboard.prod.local не будет доступен без дополнительной настройки.${NC}"
+			echo -e "${CYAN}Для настройки DNS в Windows выполните:${NC}"
+			echo -e "${GREEN}${K8S_KIND_SETUP_DIR}/setup-dns/src/update-windows-dns.sh${NC}"
+			echo -e "${CYAN}или следуйте инструкциям в ${K8S_KIND_SETUP_DIR}/setup-dns/README-WINDOWS-DNS.md${NC}"
+			
+			# Make the scripts executable
+			chmod +x "${K8S_KIND_SETUP_DIR}/setup-dns/src/update-windows-dns.sh" 2>/dev/null || true
+			chmod +x "${K8S_KIND_SETUP_DIR}/setup-dns/src/update-windows-hosts.ps1" 2>/dev/null || true
+		fi
+		
 		return 0
 	else
 		if declare -F error_banner >/dev/null; then
@@ -949,6 +1239,7 @@ usage() {
 	echo -e "${GREEN}  dashboard-token ${YELLOW}-${NC} Получить токен для доступа к dashboard"
 	echo -e "${GREEN}  reinstall-ingress ${YELLOW}-${NC} Переустановить ingress-контроллер"
 	echo -e "${GREEN}  reinstall-nvidia-device-plugin ${YELLOW}-${NC} Переустановить NVIDIA Device Plugin"
+	echo -e "${GREEN}  uninstall-nvidia-device-plugin ${YELLOW}-${NC} Удалить NVIDIA Device Plugin из всех неймспейсов"
 	echo -e "${GREEN}  restart        ${YELLOW}-${NC} Перезапустить поды чарта"
 	echo ""
 	generate_charts_menu "$(get_charts)"
@@ -1263,8 +1554,19 @@ install_chart() {
 		fi
 	fi
 
+	# Специальная обработка после установки local-ca
+	if [ "$chart" = "local-ca" ] && [ "$action" = "install" ] && [ $? -eq 0 ]; then
+		echo -e "${CYAN}Экспорт корневого CA сертификата...${NC}"
+		if ! "${TOOLS_DIR}/setup-cert-manager/src/export-root-ca.sh"; then
+			echo -e "${YELLOW}Предупреждение: Не удалось экспортировать корневой CA сертификат${NC}"
+			echo -e "${YELLOW}Вы можете экспортировать его вручную позже с помощью:${NC}"
+			echo -e "${CYAN}${TOOLS_DIR}/setup-cert-manager/src/export-root-ca.sh${NC}"
+			# Не выходим с ошибкой, продолжаем выполнение
+		fi
+	fi
+
 	# Специальная обработка для cert-manager
-	if [ "$chart" = "cert-manager" ]; then
+	if [ "$chart" = "cert-manager" ] && [ "$action" != "uninstall" ]; then
 		echo -e "${CYAN}Подготовка к установке cert-manager...${NC}"
 		
 		# Проверяем существование релиза перед upgrade
@@ -1366,7 +1668,7 @@ install_chart() {
 	fi
 
 	# Специальная обработка для kubernetes-dashboard
-	if [ "$chart" = "kubernetes-dashboard" ]; then
+	if [ "$chart" = "kubernetes-dashboard" ] && [ "$action" != "uninstall" ]; then
 		echo -e "${CYAN}Подготовка к установке kubernetes-dashboard...${NC}"
 		
 		# Показываем баннер dashboard
@@ -1426,11 +1728,16 @@ install_chart() {
 		}
 
 		# Выполняем установку чарта
-		local helm_cmd="helm ${action} ${chart} ${CHARTS_DIR}/${chart}"
-		helm_cmd+=" --namespace ${namespace} --create-namespace"
-		
-		[ -n "$version" ] && helm_cmd+=" --version ${version}"
-		[ -n "$values_file" ] && helm_cmd+=" -f ${values_file}"
+		local helm_cmd=""
+		if [ "$action" = "uninstall" ]; then
+			helm_cmd="helm ${action} ${chart} --namespace ${namespace}"
+		else
+			helm_cmd="helm ${action} ${chart} ${CHARTS_DIR}/${chart}"
+			helm_cmd+=" --namespace ${namespace} --create-namespace"
+			
+			[ -n "$version" ] && helm_cmd+=" --version ${version}"
+			[ -n "$values_file" ] && helm_cmd+=" -f ${values_file}"
+		fi
 		
 		echo -e "${CYAN}Выполняется ${action} чарта ${chart}...${NC}"
 		eval $helm_cmd
@@ -1444,6 +1751,20 @@ install_chart() {
 				if kubectl get pods -n kubernetes-dashboard -l k8s-app=kubernetes-dashboard | grep -q "Running"; then
 					echo -e "${GREEN}Сервис dashboard готов к использованию${NC}"
 					echo -e "${CYAN}Доступ: ${GREEN}https://dashboard.prod.local${NC}"
+					
+					# Check if running in WSL
+					if grep -q "microsoft" /proc/version || grep -q "WSL" /proc/version; then
+						echo -e "${YELLOW}ВАЖНО: Для доступа к dashboard из Windows необходимо настроить DNS.${NC}"
+						echo -e "${YELLOW}В Windows домен dashboard.prod.local не будет доступен без дополнительной настройки.${NC}"
+						echo -e "${CYAN}Для настройки DNS в Windows выполните:${NC}"
+						echo -e "${GREEN}${K8S_KIND_SETUP_DIR}/setup-dns/src/update-windows-dns.sh${NC}"
+						echo -e "${CYAN}или следуйте инструкциям в ${K8S_KIND_SETUP_DIR}/setup-dns/README-WINDOWS-DNS.md${NC}"
+						
+						# Make the scripts executable
+						chmod +x "${K8S_KIND_SETUP_DIR}/setup-dns/src/update-windows-dns.sh" 2>/dev/null || true
+						chmod +x "${K8S_KIND_SETUP_DIR}/setup-dns/src/update-windows-hosts.ps1" 2>/dev/null || true
+					fi
+					
 					break
 				fi
 				echo -e "${YELLOW}Ожидание готовности сервиса... (попытка $ATTEMPT/$MAX_ATTEMPTS)${NC}"
@@ -1455,6 +1776,19 @@ install_chart() {
 				echo -e "${YELLOW}Предупреждение: Превышено время ожидания, но установка завершена${NC}"
 				echo -e "${CYAN}Проверьте статус сервиса: ${GREEN}kubectl get pods -n kubernetes-dashboard${NC}"
 				echo -e "${CYAN}Доступ: ${GREEN}https://dashboard.prod.local${NC}"
+				
+				# Check if running in WSL
+				if grep -q "microsoft" /proc/version || grep -q "WSL" /proc/version; then
+					echo -e "${YELLOW}ВАЖНО: Для доступа к dashboard из Windows необходимо настроить DNS.${NC}"
+					echo -e "${YELLOW}В Windows домен dashboard.prod.local не будет доступен без дополнительной настройки.${NC}"
+					echo -e "${CYAN}Для настройки DNS в Windows выполните:${NC}"
+					echo -e "${GREEN}${K8S_KIND_SETUP_DIR}/setup-dns/src/update-windows-dns.sh${NC}"
+					echo -e "${CYAN}или следуйте инструкциям в ${K8S_KIND_SETUP_DIR}/setup-dns/README-WINDOWS-DNS.md${NC}"
+					
+					# Make the scripts executable
+					chmod +x "${K8S_KIND_SETUP_DIR}/setup-dns/src/update-windows-dns.sh" 2>/dev/null || true
+					chmod +x "${K8S_KIND_SETUP_DIR}/setup-dns/src/update-windows-hosts.ps1" 2>/dev/null || true
+				fi
 			fi
 		fi
 		
@@ -1486,21 +1820,25 @@ install_chart() {
 		exit 1
 	}
 	
-	local helm_cmd="helm ${action} ${chart} ${CHARTS_DIR}/${chart}"
-	helm_cmd+=" --namespace ${namespace}"
-	# Add --create-namespace flag only for install and upgrade actions
-	if [ "$action" = "install" ] || [ "$action" = "upgrade" ]; then
-		helm_cmd+=" --create-namespace"
-	fi
-	
-	[ -n "$version" ] && helm_cmd+=" --version ${version}"
-	[ -n "$values_file" ] && helm_cmd+=" -f ${values_file}"
+	local helm_cmd=""
+	if [ "$action" = "uninstall" ]; then
+		helm_cmd="helm ${action} ${chart} --namespace ${namespace}"
+	else
+		helm_cmd="helm ${action} ${chart} ${CHARTS_DIR}/${chart}"
+		helm_cmd+=" --namespace ${namespace}"
+		# Add --create-namespace flag only for install and upgrade actions
+		if [ "$action" = "install" ] || [ "$action" = "upgrade" ]; then
+			helm_cmd+=" --create-namespace"
+		fi
+		
+		[ -n "$version" ] && helm_cmd+=" --version ${version}"
+		[ -n "$values_file" ] && helm_cmd+=" -f ${values_file}"
 
-	# Для cert-manager добавляем таймаут установки
-	if [ "$chart" = "cert-manager" ]; then
-		helm_cmd+=" --timeout 5m"
+		# Для cert-manager добавляем таймаут установки
+		if [ "$chart" = "cert-manager" ]; then
+			helm_cmd+=" --timeout 5m"
+		fi
 	fi
-
 	
 	echo -e "${CYAN}Выполняется ${action} чарта ${chart}...${NC}"
 	eval $helm_cmd
@@ -1534,7 +1872,7 @@ install_chart() {
 # Функция проверки корректности команды
 check_action() {
 	local action=$1
-	local valid_actions=("install" "upgrade" "uninstall" "list" "restart-dns" "dashboard-token" "reinstall-ingress" "reinstall-nvidia-device-plugin" "restart")
+	local valid_actions=("install" "upgrade" "uninstall" "list" "restart-dns" "dashboard-token" "reinstall-ingress" "reinstall-nvidia-device-plugin" "restart" "uninstall-nvidia-device-plugin")
 	
 	# Проверяем совпадение с известными командами
 	for valid_action in "${valid_actions[@]}"; do
@@ -1675,6 +2013,7 @@ check_action "$action"
 # Проверяем количество аргументов для команд, требующих указания чарта
 if [ "$action" != "list" ] && [ "$action" != "restart-dns" ] && \
    [ "$action" != "dashboard-token" ] && [ "$action" != "reinstall-ingress" ] && \
+   [ "$action" != "reinstall-nvidia-device-plugin" ] && [ "$action" != "uninstall-nvidia-device-plugin" ] && \
    [ $# -lt 2 ]; then
 	if declare -F error_banner >/dev/null; then
 		error_banner "Не указан чарт для действия ${action}"
@@ -1694,8 +2033,49 @@ case $action in
 				}
 			fi
 			
+			# Устанавливаем сначала ingress-nginx в правильном namespace
+			if [ "$action" != "uninstall" ]; then
+				echo -e "${CYAN}Установка ingress-nginx в namespace ${NAMESPACE_INGRESS}...${NC}"
+				install_chart $action ingress-nginx "${NAMESPACE_INGRESS}" "$version" "$values_file"
+				
+				# Ждем готовности ingress-nginx перед продолжением
+				echo -e "${CYAN}Ожидание готовности ingress-nginx...${NC}"
+				local max_attempts=30
+				local attempt=1
+				local ready=false
+
+				while [ $attempt -le $max_attempts ]; do
+					echo -e "${CYAN}Проверка готовности ingress-nginx (попытка $attempt/$max_attempts)...${NC}"
+					
+					# Проверка статуса пода
+					if kubectl wait --namespace ${NAMESPACE_INGRESS} \
+						--for=condition=ready pod \
+						--selector=app.kubernetes.io/component=controller \
+						--timeout=30s >/dev/null 2>&1; then
+						
+						# Проверка доступности сервиса
+						if kubectl get service ingress-nginx-controller -n ${NAMESPACE_INGRESS} >/dev/null 2>&1; then
+							# Проверка наличия endpoints
+							if [ -n "$(kubectl get endpoints ingress-nginx-controller -n ${NAMESPACE_INGRESS} -o jsonpath='{.subsets[0].addresses[0].ip}' 2>/dev/null)" ]; then
+								ready=true
+								break
+							fi
+						fi
+					fi
+
+					attempt=$((attempt + 1))
+					sleep 10
+				done
+
+				if [ "$ready" = true ]; then
+					echo -e "${GREEN}Ingress-контроллер успешно установлен и готов${NC}"
+				else
+					echo -e "${YELLOW}Превышено время ожидания готовности ingress-nginx, продолжаем установку других чартов...${NC}"
+				fi
+			fi
+			
 			# Define the order of installation to handle dependencies
-			ordered_charts=("cert-manager" "ingress-nginx" "kubernetes-dashboard")
+			ordered_charts=("cert-manager" "kubernetes-dashboard")
 			
 			# Get all available charts
 			all_charts=($(get_charts))
@@ -1703,7 +2083,12 @@ case $action in
 			# Install charts in the specified order first
 			for c in "${ordered_charts[@]}"; do
 				if [[ " ${all_charts[*]} " =~ " ${c} " ]]; then
-					echo -e "${CYAN}Installing ${c} (ordered installation)...${NC}"
+					if [ "$action" = "uninstall" ]; then
+						echo -e "${CYAN}Uninstalling ${c}...${NC}"
+					else
+						echo -e "${CYAN}Installing ${c} (ordered installation)...${NC}"
+					fi
+					
 					install_chart $action $c "$namespace" "$version" "$values_file"
 					# Remove from all_charts to avoid installing twice
 					all_charts=(${all_charts[@]/$c/})
@@ -1712,11 +2097,22 @@ case $action in
 			
 			# Install remaining charts
 			for c in "${all_charts[@]}"; do
-				if [ -n "$c" ]; then  # Skip empty entries
-					echo -e "${CYAN}Installing ${c}...${NC}"
+				if [ -n "$c" ] && [ "$c" != "ingress-nginx" ]; then  # Skip empty entries and ingress-nginx
+					if [ "$action" = "uninstall" ]; then
+						echo -e "${CYAN}Uninstalling ${c}...${NC}"
+					else
+						echo -e "${CYAN}Installing ${c}...${NC}"
+					fi
+					
 					install_chart $action $c "$namespace" "$version" "$values_file"
 				fi
 			done
+			
+			# Handle uninstall for ingress-nginx separately
+			if [ "$action" = "uninstall" ]; then
+				echo -e "${CYAN}Удаление ingress-nginx из namespace ${NAMESPACE_INGRESS:-ingress-nginx}...${NC}"
+				install_chart $action ingress-nginx "${NAMESPACE_INGRESS:-ingress-nginx}" "$version" "$values_file"
+			fi
 			
 			# Re-enable ingress-nginx admission webhook after upgrading all charts
 			if [ "$action" = "upgrade" ] && type toggle_ingress_webhook &>/dev/null; then
@@ -1750,6 +2146,9 @@ case $action in
 		;;
 	reinstall-nvidia-device-plugin)
 		reinstall_nvidia_device_plugin
+		;;
+	uninstall-nvidia-device-plugin)
+		uninstall_nvidia_device_plugin
 		;;
 	restart)
 		restart_chart_pods "$chart" "$namespace"

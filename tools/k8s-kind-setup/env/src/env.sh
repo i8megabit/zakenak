@@ -59,6 +59,7 @@ export SCRIPTS_SETUP_KIND_PATH="${TOOLS_DIR}/setup-kind/src/setup-kind.sh"
 export SCRIPTS_SETUP_INGRESS_PATH="${TOOLS_DIR}/setup-ingress/src/setup-ingress.sh"
 export SCRIPTS_SETUP_CERT_MANAGER_PATH="${TOOLS_DIR}/setup-cert-manager/src/setup-cert-manager.sh"
 export SCRIPTS_SETUP_DNS_PATH="${TOOLS_DIR}/setup-dns/src/setup-dns.sh"
+export SCRIPTS_TOKEN_PATH="${TOOLS_DIR}/token/src/token.sh"
 export SCRIPTS_DASHBOARD_TOKEN_PATH="${TOOLS_DIR}/dashboard-token/src/dashboard-token.sh"
 export SCRIPTS_CHARTS_PATH="${TOOLS_DIR}/charts/src/charts.sh"
 export SCRIPTS_CONNECTIVITY_CHECK_PATH="${TOOLS_DIR}/connectivity-check/src/check-services.sh"
@@ -503,12 +504,11 @@ setup_cgroup_requirements() {
 		
 		# Вывод информации о необходимости настройки .wslconfig в Windows
 		echo -e "${YELLOW}ВНИМАНИЕ: Для корректной работы WSL2 с cgroup v2 необходимо настроить:${NC}"
-		echo -e "${YELLOW}1. В Windows файл %UserProfile%\\.wslconfig:${NC}"
-		echo -e "${YELLOW}   [wsl2]${NC}"
-		echo -e "${YELLOW}   kernelCommandLine = cgroup_no_v1=all cgroup_enable=memory swapaccount=1${NC}"
-		echo -e "${YELLOW}2. В WSL файл /etc/wsl.conf:${NC}"
-		echo -e "${YELLOW}   [boot]${NC}"
-		echo -e "${YELLOW}   systemd = true${NC}"
+		echo -e "${YELLOW}В Windows файл %UserProfile%\\.wslconfig:${NC}"
+		echo -e "${YELLOW}[boot]${NC}"
+		echo -e "${YELLOW}systemd=true${NC}"
+		echo -e "${YELLOW}[wsl2]${NC}"
+		echo -e "${YELLOW}kernelCommandLine = cgroup_no_v1=all cgroup_enable=memory swapaccount=1${NC}"
 		
 		# Проверка Docker Desktop
 		if is_docker_desktop; then

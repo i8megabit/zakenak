@@ -1,0 +1,28 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ingress-nginx-admission
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/component: admission-webhook
+spec:
+  secretName: ingress-nginx-admission
+  duration: 8760h # 1 year
+  renewBefore: 720h # 30 days
+  subject:
+    organizations:
+      - ingress-nginx
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  dnsNames:
+    - ingress-nginx-controller-admission.ingress-nginx.svc
+    - ingress-nginx-controller-admission.ingress-nginx.svc.cluster.local
+  issuerRef:
+    name: prod-local-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io

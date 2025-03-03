@@ -12,7 +12,7 @@ if kubectl get configmap coredns -n kube-system &>/dev/null; then
     kubectl get configmap coredns -n kube-system -o yaml > /tmp/coredns-current.yaml
     
     # Apply the new configuration with --force flag to replace the existing ConfigMap
-    if ! kubectl apply -f "$(dirname "${BASH_SOURCE[0]}")/coredns-custom.yaml" --force; then
+    if ! kubectl apply -f "$(dirname "${BASH_SOURCE[0]}")/coredns-custom.yaml" --force --save-config; then
         echo -e "${RED}Ошибка при применении конфигурации CoreDNS${NC}"
         exit 1
     fi
@@ -31,7 +31,7 @@ if kubectl get configmap coredns-custom -n kube-system &>/dev/null; then
     kubectl get configmap coredns-custom -n kube-system -o yaml > /tmp/coredns-custom-current.yaml
     
     # Apply the new configuration with --force flag to replace the existing ConfigMap
-    if ! kubectl apply -f "$(dirname "${BASH_SOURCE[0]}")/manifests/coredns-custom-config.yaml" --force; then
+    if ! kubectl apply -f "$(dirname "${BASH_SOURCE[0]}")/manifests/coredns-custom-config.yaml" --force --save-config; then
         echo -e "${RED}Ошибка при применении конфигурации coredns-custom-config${NC}"
         exit 1
     fi
@@ -82,5 +82,21 @@ else
 fi
 
 echo -e "${CYAN}Проверка DNS завершена${NC}"
+
+# Check if running in WSL
+if grep -q "microsoft" /proc/version || grep -q "WSL" /proc/version; then
+    echo -e "${CYAN}Обнаружено WSL окружение. Настройка DNS для Windows...${NC}"
+    
+    # Inform about Windows DNS configuration
+    echo -e "${YELLOW}ВАЖНО: Для доступа к сервисам из Windows необходимо настроить DNS.${NC}"
+    echo -e "${YELLOW}В Windows домены *.prod.local не будут доступны без дополнительной настройки.${NC}"
+    echo -e "${CYAN}Для настройки DNS в Windows выполните:${NC}"
+    echo -e "${GREEN}./update-windows-dns.sh${NC}"
+    echo -e "${CYAN}или следуйте инструкциям в README-WINDOWS-DNS.md${NC}"
+    
+    # Make the scripts executable
+    chmod +x "$(dirname "${BASH_SOURCE[0]}")/update-windows-dns.sh" 2>/dev/null || true
+    chmod +x "$(dirname "${BASH_SOURCE[0]}")/update-windows-hosts.ps1" 2>/dev/null || true
+fi
 
 echo -e "${GREEN}CoreDNS успешно настроен!${NC}"

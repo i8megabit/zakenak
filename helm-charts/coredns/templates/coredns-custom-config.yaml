@@ -7,7 +7,7 @@ metadata:
     {{- include "coredns.labels" . | nindent 4 }}
 data:
   prod.local.server: |
-    prod.local {
+    prod.local:53 {
         hosts {
           {{ .Values.ollama.ip }} ollama.prod.local
           {{ .Values.webui.ip }} webui.prod.local

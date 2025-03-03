@@ -3,6 +3,15 @@ release:
   name: ollama
   namespace: prod
 
+# Deployment control
+enabled: false  # Set to false to disable the Ollama deployment in Kubernetes
+
+# External Ollama configuration
+externalOllama:
+  enabled: true
+  host: "host.docker.internal"  # This resolves to the Docker host from within Kubernetes
+  port: 11434
+
 # Основные настройки приложения
 image:
   repository: ollama/ollama
@@ -14,32 +23,23 @@ deployment:
   replicas: 1
   resources:
     limits:
-      cpu: "12"
-      memory: "24Gi"
-      nvidia.com/gpu: "1"
-    requests:
       cpu: "8"
       memory: "16Gi"
+      nvidia.com/gpu: "1"
+    requests:
+      cpu: "4"
+      memory: "8Gi"
+  # Add GPU node selector configuration
+  gpuNodeSelector:
+    enabled: false  # Set to false by default to avoid scheduling issues
+    labelKey: "nvidia.com/gpu"
+    labelValue: "present"
   envFrom:
     - configMapRef:
         name: gpu-config
   env:
     - name: OLLAMA_HOST
       value: "0.0.0.0"
-    - name: OLLAMA_COMPUTE_TYPE
-      value: "gpu"
-    - name: OLLAMA_GPU_LAYERS
-      value: "99"  # Use all layers on GPU for maximum performance
-    - name: OLLAMA_F16
-      value: "true"
-    - name: OLLAMA_MODEL
-      value: "deepseek-r1:32b-q4_0"  # Use 4-bit quantization for better performance
-    - name: OLLAMA_QUANTIZATION
-      value: "q4_0"  # 4-bit quantization
-    - name: OLLAMA_CUDA_MEMORY_FRACTION
-      value: "0.95"  # Use 95% of GPU memory
-    - name: OLLAMA_CUDA_FORCE_ALLOCATION
-      value: "true"  # Force memory allocation
 
 # Настройки сервиса
 service:
@@ -71,7 +71,7 @@ ingress:
 
 # Настройки хранилища для моделей
 persistence:
-  enabled: true
+  enabled: false  # Disabled since we're using hostPath
   size: 100Gi  # Increased storage for larger models
   storageClass: ""
   accessModes:

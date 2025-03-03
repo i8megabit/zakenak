@@ -6,12 +6,26 @@ metadata:
   labels:
     app: ollama
 spec:
+  {{- if .Values.enabled }}
+  # When Ollama is deployed in Kubernetes, use the standard service configuration
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort }}
       protocol: TCP
       name: http
-      nodePort: 30434
+      {{- if (and (eq .Values.service.type "NodePort") (not (empty .Values.service.nodePort))) }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
   selector:
     app: ollama
+  {{- else if .Values.externalOllama.enabled }}
+  # When using external Ollama, create an ExternalName service that points to the Docker host
+  type: ExternalName
+  externalName: {{ .Values.externalOllama.host }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.externalOllama.port }}
+      protocol: TCP
+      name: http
+  {{- end }}

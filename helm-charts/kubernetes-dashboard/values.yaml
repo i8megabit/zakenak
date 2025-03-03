@@ -29,11 +29,11 @@ kubernetes-dashboard:
           - dashboard.prod.local
   resources:
     requests:
+      cpu: 50m
+      memory: 100Mi
+    limits:
       cpu: 100m
       memory: 200Mi
-    limits:
-      cpu: 200m
-      memory: 400Mi
   tolerations:
     - effect: NoSchedule
       operator: Exists

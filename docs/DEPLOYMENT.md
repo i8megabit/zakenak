@@ -23,6 +23,7 @@ Should Harbour?	No.
   - [Настройка KUBECONFIG](KUBECONFIG.md)
   - [Мониторинг](MONITORING.md)
   - [Настройка сети](NETWORK-CONFIGURATION.md)
+  - [Миграция и настройка WSL и Docker](WSL-DOCKER-MIGRATION.md)
 - [Примеры](../examples/README.md)
 
 ## Требования к системе
@@ -152,6 +153,27 @@ kubectl get pods -n kube-system -l k8s-app=nvidia-device-plugin-daemonset
 kubectl run tensor-test --rm -it --image=nvcr.io/nvidia/pytorch:23.12-py3 \
   --command -- python3 -c "import torch; print(torch.cuda.is_available())"
 ```
+
+### 3. Установка NVIDIA Device Plugin с помощью Helm
+```bash
+# Установка NVIDIA Device Plugin
+helm upgrade --install \
+    nvidia-device-plugin ./helm-charts/nvidia-device-plugin \
+    --namespace kube-system \
+    --values ./helm-charts/nvidia-device-plugin/values.yaml
+
+# Проверка статуса
+kubectl get pods -n kube-system -l k8s-app=nvidia-device-plugin-daemonset
+kubectl logs -n kube-system -l k8s-app=nvidia-device-plugin-daemonset
+```
+
+Для работы с потребительскими GPU (GeForce RTX серии) в WSL2, наша реализация NVIDIA Device Plugin включает:
+
+1. Дополнительные точки монтирования для библиотек NVIDIA
+2. Расширенные переменные окружения для конфигурации GPU
+3. Явное указание команды и аргументов для совместимости с WSL2
+
+Подробнее о настройке GPU в WSL2 см. [GPU в WSL2](GPU-WSL.md).
 
 ## Развертывание кластера
 

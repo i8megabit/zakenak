@@ -8,11 +8,11 @@ cert-manager:
   replicaCount: 1
   resources:
     requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
       cpu: 100m
       memory: 128Mi
-    limits:
-      cpu: 200m
-      memory: 256Mi
 
 # Настройки для ClusterIssuer
 clusterIssuer:
@@ -25,4 +25,3 @@ clusterIssuer:
     - "prod.local"
   duration: "8760h" # 1 год
   renewBefore: "720h" # 30 дней
-

@@ -8,7 +8,7 @@ apiVersion: v2
 name: ollama
 description: "A Helm chart for Ollama - LLM Model Server with GPU support"
 type: application
-version: 0.1.0
+version: 0.3.0
 appVersion: "latest"
 keywords:
   - llm

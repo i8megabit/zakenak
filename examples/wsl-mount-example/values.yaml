@@ -1,0 +1,55 @@
+# Пример конфигурации для монтирования OpenWebUI на физический диск из WSL
+# Example configuration for mounting OpenWebUI on a physical disk from WSL
+
+# Параметры релиза
+release:
+  name: open-webui
+  namespace: prod
+
+# Основные настройки приложения
+image:
+  repository: ghcr.io/open-webui/open-webui
+  tag: "latest"
+  pullPolicy: Always
+
+# Настройки развертывания
+deployment:
+  replicas: 1
+  resources:
+    limits:
+      cpu: "1"
+      memory: "2Gi"
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+  env:
+    - name: OLLAMA_API_BASE
+      value: "http://ollama.prod.svc.cluster.local:11434/api"
+    - name: OLLAMA_BASE_URL
+      value: "http://ollama.prod.svc.cluster.local:11434"
+    - name: DISABLE_TELEMETRY
+      value: "true"
+
+# Настройки сервиса
+service:
+  type: ClusterIP
+  port: 3000
+  targetPort: 3000
+
+# Настройки Ingress
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  hosts:
+    - host: webui.prod.local
+      paths:
+        - path: /
+          pathType: Prefix
+
+# Настройки хранилища - использование hostPath для WSL
+persistence:
+  enabled: true
+  useHostPath: true  # Включить использование hostPath вместо PVC
+  hostPath: "/mnt/u"  # Путь на хосте для монтирования
