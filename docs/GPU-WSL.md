@@ -167,7 +167,13 @@ notepad "$env:USERPROFILE\.wslconfig"
 systemd=true
 
 [wsl2]
+memory=24GB
+processors=8
+swap=8GB
+localhostForwarding=true
 kernelCommandLine = cgroup_no_v1=all cgroup_enable=memory swapaccount=1
+nestedVirtualization=true
+guiApplications=true
 ```
 
 3. Настройте Docker daemon внутри WSL2 для работы с cgroup v2 и systemd:
@@ -430,3 +436,42 @@ kind delete cluster --name kind
 # Запустите скрипт настройки заново
 ./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --auto-install
 ```
+
+## Полезные скрипты и инструменты
+
+Для упрощения работы с GPU в WSL2 и Kubernetes, в репозитории доступны следующие скрипты и инструменты:
+
+### [setup-wsl-gpu.sh](../tools/k8s-kind-setup/wsl/src/setup-wsl-gpu.sh)
+Скрипт для настройки GPU в WSL2:
+- Автоматическая установка драйверов NVIDIA
+- Настройка CUDA toolkit
+- Конфигурация NVIDIA Container Toolkit
+- Проверка работоспособности GPU
+
+### [check-cuda.sh](../tools/k8s-kind-setup/scripts/check-cuda.sh)
+Скрипт для проверки CUDA:
+- Проверка наличия драйверов NVIDIA
+- Валидация CUDA toolkit
+- Проверка совместимости с контейнерами
+- Тестирование тензорных операций
+
+### [deploy-all.sh](../tools/k8s-kind-setup/deploy-all/src/deploy-all.sh)
+Комплексный скрипт для развертывания кластера с поддержкой GPU:
+- Автоматическая установка всех компонентов
+- Настройка GPU в кластере
+- Проверка тензорных операций
+- Поддержка CPU-only режима
+
+### [nvidia-device-plugin-custom.yml](../tools/k8s-kind-setup/nvidia-device-plugin-custom.yml)
+Кастомизированный манифест для NVIDIA Device Plugin:
+- Настроен для работы с GeForce RTX GPU в WSL2
+- Дополнительные точки монтирования для библиотек NVIDIA
+- Расширенные переменные окружения
+- Улучшенная обработка ошибок
+
+### [setup-nvidia-libs.sh](../tools/k8s-kind-setup/setup-nvidia-libs.sh)
+Скрипт для установки библиотек NVIDIA:
+- Установка необходимых пакетов NVIDIA
+- Создание символических ссылок
+- Настройка NVIDIA Container Toolkit
+- Проверка работы GPU в контейнере

@@ -76,6 +76,63 @@ The Open WebUI provides a user-friendly interface for interacting with AI models
 - Support for various AI models
 - Custom prompt templates
 
+## Developed Tools and Scripts
+
+### Kubernetes Management Tools
+
+#### [deploy-all](../tools/k8s-kind-setup/deploy-all/src/deploy-all.sh)
+A comprehensive deployment orchestration script that automates the entire process of setting up a Kubernetes cluster with all necessary components. Features include:
+- Intelligent error detection and recovery
+- Support for both GPU and CPU-only modes
+- Automated installation of all required components
+- Extensive validation and testing
+
+#### [charts.sh](../tools/k8s-kind-setup/charts/src/charts.sh)
+A powerful Helm charts management tool that simplifies the installation and configuration of Kubernetes components:
+- Automated chart dependency resolution
+- Support for custom values and configurations
+- Intelligent ordering of chart installations
+- Comprehensive error handling
+
+#### [setup-dns](../tools/k8s-kind-setup/setup-dns/src/setup-dns.sh)
+A specialized tool for configuring DNS in Kubernetes clusters:
+- CoreDNS configuration for local domain resolution
+- Integration with Windows hosts for local development
+- Support for custom DNS configurations
+- Automated validation of DNS setup
+
+### GPU Integration Tools
+
+#### [setup-wsl-gpu.sh](../tools/k8s-kind-setup/wsl/src/setup-wsl-gpu.sh)
+A script for configuring GPU support in WSL2 environments:
+- Automated NVIDIA driver configuration
+- CUDA toolkit installation and setup
+- Container runtime configuration for GPU support
+- Comprehensive validation of GPU functionality
+
+#### [check-cuda.sh](../tools/k8s-kind-setup/scripts/check-cuda.sh)
+A validation script for ensuring proper CUDA configuration:
+- Verification of NVIDIA driver installation
+- CUDA toolkit validation
+- Container runtime compatibility checks
+- Tensor operations testing
+
+### Utility Scripts
+
+#### [dashboard-token.sh](../tools/k8s-kind-setup/dashboard-token/src/dashboard-token.sh)
+A utility for generating and managing Kubernetes Dashboard access tokens:
+- Secure token generation
+- RBAC configuration
+- Access control management
+- Token rotation support
+
+#### [connectivity-check](../tools/k8s-kind-setup/connectivity-check/src/check-services.sh)
+A comprehensive connectivity validation tool:
+- Service endpoint verification
+- Network policy validation
+- Ingress controller testing
+- Cross-namespace communication checks
+
 ## Contact Information
 
 - **GitHub**: [i8megabit](https://github.com/i8megabit)

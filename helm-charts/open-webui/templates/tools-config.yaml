@@ -302,6 +302,53 @@ data:
           "target_latency": "integer"
           },
           "code": "async def response_time_optimizer(current_latency: int, target_latency: int) -> dict:\n    try:\n        return optimize_response_time(current_latency, target_latency)\n    except Exception as e:\n        return {'error': str(e)}"
+        },
+        {
+          "name": "deepseek_r1_optimizer",
+          "description": "Оптимизация параметров для модели deepseek-r1:14b-qwen-distill-q4_K_M",
+          "parameters": {
+            "context_length": "integer",
+            "temperature": "float",
+            "top_p": "float"
+          },
+          "code": "async def deepseek_r1_optimizer(context_length: int, temperature: float, top_p: float) -> dict:\n    try:\n        # Оптимальные параметры для deepseek-r1:14b-qwen-distill-q4_K_M\n        optimal_params = {\n            'temperature': max(0.1, min(1.0, temperature)),\n            'top_p': max(0.1, min(1.0, top_p)),\n            'context_length': min(32768, context_length),\n            'repeat_penalty': 1.1,\n            'frequency_penalty': 0.0,\n            'presence_penalty': 0.0,\n            'mirostat': 0,\n            'mirostat_tau': 5.0,\n            'mirostat_eta': 0.1\n        }\n        return optimal_params\n    except Exception as e:\n        return {'error': str(e)}"
+        },
+        {
+          "name": "long_context_handler",
+          "description": "Обработка длинных контекстов для стабильной работы с большими диалогами",
+          "parameters": {
+            "conversation_history": "string",
+            "max_tokens": "integer",
+            "priority": "string"
+          },
+          "code": "async def long_context_handler(conversation_history: str, max_tokens: int, priority: str) -> dict:\n    try:\n        # Анализ и оптимизация длинного контекста\n        tokens_count = estimate_tokens(conversation_history)\n        if tokens_count > max_tokens:\n            if priority == 'recent':\n                # Сохраняем последние сообщения\n                optimized_history = truncate_history_keep_recent(conversation_history, max_tokens)\n            elif priority == 'important':\n                # Сохраняем важные части диалога\n                optimized_history = extract_important_parts(conversation_history, max_tokens)\n            else:\n                # Сжимаем историю с сохранением смысла\n                optimized_history = compress_history(conversation_history, max_tokens)\n            \n            return {\n                'original_tokens': tokens_count,\n                'optimized_tokens': estimate_tokens(optimized_history),\n                'optimized_history': optimized_history\n            }\n        return {'status': 'ok', 'tokens': tokens_count}\n    except Exception as e:\n        return {'error': str(e)}"
+        },
+        {
+          "name": "memory_usage_optimizer",
+          "description": "Оптимизация использования памяти для стабильной работы с большими диалогами",
+          "parameters": {
+            "current_memory_usage": "integer",
+            "max_memory": "integer"
+          },
+          "code": "async def memory_usage_optimizer(current_memory_usage: int, max_memory: int) -> dict:\n    try:\n        # Расчет оптимальных параметров использования памяти\n        memory_percentage = (current_memory_usage / max_memory) * 100\n        \n        if memory_percentage > 90:\n            # Критическое использование памяти\n            return {\n                'status': 'critical',\n                'recommendations': [\n                    'Уменьшить размер контекстного окна',\n                    'Активировать агрессивный сборщик мусора',\n                    'Уменьшить количество параллельных запросов до 1',\n                    'Очистить кэш модели'\n                ],\n                'settings': {\n                    'ENABLE_AGGRESSIVE_GC': 'true',\n                    'MAX_PARALLEL_REQUESTS': '1',\n                    'CHUNK_SIZE': '256',\n                    'STREAM_CHUNK_SIZE': '256'\n                }\n            }\n        elif memory_percentage > 75:\n            # Высокое использование памяти\n            return {\n                'status': 'high',\n                'recommendations': [\n                    'Оптимизировать размер контекстного окна',\n                    'Уменьшить количество параллельных запросов',\n                    'Включить периодическую очистку памяти'\n                ],\n                'settings': {\n                    'ENABLE_MEMORY_REDUCTION': 'true',\n                    'MAX_PARALLEL_REQUESTS': '1',\n                    'CHUNK_SIZE': '512',\n                    'STREAM_CHUNK_SIZE': '512'\n                }\n            }\n        else:\n            # Нормальное использование памяти\n            return {\n                'status': 'normal',\n                'recommendations': [\n                    'Текущие настройки оптимальны'\n                ],\n                'settings': {\n                    'ENABLE_MEMORY_REDUCTION': 'true',\n                    'MAX_PARALLEL_REQUESTS': '1',\n                    'CHUNK_SIZE': '512',\n                    'STREAM_CHUNK_SIZE': '512'\n                }\n            }\n    except Exception as e:\n        return {'error': str(e)}"
+        },
+        {
+          "name": "streaming_optimizer",
+          "description": "Оптимизация потоковой передачи ответов для улучшения отзывчивости интерфейса",
+          "parameters": {
+            "response_size": "integer",
+            "client_type": "string"
+          },
+          "code": "async def streaming_optimizer(response_size: int, client_type: str) -> dict:\n    try:\n        # Оптимизация параметров потоковой передачи\n        base_chunk_size = 512\n        \n        if response_size > 10000:\n            # Очень длинные ответы\n            if client_type == 'mobile':\n                chunk_size = 256\n            else:\n                chunk_size = 512\n        elif response_size > 5000:\n            # Длинные ответы\n            if client_type == 'mobile':\n                chunk_size = 384\n            else:\n                chunk_size = 768\n        else:\n            # Обычные ответы\n            if client_type == 'mobile':\n                chunk_size = 512\n            else:\n                chunk_size = 1024\n        \n        return {\n            'chunk_size': chunk_size,\n            'estimated_chunks': response_size // chunk_size,\n            'settings': {\n                'CHUNK_SIZE': str(chunk_size),\n                'STREAM_CHUNK_SIZE': str(chunk_size),\n                'KEEP_ALIVE': '1200',\n                'GRACEFUL_TIMEOUT': '1200'\n            }\n        }\n    except Exception as e:\n        return {'error': str(e)}"
+        },
+        {
+          "name": "ui_responsiveness_enhancer",
+          "description": "Улучшение отзывчивости пользовательского интерфейса при длинных ответах",
+          "parameters": {
+            "ui_config": "object",
+            "expected_response_size": "integer"
+          },
+          "code": "async def ui_responsiveness_enhancer(ui_config: dict, expected_response_size: int) -> dict:\n    try:\n        # Оптимизация настроек UI для длинных ответов\n        if expected_response_size > 15000:\n            # Очень длинные ответы\n            return {\n                'progressive_rendering': True,\n                'chunk_rendering': True,\n                'defer_images': True,\n                'lazy_loading': True,\n                'background_processing': True,\n                'throttle_updates': 100,  # ms\n                'use_virtual_scroll': True,\n                'max_visible_messages': 15\n            }\n        elif expected_response_size > 7500:\n            # Длинные ответы\n            return {\n                'progressive_rendering': True,\n                'chunk_rendering': True,\n                'defer_images': False,\n                'lazy_loading': True,\n                'background_processing': True,\n                'throttle_updates': 50,  # ms\n                'use_virtual_scroll': True,\n                'max_visible_messages': 20\n            }\n        else:\n            # Обычные ответы\n            return {\n                'progressive_rendering': True,\n                'chunk_rendering': False,\n                'defer_images': False,\n                'lazy_loading': False,\n                'background_processing': False,\n                'throttle_updates': 0,  # no throttling\n                'use_virtual_scroll': False,\n                'max_visible_messages': 50\n            }\n    except Exception as e:\n        return {'error': str(e)}"
         }
         ]
       }

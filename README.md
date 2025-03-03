@@ -75,7 +75,13 @@ notepad "$env:USERPROFILE\.wslconfig"
 # [boot]
 # systemd=true
 # [wsl2]
+# memory=24GB
+# processors=8
+# swap=8GB
+# localhostForwarding=true
 # kernelCommandLine = cgroup_no_v1=all cgroup_enable=memory swapaccount=1
+# nestedVirtualization=true
+# guiApplications=true
 
 # Настройка Docker внутри WSL2 для работы с cgroup v2
 # Эти настройки применяются к Docker daemon внутри WSL2, а не к Docker Desktop
@@ -249,6 +255,39 @@ docker run --gpus all \
 	ghcr.io/i8megabit/zakenak:latest converge
 ```
 
+## Оптимизация для модели deepseek-r1:14b-qwen-distill-q4_K_M
+
+Для оптимальной работы с моделью deepseek-r1:14b-qwen-distill-q4_K_M в Ollama через Docker Compose:
+
+```bash
+# Установка модели с оптимизированными настройками
+./setup-deepseek-model.sh
+```
+
+### Оптимизированные настройки
+Для модели deepseek-r1:14b-qwen-distill-q4_K_M настроены следующие оптимизированные параметры:
+
+```yaml
+environment:
+  - OLLAMA_HOST=0.0.0.0
+  - OLLAMA_COMPUTE_TYPE=gpu
+  - OLLAMA_GPU_LAYERS=99
+  - OLLAMA_F16=true
+  - OLLAMA_QUANTIZATION=q4_K_M
+  - OLLAMA_CUDA_MEMORY_FRACTION=0.95
+  - OLLAMA_CUDA_FORCE_ALLOCATION=true
+  - OLLAMA_MODEL=deepseek-r1:14b-qwen-distill-q4_K_M
+  - OLLAMA_CONTEXT_SIZE=8192
+```
+
+### Рекомендуемый процесс установки
+1. Скачайте модель через Windows-приложение Ollama
+2. Скопируйте файлы модели в примонтированный к Docker-контейнеру каталог `/mnt/o`
+3. Установите права доступа к файлам модели на `root:root`
+4. Запустите Ollama через Docker Compose с оптимизированными настройками
+
+Подробная документация: [README-DEEPSEEK-MODEL.md](README-DEEPSEEK-MODEL.md)
+
 ### Монтирование томов
 #### Обязательные тома
 - `/workspace`: Рабочая директория с конфигурацией
@@ -365,6 +404,8 @@ Zakenak распространяется под MIT лицензией.
 
 ## Авторы
 - [@eberil](https://github.com/eberil) - Основной разработчик
+- [Портфолио](portfolio/README.md)
+- [Резюме](resume/README.md)
 
 ## Благодарности
 - Команде Werf за вдохновение

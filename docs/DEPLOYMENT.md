@@ -62,9 +62,9 @@ notepad "$env:USERPROFILE\.wslconfig"
 # [boot]
 # systemd=true
 # [wsl2]
-# memory=40GB
-# processors=12
-# swap=16GB
+# memory=24GB
+# processors=8
+# swap=8GB
 # localhostForwarding=true
 # kernelCommandLine=cgroup_no_v1=all cgroup_enable=memory swapaccount=1
 # nestedVirtualization=true
@@ -123,6 +123,8 @@ docker run --rm --gpus all nvidia/cuda:12.6.0-base-ubuntu22.04 nvidia-smi
 ## Развертывание кластера
 
 ### 1. Автоматическое развертывание
+Для полного автоматического развертывания кластера используйте скрипт [deploy-all.sh](../tools/k8s-kind-setup/deploy-all/src/deploy-all.sh):
+
 ```bash
 # Полное развертывание с проверками и безопасным откатом
 ./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh
@@ -138,7 +140,19 @@ docker run --rm --gpus all nvidia/cuda:12.6.0-base-ubuntu22.04 nvidia-smi
 
 # Принудительное выполнение (игнорирование идемпотентности)
 ./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --force
+
+# Запуск в CPU-only режиме (без GPU)
+./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --skip-gpu-check
 ```
+
+Скрипт выполняет следующие действия:
+1. Проверяет конфигурацию системы и наличие необходимых компонентов
+2. Настраивает WSL2 для работы с GPU (если не указан флаг --no-wsl)
+3. Создает кластер KIND с поддержкой GPU
+4. Устанавливает базовые компоненты (cert-manager, local-ca, ingress-nginx)
+5. Настраивает DNS и TLS
+6. Устанавливает AI сервисы (Ollama, Open WebUI)
+7. Проводит валидацию развертывания
 
 ### 2. Проверка GPU в кластере
 ```bash
@@ -395,6 +409,59 @@ helm rollback ollama 1 -n prod
 - Просмотр истории развертывания: `cat /tools/k8s-kind-setup/.state/deploy_history.log`
 - Восстановление из бэкапа: `./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --rollback`
 - Очистка состояния: `./tools/k8s-kind-setup/deploy-all/src/deploy-all.sh --cleanup`
+
+## Полезные скрипты и инструменты
+
+Для упрощения процесса развертывания и управления кластером, в репозитории доступны следующие скрипты и инструменты:
+
+### [deploy-all.sh](../tools/k8s-kind-setup/deploy-all/src/deploy-all.sh)
+Комплексный скрипт для автоматического развертывания всего кластера:
+- Интеллектуальное обнаружение и восстановление после ошибок
+- Поддержка как GPU, так и CPU-only режимов
+- Автоматическая установка всех необходимых компонентов
+- Расширенная валидация и тестирование
+
+### [charts.sh](../tools/k8s-kind-setup/charts/src/charts.sh)
+Мощный инструмент для управления Helm чартами:
+- Автоматическое разрешение зависимостей чартов
+- Поддержка пользовательских values и конфигураций
+- Интеллектуальное упорядочивание установки чартов
+- Комплексная обработка ошибок
+
+### [setup-dns.sh](../tools/k8s-kind-setup/setup-dns/src/setup-dns.sh)
+Специализированный инструмент для настройки DNS в кластерах Kubernetes:
+- Конфигурация CoreDNS для локального разрешения доменов
+- Интеграция с Windows hosts для локальной разработки
+- Поддержка пользовательских DNS конфигураций
+- Автоматическая валидация настройки DNS
+
+### [setup-ingress.sh](../tools/k8s-kind-setup/setup-ingress/src/setup-ingress.sh)
+Инструмент для настройки Ingress контроллера:
+- Автоматическая установка Nginx Ingress Controller
+- Интеграция с cert-manager для TLS
+- Настройка правил маршрутизации
+- Проверка доступности сервисов
+
+### [dashboard-token.sh](../tools/k8s-kind-setup/dashboard-token/src/dashboard-token.sh)
+Утилита для генерации и управления токенами доступа к Kubernetes Dashboard:
+- Безопасная генерация токенов
+- Настройка RBAC
+- Управление доступом
+- Поддержка ротации токенов
+
+### [connectivity-check.sh](../tools/k8s-kind-setup/connectivity-check/src/check-services.sh)
+Комплексный инструмент для проверки связности:
+- Проверка конечных точек сервисов
+- Валидация сетевых политик
+- Тестирование Ingress контроллера
+- Проверка межнеймспейсной коммуникации
+
+### [setup-cert-manager.sh](../tools/k8s-kind-setup/setup-cert-manager/src/setup-cert-manager.sh)
+Инструмент для настройки управления сертификатами:
+- Установка и настройка cert-manager
+- Создание локального CA
+- Настройка выпуска сертификатов
+- Экспорт корневого CA для браузеров
 
 ```plain text
 Copyright (c) 2025 Mikhail Eberil

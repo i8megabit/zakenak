@@ -12,9 +12,11 @@ services:
       - OLLAMA_COMPUTE_TYPE=gpu
       - OLLAMA_GPU_LAYERS=99
       - OLLAMA_F16=true
-      - OLLAMA_QUANTIZATION=q4_0
+      - OLLAMA_QUANTIZATION=q4_K_M
       - OLLAMA_CUDA_MEMORY_FRACTION=0.95
       - OLLAMA_CUDA_FORCE_ALLOCATION=true
+      - OLLAMA_MODEL=deepseek-r1:14b-qwen-distill-q4_K_M
+      - OLLAMA_CONTEXT_SIZE=8192
     deploy:
       resources:
         reservations:

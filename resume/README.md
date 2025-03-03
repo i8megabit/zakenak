@@ -191,3 +191,4 @@ Experienced DevOps Engineer and Infrastructure Architect with over 11 years of e
 - [Kubernetes Dashboard](http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/)
 - [Open WebUI](http://localhost:3000)
 - [Portfolio](../portfolio/README.md)
+- [Zakenak k8s Branch](https://github.com/i8megabit/zakenak/tree/k8s)

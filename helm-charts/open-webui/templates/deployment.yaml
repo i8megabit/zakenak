@@ -15,6 +15,7 @@ spec:
       labels:
         app: open-webui
     spec:
+      terminationGracePeriodSeconds: 120  # Increased from default 30
       initContainers:
       - name: check-ollama-service
         image: curlimages/curl:latest
@@ -43,27 +44,27 @@ spec:
           httpGet:
             path: /health
             port: http
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
+          initialDelaySeconds: 60  # Increased from 30 to 60
+          periodSeconds: 15  # Increased from 10 to 15
+          timeoutSeconds: 10  # Increased from 5 to 10
           successThreshold: 1
           failureThreshold: 30
         readinessProbe:
           httpGet:
             path: /health
             port: http
-          initialDelaySeconds: 45
-          periodSeconds: 10
-          timeoutSeconds: 5
+          initialDelaySeconds: 90  # Increased from 45 to 90
+          periodSeconds: 20  # Increased from 10 to 20
+          timeoutSeconds: 15  # Increased from 5 to 15
           successThreshold: 1
           failureThreshold: 3
         livenessProbe:
           httpGet:
             path: /health
             port: http
-          initialDelaySeconds: 60
-          periodSeconds: 20
-          timeoutSeconds: 10
+          initialDelaySeconds: 120  # Increased from 60 to 120
+          periodSeconds: 30  # Increased from 20 to 30
+          timeoutSeconds: 20  # Increased from 10 to 20
           successThreshold: 1
           failureThreshold: 3
         envFrom:
@@ -86,11 +87,16 @@ spec:
         lifecycle:
           preStop:
             exec:
-              command: ["sh", "-c", "sleep 15"]
+              command: ["sh", "-c", "sleep 30"]  # Increased from 15 to 30
+          postStart:
+            exec:
+              command: ["sh", "-c", "echo 'Optimizing for deepseek-r1:14b-qwen-distill-q4_K_M model' && sleep 5"]
         {{- if or .Values.persistence.enabled .Values.persistence.useHostPath }}
         volumeMounts:
         - name: data
           mountPath: /app/backend/data
+        - name: tmp-volume
+          mountPath: /tmp
         {{- end }}
       {{- if or .Values.persistence.enabled .Values.persistence.useHostPath }}
       volumes:
@@ -103,4 +109,7 @@ spec:
         persistentVolumeClaim:
           claimName: {{ .Release.Name }}-pvc
         {{- end }}
+      - name: tmp-volume
+        emptyDir:
+          sizeLimit: "2Gi"
       {{- end }}

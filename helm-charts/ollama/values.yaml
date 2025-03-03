@@ -4,11 +4,11 @@ release:
   namespace: prod
 
 # Deployment control
-enabled: false  # Set to false to disable the Ollama deployment in Kubernetes
+enabled: true  # Enable the Ollama deployment in Kubernetes
 
 # External Ollama configuration
 externalOllama:
-  enabled: true
+  enabled: false
   host: "host.docker.internal"  # This resolves to the Docker host from within Kubernetes
   port: 11434
 
@@ -23,15 +23,15 @@ deployment:
   replicas: 1
   resources:
     limits:
-      cpu: "8"
-      memory: "16Gi"
+      cpu: "12"
+      memory: "24Gi"
       nvidia.com/gpu: "1"
     requests:
-      cpu: "4"
-      memory: "8Gi"
+      cpu: "8"
+      memory: "16Gi"
   # Add GPU node selector configuration
   gpuNodeSelector:
-    enabled: false  # Set to false by default to avoid scheduling issues
+    enabled: true  # Enable GPU node selector
     labelKey: "nvidia.com/gpu"
     labelValue: "present"
   envFrom:
@@ -40,6 +40,14 @@ deployment:
   env:
     - name: OLLAMA_HOST
       value: "0.0.0.0"
+    - name: OLLAMA_MODELS
+      value: "/mnt/o/models"
+    - name: OLLAMA_KEEP_ALIVE
+      value: "5m"
+    - name: OLLAMA_NUM_THREADS
+      value: "8"
+    - name: OLLAMA_COMPUTE_SHAPES
+      value: "false"
 
 # Настройки сервиса
 service:

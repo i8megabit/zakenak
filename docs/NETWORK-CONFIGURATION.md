@@ -67,8 +67,9 @@ notepad "$env:USERPROFILE\.wslconfig"
 
 ```ini
 [wsl2]
-memory=8GB
-processors=4
+memory=24GB
+processors=8
+swap=8GB
 localhostForwarding=true
 networkingMode=mirrored  # Или NAT
 dnsTunneling=true

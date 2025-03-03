@@ -1,54 +1,54 @@
-# External Ollama with GPU for Kubernetes
+# Внешний Ollama с поддержкой GPU для Kubernetes
 
-This guide explains how to set up Ollama with GPU support in a Docker container outside of Kubernetes, and configure your Kubernetes cluster to use this external Ollama instance.
+Это руководство объясняет, как настроить Ollama с поддержкой GPU в Docker-контейнере вне Kubernetes и сконфигурировать ваш кластер Kubernetes для использования этого внешнего экземпляра Ollama.
 
-## Overview
+## Обзор
 
-Instead of running Ollama with GPU resources directly in Kubernetes pods, this setup:
+Вместо запуска Ollama с ресурсами GPU непосредственно в подах Kubernetes, эта настройка:
 
-1. Runs Ollama in a Docker container with GPU access using Docker Compose
-2. Creates a Kubernetes service that points to the external Ollama container
-3. Maintains integration with Open WebUI in the Kubernetes cluster
+1. Запускает Ollama в Docker-контейнере с доступом к GPU, используя Docker Compose
+2. Создает сервис Kubernetes, который указывает на внешний контейнер Ollama
+3. Поддерживает интеграцию с Open WebUI в кластере Kubernetes
 
-This approach allows you to:
-- Use GPU resources more efficiently
-- Simplify Kubernetes resource management (no GPU resources needed in K8s)
-- Maintain the same user experience with Open WebUI
+Этот подход позволяет вам:
+- Более эффективно использовать ресурсы GPU
+- Упростить управление ресурсами Kubernetes (не требуются ресурсы GPU в K8s)
+- Сохранить тот же пользовательский опыт с Open WebUI
 
-## Setup Instructions
+## Инструкции по настройке
 
-### Automated Setup (Recommended)
+### Автоматическая настройка (Рекомендуется)
 
-The easiest way to set up this configuration is to use the provided setup script:
+Самый простой способ настроить эту конфигурацию — использовать предоставленный скрипт настройки:
 
 ```bash
 ./setup-external-ollama.sh
 ```
 
-This script will:
-1. Check for required dependencies (Docker, Docker Compose, kubectl, Helm, NVIDIA drivers)
-2. Install NVIDIA Container Toolkit if needed
-3. Start the Ollama container with GPU support using Docker Compose
-4. Create a Kubernetes service that points to the external Ollama container
-5. Deploy the Open WebUI Helm chart with the appropriate configuration
-6. Wait for the Open WebUI pod to become ready (may take up to 30 minutes)
+Этот скрипт:
+1. Проверит наличие необходимых зависимостей (Docker, Docker Compose, kubectl, Helm, драйверы NVIDIA)
+2. Установит NVIDIA Container Toolkit, если необходимо
+3. Запустит контейнер Ollama с поддержкой GPU, используя Docker Compose
+4. Создаст сервис Kubernetes, который указывает на внешний контейнер Ollama
+5. Развернет чарт Helm для Open WebUI с соответствующей конфигурацией
+6. Дождется готовности пода Open WebUI (может занять до 30 минут)
 
-### Manual Setup
+### Ручная настройка
 
-If you prefer to set up the components manually:
+Если вы предпочитаете настраивать компоненты вручную:
 
-#### 1. Set up Ollama in Docker
+#### 1. Настройка Ollama в Docker
 
-Navigate to the `docker-compose` directory and start Ollama with GPU support:
+Перейдите в директорию `docker-compose` и запустите Ollama с поддержкой GPU:
 
 ```bash
 cd docker-compose
 docker compose up -d
 ```
 
-#### 2. Create Kubernetes Service for External Ollama
+#### 2. Создание сервиса Kubernetes для внешнего Ollama
 
-Create a Kubernetes service that points to the external Ollama container:
+Создайте сервис Kubernetes, который указывает на внешний контейнер Ollama:
 
 ```bash
 kubectl apply -f - <<EOF
@@ -70,64 +70,64 @@ spec:
 EOF
 ```
 
-#### 3. Deploy Open WebUI
+#### 3. Развертывание Open WebUI
 
-Deploy the Open WebUI Helm chart with GPU configuration disabled:
+Разверните чарт Helm для Open WebUI с отключенной конфигурацией GPU:
 
 ```bash
 helm upgrade --install open-webui ./helm-charts/open-webui -n prod --set deployment.gpuConfig=false
 ```
 
-## Troubleshooting
+## Устранение неполадок
 
-If Open WebUI cannot connect to Ollama, check the following:
+Если Open WebUI не может подключиться к Ollama, проверьте следующее:
 
-1. Ensure the Ollama container is running in Docker:
+1. Убедитесь, что контейнер Ollama запущен в Docker:
    ```bash
    docker ps | grep ollama
    docker logs ollama
    ```
 
-2. Verify that the Ollama service in Kubernetes is correctly configured:
+2. Проверьте, что сервис Ollama в Kubernetes правильно настроен:
    ```bash
    kubectl get svc -n prod ollama
    ```
 
-3. Test connectivity from within the Kubernetes cluster:
+3. Проверьте соединение изнутри кластера Kubernetes:
    ```bash
    kubectl run -it --rm debug --image=curlimages/curl -- curl http://host.docker.internal:11434/api/tags
    ```
 
-4. Check the logs of the Open WebUI pod:
+4. Проверьте логи пода Open WebUI:
    ```bash
    kubectl logs -n prod -l app=open-webui
    ```
 
-5. Check the status of the Open WebUI pod:
+5. Проверьте статус пода Open WebUI:
    ```bash
    kubectl describe pod -n prod -l app=open-webui
    ```
 
-6. If you're using a different hostname than `host.docker.internal`, make sure it's correctly set in the Kubernetes service.
+6. Если вы используете имя хоста, отличное от `host.docker.internal`, убедитесь, что оно правильно указано в сервисе Kubernetes.
 
-7. For segmentation faults (exit code 139), try increasing the memory limits in the Open WebUI Helm chart:
+7. При ошибках сегментации (код выхода 139) попробуйте увеличить лимиты памяти в чарте Helm для Open WebUI:
    ```bash
    helm upgrade --install open-webui ./helm-charts/open-webui -n prod --set deployment.gpuConfig=false --set deployment.resources.limits.memory=4Gi
    ```
 
-## Network Configuration
+## Сетевая конфигурация
 
-For this setup to work, your Kubernetes cluster needs to be able to communicate with the Docker host. If you're using Kind or Minikube on the same machine, this should work automatically using `host.docker.internal` as the hostname.
+Для работы этой настройки ваш кластер Kubernetes должен иметь возможность взаимодействовать с хостом Docker. Если вы используете Kind или Minikube на том же компьютере, это должно работать автоматически с использованием `host.docker.internal` в качестве имени хоста.
 
-If you're using a different setup, you may need to adjust the hostname in the Kubernetes service to point to the correct IP address of your Docker host.
+Если вы используете другую настройку, возможно, вам потребуется изменить имя хоста в сервисе Kubernetes, чтобы оно указывало на правильный IP-адрес вашего хоста Docker.
 
-## Startup Time
+## Время запуска
 
-The Open WebUI pod may take up to 30 minutes to start up completely. The startup probe is configured with extended timeouts to allow sufficient time for the container to become ready. If the pod is still not ready after this time, check the logs for any errors.
+Запуск пода Open WebUI может занять до 30 минут. Проба запуска настроена с расширенными таймаутами, чтобы обеспечить достаточно времени для готовности контейнера. Если под все еще не готов по истечении этого времени, проверьте логи на наличие ошибок.
 
-The startup process includes:
-- Database initialization and migrations
-- Loading models and resources
-- Establishing connection to Ollama
+Процесс запуска включает:
+- Инициализацию базы данных и миграции
+- Загрузку моделей и ресурсов
+- Установление соединения с Ollama
 
-During this time, the pod will show as "Running" but not "Ready" until all health checks pass.
+В течение этого времени под будет отображаться как "Running" (Запущен), но не "Ready" (Готов), пока не пройдут все проверки работоспособности.

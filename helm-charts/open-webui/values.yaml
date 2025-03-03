@@ -13,17 +13,17 @@ image:
 # Настройки развертывания
 deployment:
   replicas: 1
-  gpuConfig: false  # Set to true to use gpu-config ConfigMap
+  gpuConfig: true  # Enable GPU config for better performance
   resources:
     limits:
-      cpu: "1500m"
-      memory: "2Gi"
+      cpu: "3000m"
+      memory: "4Gi"
     requests:
-      cpu: "1000m"
-      memory: "1Gi"
+      cpu: "2000m"
+      memory: "2Gi"
   env:
     - name: MODEL
-      value: ""  # Empty value to allow manual model selection through GUI
+      value: "deepseek-r1:14b-qwen-distill-q4_K_M"  # Set the specific model
     - name: DEBUG
       value: "false"
     - name: ENABLE_MEMORY_REDUCTION
@@ -31,9 +31,9 @@ deployment:
     - name: COMPUTE_SHAPES
       value: "false"
     - name: MAX_PARALLEL_REQUESTS
-      value: "2"  # Reduced from 4 to 2 to prevent overloading
+      value: "1"  # Reduced to 1 to prevent overloading with large model
     - name: NODE_OPTIONS
-      value: "--max-old-space-size=3072 --max-http-header-size=16384"  # Added max-http-header-size
+      value: "--max-old-space-size=4096 --max-http-header-size=32768"  # Increased memory and header size
     - name: ENABLE_AGGRESSIVE_GC
       value: "true"
     - name: OLLAMA_API_BASE
@@ -51,7 +51,7 @@ deployment:
     - name: HEALTH_CHECK_PATH
       value: "/health"
     - name: WEB_CONCURRENCY
-      value: "2"  # Reduced from 4 to 2 to prevent overloading
+      value: "1"  # Reduced to 1 for better stability with large model
     - name: WORKERS_PER_CORE
       value: "1"
     - name: PORT
@@ -59,25 +59,31 @@ deployment:
     - name: HOST
       value: "0.0.0.0"
     - name: TIMEOUT
-      value: "600"  # Increased from 300 to 600 for longer operations
+      value: "1200"  # Increased from 600 to 1200 for longer operations
     - name: GRACEFUL_TIMEOUT
-      value: "600"  # Increased from 300 to 600 for longer operations
+      value: "1200"  # Increased from 600 to 1200 for longer operations
     - name: KEEP_ALIVE
-      value: "600"  # Increased from 300 to 600 for longer operations
+      value: "1200"  # Increased from 600 to 1200 for longer operations
     - name: UNICORN_ENABLED
       value: "true"
     - name: UVICORN_WORKERS
-      value: "2"  # Reduced from 4 to 2 to prevent overloading
+      value: "1"  # Reduced to 1 for better stability with large model
     - name: UVICORN_HOST
       value: "0.0.0.0"
     - name: UVICORN_PORT
       value: "3000"
     - name: UVICORN_TIMEOUT
-      value: "600"  # Increased from 300 to 600 for longer operations
+      value: "1200"  # Increased from 600 to 1200 for longer operations
     - name: NGINX_MAX_UPLOAD_SIZE
-      value: "50m"
+      value: "100m"  # Increased from 50m to 100m
     - name: NGINX_PROXY_TIMEOUT
-      value: "600s"
+      value: "1200s"  # Increased from 600s to 1200s
+    - name: CHUNK_SIZE
+      value: "512"  # Added chunk size for better streaming performance
+    - name: STREAM_CHUNK_SIZE
+      value: "512"  # Added stream chunk size for better streaming performance
+    - name: MAX_CONTEXT_WINDOW_SIZE
+      value: "32768"  # Added max context window size for large context handling
 
 # Секреты
 secrets:
@@ -103,12 +109,12 @@ ingress:
   className: nginx
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
-    nginx.ingress.kubernetes.io/proxy-buffers-number: "4"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"  # Increased from 50m to 100m
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "1200"  # Increased from 600 to 1200
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "1200"  # Increased from 600 to 1200
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "1200"  # Increased from 600 to 1200
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "256k"  # Increased from 128k to 256k
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "8"  # Increased from 4 to 8
     nginx.ingress.kubernetes.io/affinity: "cookie"
     nginx.ingress.kubernetes.io/session-cookie-name: "route"
     nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
@@ -131,7 +137,7 @@ tls:
 
 persistence:
   enabled: true
-  size: 10Gi
+  size: 20Gi  # Increased from 10Gi to 20Gi for more storage
   storageClass: ""
   # Add hostPath configuration for WSL mount
   useHostPath: false  # Set to true to use hostPath instead of PVC

@@ -6,5 +6,10 @@ metadata:
 data:
   NVIDIA_VISIBLE_DEVICES: "all"
   NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
-  MAX_PARALLEL_REQUESTS: "4"
-  CUDA_MEMORY_FRACTION: "0.95"
+  MAX_PARALLEL_REQUESTS: "1"  # Reduced from 4 to 1 for better stability with large model
+  CUDA_MEMORY_FRACTION: "0.98"  # Increased from 0.95 to 0.98 for more GPU memory
+  CUDA_VISIBLE_DEVICES: "0"
+  OLLAMA_MODEL: "deepseek-r1:14b-qwen-distill-q4_K_M"
+  OLLAMA_NUM_GPU: "1"
+  OLLAMA_GPU_LAYERS: "99"  # Use as many layers on GPU as possible
+  OLLAMA_VERBOSE: "1"  # Enable verbose logging for debugging

@@ -299,20 +299,27 @@ docker-compose up -d
 Для оптимизации использования ресурсов WSL, создайте или отредактируйте файл `.wslconfig` в домашней директории Windows (`%USERPROFILE%`):
 
 ```ini
+[boot]
+systemd=true
 [wsl2]
-memory=8GB
-processors=4
-swap=4GB
+memory=24GB
+processors=8
+swap=8GB
 localhostForwarding=true
 kernelCommandLine = cgroup_no_v1=all cgroup_enable=memory swapaccount=1
+nestedVirtualization=true
+guiApplications=true
 ```
 
 Эти настройки:
-- Ограничивают использование памяти до 8GB
-- Ограничивают использование процессоров до 4 ядер
-- Устанавливают размер файла подкачки в 4GB
+- Включают systemd для лучшей совместимости с сервисами Linux
+- Ограничивают использование памяти до 16GB
+- Ограничивают использование процессоров до 8 ядер
+- Устанавливают размер файла подкачки в 8GB
 - Включают перенаправление localhost
 - Настраивают параметры ядра для поддержки cgroup v2 и Docker
+- Включают поддержку вложенной виртуализации
+- Включают поддержку GUI-приложений
 
 ### Оптимизация файловой системы
 
