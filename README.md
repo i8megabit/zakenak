@@ -185,7 +185,7 @@ zakenak deploy
 ## Архитектура
 ```mermaid
 graph TD
-    A[Git Repository] --> B[Ƶakanak]
+    A[Git Repository] --> B[Ƶakenak]
     B --> C[Container Registry]
     B --> D[Kubernetes Cluster]
     B --> E[State Manager]
