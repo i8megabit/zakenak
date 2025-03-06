@@ -29,6 +29,33 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  # open-webui:
+  #   image: ghcr.io/open-webui/open-webui:latest
+  #   container_name: open-webui
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"  # Проброс порта на хост-машину для доступа из локальной сети
+  #   environment:
+  #     - OLLAMA_API_BASE=http://ollama:11434/api
+  #     - OLLAMA_BASE_URL=http://ollama:11434
+  #     - OLLAMA_HOST=ollama
+  #     - OLLAMA_PORT=11434
+  #     - HOST=0.0.0.0  # Важно для доступа извне контейнера
+  #     - MODEL=deepseek-r1:14b-qwen-distill-q4_K_M
+  #     - DEBUG=false
+  #     - ENABLE_MEMORY_REDUCTION=true
+  #     - COMPUTE_SHAPES=false
+  #     - MAX_PARALLEL_REQUESTS=1
+  #     - NODE_OPTIONS=--max-old-space-size=4096 --max-http-header-size=32768
+  #     - ENABLE_AGGRESSIVE_GC=true
+  #     - DISABLE_TELEMETRY=true
+  #     - HEALTH_CHECK_ENABLED=true
+  #     - HEALTH_CHECK_PATH=/health
+  #   networks:
+  #     - ollama-network
+  #   depends_on:
+  #     - ollama
+
 networks:
   ollama-network:
     name: ollama-network

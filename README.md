@@ -399,6 +399,7 @@ Zakenak распространяется под MIT лицензией.
   - [Настройка KUBECONFIG](docs/KUBECONFIG.md)
   - [Мониторинг](docs/MONITORING.md)
   - [Настройка сети](docs/NETWORK-CONFIGURATION.md)
+  - [Доступ к Open WebUI из локальной сети](docs/ACCESSING-OPEN-WEBUI.md)
   - [Миграция и настройка WSL и Docker](docs/WSL-DOCKER-MIGRATION.md)
 - 💡 [Примеры](examples/)
 

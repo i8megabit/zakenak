@@ -133,3 +133,42 @@ If you encounter issues:
    ```
 
 5. If Kubernetes cannot connect to the Docker host, try using the actual IP address of your host machine instead of `host.docker.internal` in the Kubernetes service.
+
+6. Check if Open WebUI is running:
+   ```bash
+   docker ps | grep open-webui
+   ```
+
+7. Check Open WebUI logs:
+   ```bash
+   docker logs open-webui
+   ```
+
+8. Test Open WebUI health endpoint:
+   ```bash
+   curl http://localhost:3000/health
+   ```
+
+## Accessing from Local Network
+
+To make Open WebUI accessible from your local network:
+
+1. Ensure port 3000 is exposed in the docker-compose.yaml file (already configured)
+2. Find your host machine's IP address:
+   ```bash
+   # On Linux
+   hostname -I | awk '{print $1}'
+   
+   # On macOS
+   ipconfig getifaddr en0
+   
+   # On Windows
+   ipconfig | findstr /i "IPv4"
+   ```
+3. Access Open WebUI from other devices using:
+   ```
+   http://<your-host-ip>:3000
+   ```
+4. If you can't connect, check your firewall settings to ensure port 3000 is allowed
+
+For more detailed information about accessing Open WebUI from your local network, see the [Доступ к Open WebUI из локальной сети](../docs/ACCESSING-OPEN-WEBUI.md) documentation.
