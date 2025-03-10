@@ -58,7 +58,7 @@ Built a complete AI infrastructure stack:
 
 ## Technical Deep Dives
 
-### [Kubernetes Dashboard Access](http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/)
+### [Kubernetes Dashboard Access](https://eberil.ru/dashboard)
 
 The Kubernetes Dashboard provides a comprehensive UI for managing cluster resources. I've configured it with:
 
@@ -67,7 +67,7 @@ The Kubernetes Dashboard provides a comprehensive UI for managing cluster resour
 - Metrics integration for resource monitoring
 - Custom resource visualization
 
-### [Open WebUI for AI Interaction](http://localhost:3000)
+### [Open WebUI for AI Interaction](https://eberil.ru/webui)
 
 The Open WebUI provides a user-friendly interface for interacting with AI models. Key features include:
 

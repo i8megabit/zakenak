@@ -8,11 +8,8 @@ echo -e "${CYAN}Настройка CoreDNS...${NC}"
 # Применение конфигурации CoreDNS
 # First check if the ConfigMap exists
 if kubectl get configmap coredns -n kube-system &>/dev/null; then
-    # If it exists, get the current ConfigMap and save it to a temporary file
-    kubectl get configmap coredns -n kube-system -o yaml > /tmp/coredns-current.yaml
-    
-    # Apply the new configuration with --force flag to replace the existing ConfigMap
-    if ! kubectl apply -f "$(dirname "${BASH_SOURCE[0]}")/coredns-custom.yaml" --force --save-config; then
+    # If it exists, apply the new configuration with --save-config flag to ensure the annotation is set
+    if ! kubectl apply -f "$(dirname "${BASH_SOURCE[0]}")/coredns-custom.yaml" --save-config; then
         echo -e "${RED}Ошибка при применении конфигурации CoreDNS${NC}"
         exit 1
     fi
@@ -27,11 +24,8 @@ fi
 # Применение конфигурации coredns-custom-config
 echo -e "${CYAN}Применение конфигурации coredns-custom-config...${NC}"
 if kubectl get configmap coredns-custom -n kube-system &>/dev/null; then
-    # If it exists, get the current ConfigMap and save it to a temporary file
-    kubectl get configmap coredns-custom -n kube-system -o yaml > /tmp/coredns-custom-current.yaml
-    
-    # Apply the new configuration with --force flag to replace the existing ConfigMap
-    if ! kubectl apply -f "$(dirname "${BASH_SOURCE[0]}")/manifests/coredns-custom-config.yaml" --force --save-config; then
+    # If it exists, apply the new configuration with --save-config flag to ensure the annotation is set
+    if ! kubectl apply -f "$(dirname "${BASH_SOURCE[0]}")/manifests/coredns-custom-config.yaml" --save-config; then
         echo -e "${RED}Ошибка при применении конфигурации coredns-custom-config${NC}"
         exit 1
     fi

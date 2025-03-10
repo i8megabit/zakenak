@@ -11,34 +11,44 @@ Experienced DevOps Engineer and Infrastructure Architect with over 11 years of e
 
 ## Professional Experience
 
-### DevOps Team Lead
+### Department Head
 **Sberbank** | January 2022 - Present
 
 #### Key Responsibilities:
-- Led the DevOps team for the over-the-counter trading division
-- Designed and implemented high-availability infrastructure for critical financial systems
-- Established DevOps culture, workflows, and best practices across the organization
-- Managed CI/CD pipelines for financial applications with strict security requirements
-- Coordinated with development teams, QA, and business analysts to ensure smooth delivery
-- Implemented monitoring and alerting systems for critical financial services
-- Conducted regular performance reviews and mentored junior team members
+- Lead the DevOps team for the over-the-counter trading division.
+- Design and implement high-availability infrastructure for critical financial systems.
+- Develop DevOps culture, workflows, and best practices.
+- Manage CI/CD pipelines for financial applications with strict security requirements.
+- Coordinate with development teams, QA, business analysts, and SRE.
+- Implement monitoring and alerting systems for critical infrastructure.
+- Conduct regular reviews and mentoring for junior team members.
 
 #### Key Achievements:
+- Reduced deployment time by 70% through automation and implementation of CI/CD best practices.
+- Improved system reliability with 99.99% uptime for critical trading systems.
+- Established comprehensive disaster recovery procedures for financial data.
+- Successfully migrated legacy monolithic applications to microservices architecture.
+- Implemented secure, compliant infrastructure meeting financial industry regulations.
 - Developed **Zakenak**, a professional GitOps tool for Kubernetes cluster orchestration with GPU support
 - Created **charts.sh**, a comprehensive Helm charts management tool that automates installation, upgrades, and configuration of Kubernetes components
 - Built **deploy-all.sh**, a powerful deployment orchestration script with intelligent error detection and rollback capabilities
-- Reduced deployment time by 70% through automation and CI/CD implementation
-- Improved system reliability with 99.99% uptime for critical trading systems
-- Established comprehensive disaster recovery procedures for financial data
-- Successfully migrated legacy monolithic applications to microservices architecture
-- Implemented secure, compliant infrastructure meeting financial industry regulations
 
 #### Technologies Used:
-- **Orchestration:** Kubernetes, Docker Swarm
-- **CI/CD:** Jenkins, GitLab CI
-- **Monitoring:** Prometheus, Grafana, ELK Stack
-- **Infrastructure:** Terraform, Ansible, VMware
-- **Security:** Vault, Certificate Management, RBAC
+- **Orchestration:** OpenShift, Kubernetes, Docker, Jenkins, Helm, ArgoCD, Werf, Deckhouse, Zakenak.
+- **Message Brokers:** Kafka, Rabbit.
+- **Databases:** T-psql, MS SQL, MySQL, MongoDB, Redis, etc.
+- **ServiceMesh:** Envoy, Istio, Traefik, Nginx.
+- **Monitoring:** Prometheus, Victoria, Grafana, ELK Stack, Fluent/Filebit, Alert-manager, Vector, Graylog, Loki, Zabbix, etc.
+- **Infrastructure:** Terraform, Ansible, VMware, Proxmox, Ceph, Salt, etc.
+- **Security:** HashiCorp Vault, Ansible Vault, Certificate Management, RBAC.
+
+#### Pet Projects:
+- **Zakenak**, a professional GitOps tool for Kubernetes cluster orchestration with GPU support:
+(https://github.com/i8megabit/zakenak).
+- **Charts**. A comprehensive Helm charts management tool that automates installation, upgrades, and configuration of Kubernetes components:
+(https://github.com/i8megabit/zakenak/blob/k8s/tools/k8s-kind-setup/charts/src/charts.sh).
+- **Deploy**. A utility for deploying k8s clusters with error detection and rollback capabilities:
+(https://github.com/i8megabit/zakenak/blob/k8s/tools/k8s-kind-setup/deploy-all/README.md).
 
 ### DevOps Engineer
 **AO Antiplagiat** | February 2018 - January 2022
@@ -188,7 +198,7 @@ Experienced DevOps Engineer and Infrastructure Architect with over 11 years of e
 - Own vehicle
 
 ## Links
-- [Kubernetes Dashboard](http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/)
-- [Open WebUI](http://localhost:3000)
+- [Kubernetes Dashboard](https://eberil.ru/dashboard)
+- [Open WebUI](https://eberil.ru/webui)
 - [Portfolio](../portfolio/README.md)
 - [Zakenak k8s Branch](https://github.com/i8megabit/zakenak/tree/k8s)

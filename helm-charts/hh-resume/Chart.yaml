@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Mikhail Eberil
+# "Managing your hh.ru resume with Kubernetes"
+
+apiVersion: v2
+name: hh-resume
+description: "A Helm chart for managing resumes on hh.ru through API"
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - resume
+  - hh.ru
+  - api
+  - job
+maintainers:
+  - name: "@eberil"
+    email: "i8megabit@gmail.com"

@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-updater
+  namespace: {{ .Values.release.namespace }}
+  labels:
+    app: hh-resume
+spec:
+  schedule: "{{ .Values.deployment.schedule }}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hh-resume-updater
+            image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+            imagePullPolicy: {{ .Values.image.pullPolicy }}
+            command: ["/bin/sh", "-c"]
+            args:
+              - "/app/update-resume.sh"
+            env:
+              {{- with .Values.deployment.env }}
+              {{- toYaml . | nindent 14 }}
+              {{- end }}
+            volumeMounts:
+              - name: resume-data
+                mountPath: /app/resume
+              - name: config-volume
+                mountPath: /app/config
+          volumes:
+            - name: resume-data
+              persistentVolumeClaim:
+                claimName: {{ .Release.Name }}-pvc
+            - name: config-volume
+              configMap:
+                name: {{ .Release.Name }}-config
+          restartPolicy: OnFailure

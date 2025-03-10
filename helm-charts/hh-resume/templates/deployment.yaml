@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.release.namespace }}
+  labels:
+    app: hh-resume
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: hh-resume
+  template:
+    metadata:
+      labels:
+        app: hh-resume
+    spec:
+      containers:
+        - name: hh-resume
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- with .Values.deployment.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
+          volumeMounts:
+            - name: resume-data
+              mountPath: /app/resume
+            - name: config-volume
+              mountPath: /app/config
+      volumes:
+        - name: resume-data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-pvc
+        - name: config-volume
+          configMap:
+            name: {{ .Release.Name }}-config

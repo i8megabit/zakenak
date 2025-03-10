@@ -1,0 +1,23 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: eberil-ru-issuer
+  namespace: prod
+spec:
+  # This is a placeholder for the actual certificate configuration
+  # For a purchased certificate, you would typically use an ACME issuer with Let's Encrypt
+  # or configure a secretName that contains your purchased certificate
+  
+  # Example for using a purchased certificate stored in a secret:
+  secretName: eberil-ru-tls
+  
+  # Alternatively, if using Let's Encrypt with HTTP01 challenge:
+  # acme:
+  #   server: https://acme-v02.api.letsencrypt.org/directory
+  #   email: admin@eberil.ru
+  #   privateKeySecretRef:
+  #     name: eberil-ru-issuer-account-key
+  #   solvers:
+  #   - http01:
+  #       ingress:
+  #         class: nginx

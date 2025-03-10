@@ -1,0 +1,91 @@
+# Параметры релиза
+release:
+  namespace: default  # Namespace для развертывания
+
+# Основные настройки приложения
+image:
+  # Docker образ для обновления резюме на hh.ru
+  # Если образ недоступен в публичном репозитории, его нужно собрать локально
+  # Для сборки образа используйте скрипт: ./helm-charts/hh-resume/docker/build-image.sh
+  repository: ghcr.io/i8megabit/hh-resume-updater  # Docker образ
+  tag: latest  # Тег образа
+  pullPolicy: IfNotPresent  # Политика загрузки образа: Always, IfNotPresent, Never
+
+# Настройки развертывания
+deployment:
+  replicas: 1  # Количество реплик
+  schedule: "0 12 * * *"  # Расписание обновления резюме (каждый день в 12:00)
+  resources:
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+  env:
+    - name: HH_API_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: hh-credentials
+          key: api-token
+    - name: HH_RESUME_ID
+      valueFrom:
+        secretKeyRef:
+          name: hh-credentials
+          key: resume-id
+    - name: TZ
+      value: "Europe/Moscow"
+
+# Настройки сервиса
+service:
+  type: ClusterIP  # Тип сервиса
+  port: 80  # Порт сервиса
+  targetPort: 8080  # Целевой порт в контейнере
+
+# Настройки Ingress
+ingress:
+  enabled: true  # Включить Ingress
+  className: nginx  # Класс Ingress
+  annotations:
+    cert-manager.io/cluster-issuer: local-ca-issuer
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: hh-resume.prod.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: hh-resume-tls
+      hosts:
+        - hh-resume.prod.local
+
+# Настройки хранилища
+persistence:
+  enabled: true  # Включить PVC
+  size: 1Gi  # Размер хранилища
+  storageClass: ""  # Класс хранилища
+  accessModes:
+    - ReadWriteOnce
+
+# Настройки безопасности
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# Настройки сети
+networkPolicy:
+  enabled: true  # Включить NetworkPolicy
+  allowedNamespaces:
+    - default
+    - prod
+    - kube-system
+
+# Настройки для создания секрета (опционально)
+# Для безопасности рекомендуется создавать секрет отдельно
+# и не хранить чувствительные данные в values.yaml
+secrets:
+  create: false  # Не создавать секрет автоматически
+  # Если create: true, то следующие значения будут использованы для создания секрета
+  # apiToken: ""  # API токен hh.ru
+  # resumeId: ""  # ID резюме на hh.ru

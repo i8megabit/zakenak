@@ -1,0 +1,39 @@
+kubernetes-dashboard:
+  extraArgs:
+    - --token-ttl=43200
+    - --enable-skip-login
+    - --enable-insecure-login
+    - --disable-settings-authorizer
+  protocolHttp: true
+  service:
+    type: ClusterIP
+  rbac:
+    clusterReadOnlyRole: true
+    create: true
+  serviceAccount:
+    create: true
+    name: kubernetes-dashboard
+  metricsScraper:
+    enabled: true
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - dashboard.prod.local
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    tls:
+      - secretName: eberil-ru-tls
+        hosts:
+          - dashboard.prod.local
+  resources:
+    requests:
+      cpu: 50m
+      memory: 100Mi
+    limits:
+      cpu: 100m
+      memory: 200Mi
+  tolerations:
+    - effect: NoSchedule
+      operator: Exists

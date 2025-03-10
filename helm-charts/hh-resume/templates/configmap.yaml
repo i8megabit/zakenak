@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  namespace: {{ .Values.release.namespace }}
+  labels:
+    app: hh-resume
+data:
+  # Основные настройки приложения
+  config.yaml: |
+    # Настройки API hh.ru
+    api:
+      base_url: "https://api.hh.ru/v1"
+      request_timeout: 30
+      retry_attempts: 3
+      retry_delay: 5
+    
+    # Настройки обновления резюме
+    resume:
+      update_interval: {{ .Values.deployment.schedule | quote }}
+      auto_publish: true
+      
+    # Настройки логирования
+    logging:
+      level: "info"
+      format: "json"
+      
+    # Настройки веб-интерфейса
+    web:
+      enabled: {{ .Values.ingress.enabled }}
+      port: {{ .Values.service.targetPort }}
+      
+  # Скрипт для обновления резюме
+  update-resume.sh: |
+    #!/bin/sh
+    set -e
+    
+    echo "Начало обновления резюме на hh.ru"
+    echo "Время запуска: $(date)"
+    
+    # Проверка наличия переменных окружения
+    if [ -z "$HH_API_TOKEN" ]; then
+      echo "Ошибка: Переменная окружения HH_API_TOKEN не установлена"
+      exit 1
+    fi
+    
+    if [ -z "$HH_RESUME_ID" ]; then
+      echo "Ошибка: Переменная окружения HH_RESUME_ID не установлена"
+      exit 1
+    fi
+    
+    # Обновление резюме через API
+    echo "Обновление резюме с ID: $HH_RESUME_ID"
+    
+    # Запрос к API для обновления резюме
+    RESPONSE=$(curl -s -X PUT \
+      -H "Authorization: Bearer $HH_API_TOKEN" \
+      -H "Content-Type: application/json" \
+      "https://api.hh.ru/resumes/$HH_RESUME_ID/publish")
+    
+    # Проверка результата
+    if echo "$RESPONSE" | grep -q "error"; then
+      echo "Ошибка при обновлении резюме: $RESPONSE"
+      exit 1
+    else
+      echo "Резюме успешно обновлено"
+      echo "Результат: $RESPONSE"
+      
+      # Сохранение информации об обновлении
+      echo "$(date) - Успешное обновление" >> /app/resume/update-history.log
+    fi
+    
+    echo "Обновление завершено: $(date)"
