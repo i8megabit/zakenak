@@ -1,0 +1,24 @@
+# Production values for local-ca chart
+release:
+  name: local-ca
+  namespace: prod
+
+# Настройки CA
+ca:
+  commonName: "Eberil Internal Production CA"
+  organization: "DevSecMLOps"
+  validityDuration: "8760h"  # 1 год
+  renewBefore: "720h"        # 30 дней
+  secretName: "root-ca-key-pair"
+
+# Сертификаты для создания (только для внутренних сервисов)
+certificates:
+  - name: sidecar-injector-tls
+    commonName: "sidecar-injector.prod.svc"
+    dnsNames:
+      - "sidecar-injector.prod.svc"
+      - "sidecar-injector.prod.svc.cluster.local"
+  - name: ollama-tls
+    commonName: "ollama.prod.local"
+    dnsNames:
+      - "ollama.prod.local"

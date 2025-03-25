@@ -1,0 +1,37 @@
+{{- if and .Values.clusterIssuer.enabled (eq .Values.clusterIssuer.type "letsencrypt") }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: eberil-ru-wildcard
+  namespace: {{ .Values.release.namespace }}
+spec:
+  secretName: eberil-ru-tls
+  issuerRef:
+    name: {{ .Values.clusterIssuer.name }}
+    kind: ClusterIssuer
+  commonName: "*.eberil.ru"
+  dnsNames:
+    - "eberil.ru"
+    - "*.eberil.ru"
+  duration: 2160h # 90 days
+  renewBefore: 360h # 15 days
+{{- end }}
+
+{{- if and .Values.clusterIssuer.enabled (eq .Values.clusterIssuer.type "selfsigned") }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.release.namespace }}-local-wildcard
+  namespace: {{ .Values.release.namespace }}
+spec:
+  secretName: {{ .Values.release.namespace }}-local-tls
+  issuerRef:
+    name: {{ .Values.release.namespace }}-local-issuer
+    kind: ClusterIssuer
+  commonName: "*.{{ .Values.release.namespace }}.local"
+  dnsNames:
+    - "{{ .Values.release.namespace }}.local"
+    - "*.{{ .Values.release.namespace }}.local"
+  duration: 8760h # 1 year
+  renewBefore: 720h # 30 days
+{{- end }}

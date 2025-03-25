@@ -8,6 +8,17 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+# Parse command line arguments
+USE_PROD_VALUES=false
+for arg in "$@"; do
+    case $arg in
+        --prod)
+            USE_PROD_VALUES=true
+            shift
+            ;;
+    esac
+done
+
 log_info() {
     echo -e "${GREEN}[INFO] $1${NC}"
 }
@@ -185,8 +196,15 @@ fi
 
 # Deploy Open WebUI Helm chart
 log_warn "Deploying Open WebUI Helm chart..."
-if ! helm upgrade --install open-webui ./helm-charts/open-webui -n prod --set deployment.gpuConfig=false; then
-    handle_error "Failed to deploy Open WebUI Helm chart."
+if [ "$USE_PROD_VALUES" = true ]; then
+    log_info "Using production values (values.prod.yaml)"
+    if ! helm upgrade --install open-webui ./helm-charts/open-webui -n prod -f ./helm-charts/open-webui/values.prod.yaml --set deployment.gpuConfig=false; then
+        handle_error "Failed to deploy Open WebUI Helm chart."
+    fi
+else
+    if ! helm upgrade --install open-webui ./helm-charts/open-webui -n prod --set deployment.gpuConfig=false; then
+        handle_error "Failed to deploy Open WebUI Helm chart."
+    fi
 fi
 
 log_warn "Waiting for Open WebUI to start (this may take up to 60 minutes)..."

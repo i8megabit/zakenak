@@ -1,7 +1,7 @@
 # Параметры релиза
 release:
   name: open-webui
-  namespace: prod
+  namespace: dev
 
 # Основные настройки приложения
 image:
@@ -123,10 +123,10 @@ ingress:
     nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
     nginx.ingress.kubernetes.io/enable-cors: "true"
   hosts:
-    - host: webui.prod.local
+    - host: webui.dev.local
       paths:
         - path: /
-          pathType: Prefix
+          pathType: ImplementationSpecific
   tls: []
 
 # TLS Configuration

@@ -1,0 +1,18 @@
+# Production values for sidecar-injector chart
+release:
+  name: sidecar-injector
+  namespace: prod
+
+ingress:
+  enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-issuer"
+  hosts:
+  - host: sidecar.eberil.ru
+    paths:
+    - path: /
+      pathType: Prefix
+  tls:
+    - secretName: sidecar-eberil-ru-tls
+      hosts:
+        - sidecar.eberil.ru

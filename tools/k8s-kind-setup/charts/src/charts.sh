@@ -25,6 +25,8 @@ source "${K8S_KIND_SETUP_DIR}/env/src/env.sh"
 
 # Define NAMESPACE_INGRESS with a default value
 export NAMESPACE_INGRESS="${NAMESPACE_INGRESS:-ingress-nginx}"
+# Add prod_mode variable
+prod_mode=false
 
 # Загрузка функций из setup-ingress.sh
 if [ -f "${K8S_KIND_SETUP_DIR}/setup-ingress/src/setup-ingress.sh" ]; then
@@ -143,10 +145,11 @@ restart_coredns() {
 
 	# Проверка резолвинга с более подробной диагностикой
 	echo -e "${CYAN}Проверка DNS резолвинга...${NC}"
-	echo -e "${CYAN}Тестирование резолвинга dashboard.prod.local...${NC}"
-
-	# Создаем под для тестирования DNS
-	cat <<EOF | kubectl apply -f -
+	if [ "$prod_mode" = true ]; then
+		echo -e "${CYAN}Тестирование резолвинга eberil.ru...${NC}"
+		
+		# Создаем под для тестирования DNS
+		cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -161,15 +164,44 @@ spec:
       - "3600"
 EOF
 
-	# Ждем, пока под будет готов
-	kubectl wait --for=condition=ready pod/dnsutils --timeout=60s
+		# Ждем, пока под будет готов
+		kubectl wait --for=condition=ready pod/dnsutils --timeout=60s
 
-	# Выполняем тесты DNS
-	echo -e "${CYAN}Выполнение dig для dashboard.prod.local...${NC}"
-	kubectl exec -i dnsutils -- dig dashboard.prod.local
+		# Выполняем тесты DNS
+		echo -e "${CYAN}Выполнение dig для eberil.ru...${NC}"
+		kubectl exec -i dnsutils -- dig eberil.ru
 
-	echo -e "${CYAN}Выполнение nslookup для dashboard.prod.local...${NC}"
-	kubectl exec -i dnsutils -- nslookup dashboard.prod.local
+		echo -e "${CYAN}Выполнение nslookup для eberil.ru...${NC}"
+		kubectl exec -i dnsutils -- nslookup eberil.ru
+	else
+		echo -e "${CYAN}Тестирование резолвинга dashboard.dev.local...${NC}"
+		
+		# Создаем под для тестирования DNS
+		cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dnsutils
+  namespace: default
+spec:
+  containers:
+  - name: dnsutils
+    image: gcr.io/kubernetes-e2e-test-images/dnsutils:1.3
+    command:
+      - sleep
+      - "3600"
+EOF
+
+		# Ждем, пока под будет готов
+		kubectl wait --for=condition=ready pod/dnsutils --timeout=60s
+
+		# Выполняем тесты DNS
+		echo -e "${CYAN}Выполнение dig для dashboard.dev.local...${NC}"
+		kubectl exec -i dnsutils -- dig dashboard.dev.local
+
+		echo -e "${CYAN}Выполнение nslookup для dashboard.dev.local...${NC}"
+		kubectl exec -i dnsutils -- nslookup dashboard.dev.local
+	fi
 
 	# Проверяем локальное разрешение
 	echo -e "${CYAN}Проверка локального разрешения имен...${NC}"
@@ -381,12 +413,88 @@ install_chart() {
 		done
 	fi
 	
-	# For ingress-nginx, use the updated configuration file
-	if [ "$chart" = "ingress-nginx" ] && [ "$action" != "uninstall" ]; then
+	# Специальная обработка для ingress-nginx
+	if [ "$chart" = "ingress-nginx" ]; then
+		# Force the namespace to be NAMESPACE_INGRESS for ingress-nginx
+		namespace="${NAMESPACE_INGRESS}"
+		echo -e "${CYAN}Установка ingress-nginx в namespace ${namespace}...${NC}"
+		
+		# Ensure the namespace exists
+		if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
+			echo -e "${CYAN}Создание namespace ${namespace}...${NC}"
+			kubectl create namespace "$namespace"
+			# Wait for namespace to be fully created
+			sleep 5
+		fi
+		
+		# Remove old webhook if it exists
+		kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission 2>/dev/null || true
+		
+		# Wait for webhook deletion
+		sleep 5
+		
+		# Force remove any existing ingress-nginx installations in other namespaces
+		for ns in $(kubectl get ns -o name | grep -v "^namespace/${namespace}$" | cut -d/ -f2); do
+			if kubectl get deployment -n "$ns" ingress-nginx-controller &>/dev/null; then
+				echo -e "${YELLOW}Обнаружена установка ingress-nginx в namespace ${ns}. Удаляем...${NC}"
+				helm uninstall ingress-nginx -n "$ns" || true
+				kubectl delete all -l app.kubernetes.io/instance=ingress-nginx -n "$ns" --force --grace-period=0 || true
+				sleep 10
+			fi
+		done
+		
+		# For upgrade action, check if the release exists first
+		if [ "$action" = "upgrade" ]; then
+			echo -e "${CYAN}Проверка существования релиза ingress-nginx в namespace ${namespace}...${NC}"
+			if ! helm status ingress-nginx -n "${namespace}" &>/dev/null; then
+				echo -e "${YELLOW}Релиз ingress-nginx не найден в namespace ${namespace}, выполняем установку вместо обновления...${NC}"
+				action="install"
+			fi
+		fi
+		
+		# For install action, use reinstall_ingress function which has more robust implementation
+		if [ "$action" = "install" ]; then
+			echo -e "${CYAN}Использование функции reinstall_ingress для установки ingress-nginx...${NC}"
+			if reinstall_ingress; then
+				echo -e "${GREEN}Установка ingress-nginx успешно завершена${NC}"
+				return 0
+			else
+				echo -e "${RED}Ошибка при установке ingress-nginx${NC}"
+				return 1
+			fi
+		fi
+		
+		# For uninstall action, perform thorough cleanup
+		if [ "$action" = "uninstall" ]; then
+			echo -e "${CYAN}Удаление ingress-nginx из namespace ${namespace}...${NC}"
+			
+			# Check if the release exists before trying to uninstall it
+			if ! helm status ingress-nginx -n "${namespace}" &>/dev/null; then
+				echo -e "${YELLOW}Релиз ingress-nginx не найден в namespace ${namespace}${NC}"
+				return 0
+			fi
+			
+			# Uninstall the release
+			helm uninstall ingress-nginx -n "${namespace}" || true
+			
+			# Remove webhook if it exists
+			kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission 2>/dev/null || true
+			
+			# Wait for resources to be deleted
+			sleep 5
+			
+			# Force remove any remaining resources
+			kubectl delete all -l app.kubernetes.io/instance=ingress-nginx -n "${namespace}" --force --grace-period=0 || true
+			
+			echo -e "${GREEN}Удаление ingress-nginx успешно завершено${NC}"
+			return 0
+		fi
+		
+		# For upgrade action, use the helm repo directly with our custom values
 		echo -e "${CYAN}Использование обновленной конфигурации для ingress-nginx...${NC}"
 		
 		# Use the helm repo directly with our custom values
-		helm_cmd="helm ${action} ${chart} ingress-nginx/ingress-nginx --namespace ${namespace} --create-namespace --values ${K8S_KIND_SETUP_DIR}/setup-ingress/src/ingress-config.yaml"
+		helm_cmd="helm ${action} ingress-nginx ingress-nginx/ingress-nginx --namespace ${namespace} --create-namespace --values ${K8S_KIND_SETUP_DIR}/setup-ingress/src/ingress-config.yaml"
 		
 		[ -n "$version" ] && helm_cmd+=" --version ${version}"
 		[ -n "$values_file" ] && helm_cmd+=" -f ${values_file}"
@@ -394,8 +502,14 @@ install_chart() {
 		echo -e "${CYAN}Выполняется команда: ${helm_cmd}${NC}"
 		eval $helm_cmd
 		
-		# Skip the regular installation since we've already done it
-		return
+		# Check the result of the helm command
+		if [ $? -eq 0 ]; then
+			echo -e "${GREEN}${action^} ingress-nginx успешно завершен${NC}"
+			return 0
+		else
+			echo -e "${RED}Ошибка при выполнении ${action} ingress-nginx${NC}"
+			return 1
+		fi
 	fi
 	
 	# Специальная обработка для kubernetes-dashboard
@@ -705,6 +819,14 @@ install_chart() {
 		fi
 		
 		[ -n "$version" ] && helm_cmd+=" --version ${version}"
+		
+		# Use values.prod.yaml if prod_mode is true and the file exists
+		if [ "$prod_mode" = true ] && [ -f "${CHARTS_DIR}/${chart}/values.prod.yaml" ]; then
+			echo -e "${CYAN}Используется production конфигурация для чарта ${chart}...${NC}"
+			helm_cmd+=" -f ${CHARTS_DIR}/${chart}/values.prod.yaml"
+		fi
+		
+		# Add custom values file if specified
 		[ -n "$values_file" ] && helm_cmd+=" -f ${values_file}"
 
 		# Для cert-manager добавляем таймаут установки
@@ -1166,19 +1288,28 @@ get_dashboard_token() {
 		fi
 		echo -e "${GREEN}Токен для доступа к dashboard:${NC}"
 		echo -e "${YELLOW}$token${NC}"
-		echo -e "\n${CYAN}Доступ к dashboard: ${GREEN}https://dashboard.prod.local${NC}"
+		
+		if [ "$prod_mode" = true ]; then
+			echo -e "\n${CYAN}Доступ к dashboard: ${GREEN}https://eberil.ru/dashboard${NC}"
+		else
+			echo -e "\n${CYAN}Доступ к dashboard: ${GREEN}https://dashboard.dev.local${NC}"
+		fi
 		
 		# Check if running in WSL
 		if grep -q "microsoft" /proc/version || grep -q "WSL" /proc/version; then
 			echo -e "${YELLOW}ВАЖНО: Для доступа к dashboard из Windows необходимо настроить DNS.${NC}"
-			echo -e "${YELLOW}В Windows домен dashboard.prod.local не будет доступен без дополнительной настройки.${NC}"
-			echo -e "${CYAN}Для настройки DNS в Windows выполните:${NC}"
-			echo -e "${GREEN}${K8S_KIND_SETUP_DIR}/setup-dns/src/update-windows-dns.sh${NC}"
-			echo -e "${CYAN}или следуйте инструкциям в ${K8S_KIND_SETUP_DIR}/setup-dns/README-WINDOWS-DNS.md${NC}"
-			
-			# Make the scripts executable
-			chmod +x "${K8S_KIND_SETUP_DIR}/setup-dns/src/update-windows-dns.sh" 2>/dev/null || true
-			chmod +x "${K8S_KIND_SETUP_DIR}/setup-dns/src/update-windows-hosts.ps1" 2>/dev/null || true
+			if [ "$prod_mode" = true ]; then
+				echo -e "${YELLOW}Убедитесь, что домен eberil.ru правильно настроен в вашей DNS.${NC}"
+			else
+				echo -e "${YELLOW}В Windows домен dashboard.dev.local не будет доступен без дополнительной настройки.${NC}"
+				echo -e "${CYAN}Для настройки DNS в Windows выполните:${NC}"
+				echo -e "${GREEN}${K8S_KIND_SETUP_DIR}/setup-dns/src/update-windows-dns.sh${NC}"
+				echo -e "${CYAN}или следуйте инструкциям в ${K8S_KIND_SETUP_DIR}/setup-dns/README-WINDOWS-DNS.md${NC}"
+				
+				# Make the scripts executable
+				chmod +x "${K8S_KIND_SETUP_DIR}/setup-dns/src/update-windows-dns.sh" 2>/dev/null || true
+				chmod +x "${K8S_KIND_SETUP_DIR}/setup-dns/src/update-windows-hosts.ps1" 2>/dev/null || true
+			fi
 		fi
 		
 		return 0
@@ -1248,6 +1379,7 @@ usage() {
 	echo -e "${GREEN}  -n, --namespace ${YELLOW}<namespace>${NC}  - Использовать указанный namespace"
 	echo -e "${GREEN}  -v, --version ${YELLOW}<version>${NC}      - Использовать указанную версию"
 	echo -e "${GREEN}  -f, --values ${YELLOW}<file>${NC}          - Использовать дополнительный values файл"
+	echo -e "${GREEN}  --prod${NC}                      - Использовать production конфигурацию"
 	echo -e "${GREEN}  -h, --help${NC}                   - Показать эту справку"
 	exit 1
 }
@@ -1383,7 +1515,7 @@ install_chart() {
 				grafana_banner
 			fi
 			;;
-		"ingress")
+		"ingress-nginx")
 			if declare -F ingress_banner >/dev/null; then
 				ingress_banner
 			fi
@@ -1976,6 +2108,7 @@ EOF
 namespace=""
 version=""
 values_file=""
+prod_mode=false
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
@@ -1993,6 +2126,10 @@ while [[ $# -gt 0 ]]; do
 		-f|--values)
 			values_file="$2"
 			shift 2
+			;;
+		--prod)
+			prod_mode=true
+			shift
 			;;
 		*)
 			break

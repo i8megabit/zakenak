@@ -1,7 +1,7 @@
-# Параметры релиза
+# Development values for cert-manager chart
 release:
   name: cert-manager
-  namespace: prod
+  namespace: dev
 
 cert-manager:
   installCRDs: true
@@ -25,9 +25,3 @@ clusterIssuer:
     - "dev.local"
   duration: "8760h" # 1 год
   renewBefore: "720h" # 30 дней
-
-# Cloudflare configuration for DNS01 challenge
-cloudflare:
-  enabled: false
-  email: ""
-  apiToken: ""

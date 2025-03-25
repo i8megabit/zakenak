@@ -1,7 +1,7 @@
 # Параметры релиза
 release:
   name: sidecar-injector
-  namespace: prod
+  namespace: dev
 
 nameOverride: ""
 fullnameOverride: ""
@@ -33,7 +33,7 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-  - host: sidecar-injector.prod.local
+  - host: sidecar-injector.dev.local
     paths:
     - path: /
       pathType: Prefix

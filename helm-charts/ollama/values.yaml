@@ -1,7 +1,7 @@
 # Параметры релиза
 release:
   name: ollama
-  namespace: prod
+  namespace: dev
 
 # Deployment control
 enabled: true  # Enable the Ollama deployment in Kubernetes
@@ -68,14 +68,14 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
   hosts:
-    - host: ollama.prod.local
+    - host: ollama.dev.local
       paths:
         - path: /
           pathType: Prefix
   tls:
     - secretName: ollama-tls
       hosts:
-        - ollama.prod.local
+        - ollama.dev.local
 
 # Настройки хранилища для моделей
 persistence:

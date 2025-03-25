@@ -1,7 +1,7 @@
 # Параметры релиза
 release:
   name: local-ca
-  namespace: prod
+  namespace: dev
 
 # Настройки CA
 ca:
@@ -14,17 +14,17 @@ ca:
 # Сертификаты для создания
 certificates:
   - name: ollama-tls
-    commonName: "ollama.prod.local"
+    commonName: "ollama.dev.local"
     dnsNames:
-      - "ollama.prod.local"
+      - "ollama.dev.local"
   - name: open-webui-tls
-    commonName: "webui.prod.local"
+    commonName: "webui.dev.local"
     dnsNames:
-      - "webui.prod.local"
+      - "webui.dev.local"
   - name: kubernetes-dashboard-tls
-    commonName: "dashboard.prod.local"
+    commonName: "dashboard.dev.local"
     dnsNames:
-      - "dashboard.prod.local"
+      - "dashboard.dev.local"
   - name: sidecar-injector-tls
     commonName: "sidecar-injector.prod.svc"
     dnsNames:

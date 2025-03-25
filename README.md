@@ -39,6 +39,22 @@ Zakenak — профессиональный инструмент GitOps для 
 - Kind v0.20.0+
 - Helm 3.0+
 
+## Окружения
+
+Zakenak поддерживает два основных окружения:
+
+### Dev окружение
+- Все эндпоинты и проверки к домену `*.dev.local`
+- Все чарты деплоятся в namespace `dev`
+- Используется локальный центр сертификации (Local CA)
+
+### Prod окружение
+- Все эндпоинты и проверки к домену `*.eberil.ru`
+- Все чарты деплоятся в namespace `prod`
+- Используется Let's Encrypt для получения сертификатов
+
+Подробнее см. [Руководство по использованию окружений](docs/ENVIRONMENTS.md).
+
 ## Развертывание кластера
 
 ### Автоматическая установка
@@ -245,6 +261,40 @@ net::ERR_CERT_AUTHORITY_INVALID
 - https://ollama.prod.local
 - https://webui.prod.local
 
+### Настройка Let's Encrypt с Cloudflare DNS
+
+Для доменов, доступных из интернета (например, webui.eberil.ru), можно использовать Let's Encrypt для получения доверенных сертификатов. Для упрощения настройки предоставляется специальный скрипт:
+
+```bash
+# Установка переменной окружения с API токеном Cloudflare
+export CLOUDFLARE_API_TOKEN="ваш-api-токен-cloudflare"
+
+# Запуск скрипта настройки Let's Encrypt с Cloudflare DNS
+./tools/k8s-kind-setup/setup-cert-manager/src/setup-letsencrypt.sh
+```
+
+Скрипт автоматически выполнит следующие действия:
+1. Проверит наличие и установит cert-manager, если необходимо
+2. Создаст секрет с API токеном Cloudflare
+3. Настроит ClusterIssuer для Let's Encrypt с использованием DNS01 challenge через Cloudflare
+4. Создаст сертификат для webui.eberil.ru
+
+Для этого необходимо:
+1. Создать API токен в панели управления Cloudflare с правами на редактирование DNS записей для вашей зоны
+2. Указать этот токен в переменной окружения CLOUDFLARE_API_TOKEN
+3. Убедиться, что в values.prod.yaml для cert-manager указаны правильные настройки:
+   - Правильный email для Let's Encrypt и Cloudflare
+   - Правильная DNS зона (например, eberil.ru)
+
+После успешной настройки, сертификаты будут автоматически выпущены и обновлены Let's Encrypt, и браузеры будут доверять этим сертификатам без дополнительных действий.
+
+Для ручной настройки можно использовать следующие команды:
+
+```bash
+# Установка cert-manager с поддержкой Let's Encrypt
+./tools/k8s-kind-setup/charts/src/charts.sh install cert-manager --values helm-charts/cert-manager/values.prod.yaml
+```
+
 ### Использование с GPU
 ```bash
 docker run --gpus all \
@@ -401,6 +451,7 @@ Zakenak распространяется под MIT лицензией.
   - [Настройка сети](docs/NETWORK-CONFIGURATION.md)
   - [Доступ к Open WebUI из локальной сети](docs/ACCESSING-OPEN-WEBUI.md)
   - [Миграция и настройка WSL и Docker](docs/WSL-DOCKER-MIGRATION.md)
+  - [Окружения](docs/ENVIRONMENTS.md)
 - 💡 [Примеры](examples/)
 
 ## Авторы

@@ -46,7 +46,7 @@ ingress:
     - host: webui.prod.local
       paths:
         - path: /
-          pathType: Prefix
+          pathType: ImplementationSpecific
 
 # Настройки хранилища - использование hostPath для WSL
 persistence:

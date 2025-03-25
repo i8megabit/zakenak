@@ -1,0 +1,42 @@
+# Production values for cert-manager chart
+release:
+  name: cert-manager
+  namespace: prod
+
+cert-manager:
+  installCRDs: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+# Настройки для ClusterIssuer
+clusterIssuer:
+  enabled: true
+  name: letsencrypt-issuer
+  type: letsencrypt
+  email: "admin@eberil.ru"  # Replace with your actual email
+  server: "https://acme-v02.api.letsencrypt.org/directory"
+  privateKeySecretRef: "letsencrypt-account-key"
+  solvers:
+    - dns01:
+        # Replace with your DNS provider configuration
+        # This example uses Cloudflare, but you should use your actual DNS provider
+        cloudflare:
+          email: "admin@eberil.ru"  # Replace with your Cloudflare email
+          apiTokenSecretRef:
+            name: cloudflare-api-token-secret
+            key: api-token
+      selector:
+        dnsZones:
+          - "eberil.ru"
+
+# Cloudflare configuration for DNS01 challenge
+cloudflare:
+  enabled: true
+  email: "admin@eberil.ru"  # Replace with your Cloudflare email
+  apiToken: "${CLOUDFLARE_API_TOKEN}"  # Replace with your Cloudflare API token or use environment variable

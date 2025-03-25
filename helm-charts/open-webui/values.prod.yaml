@@ -1,0 +1,39 @@
+# Production values for open-webui chart
+release:
+  name: open-webui
+  namespace: prod
+
+# Ingress configuration for production
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "1200"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "1200"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "1200"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "256k"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "8"
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "route"
+    nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
+    nginx.ingress.kubernetes.io/websocket-services: "{{ .Release.Name }}"
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-issuer"
+  hosts:
+    - host: webui.eberil.ru
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: webui-eberil-ru-tls
+      hosts:
+        - webui.eberil.ru
+
+# TLS Configuration
+tls:
+  enabled: true
+  # Certificate and key will be provided by Kubernetes secrets

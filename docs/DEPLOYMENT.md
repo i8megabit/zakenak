@@ -252,6 +252,112 @@ helm upgrade --install \
     --values ./helm-charts/open-webui/values.yaml
 ```
 
+## Окружения разработки и продакшена
+
+Zakenak поддерживает два основных окружения: разработки (dev) и продакшена (prod). Каждое окружение имеет свои особенности и настройки.
+
+### Dev окружение
+
+Dev окружение предназначено для разработки и тестирования:
+
+- **Namespace**: Все компоненты устанавливаются в namespace `dev`
+- **Домены**: Используются домены вида `*.dev.local`
+- **SSL**: Используется локальный центр сертификации (Local CA)
+- **Доступ**: Доступ только из локальной сети
+
+Установка компонентов в dev окружении:
+
+```bash
+# Установка cert-manager
+helm upgrade --install \
+    cert-manager ./helm-charts/cert-manager \
+    --namespace dev \
+    --create-namespace \
+    --values ./helm-charts/cert-manager/values.dev.yaml
+
+# Установка local-ca
+helm upgrade --install \
+    local-ca ./helm-charts/local-ca \
+    --namespace dev \
+    --values ./helm-charts/local-ca/values.yaml
+
+# Установка Ollama
+helm upgrade --install \
+    ollama ./helm-charts/ollama \
+    --namespace dev \
+    --values ./helm-charts/ollama/values.yaml
+
+# Установка Open WebUI
+helm upgrade --install \
+    open-webui ./helm-charts/open-webui \
+    --namespace dev \
+    --values ./helm-charts/open-webui/values.yaml
+```
+
+### Prod окружение
+
+Prod окружение предназначено для промышленной эксплуатации:
+
+- **Namespace**: Все компоненты устанавливаются в namespace `prod`
+- **Домены**: Используются домены вида `*.eberil.ru`
+- **SSL**: Используется Let's Encrypt для получения доверенных сертификатов
+- **Доступ**: Доступ из интернета
+
+Установка компонентов в prod окружении:
+
+```bash
+# Установка cert-manager
+helm upgrade --install \
+    cert-manager ./helm-charts/cert-manager \
+    --namespace prod \
+    --create-namespace \
+    --values ./helm-charts/cert-manager/values.prod.yaml
+
+# Установка local-ca (опционально, если требуется)
+helm upgrade --install \
+    local-ca ./helm-charts/local-ca \
+    --namespace prod \
+    --values ./helm-charts/local-ca/values.prod.yaml
+
+# Установка Ollama
+helm upgrade --install \
+    ollama ./helm-charts/ollama \
+    --namespace prod \
+    --values ./helm-charts/ollama/values.prod.yaml
+
+# Установка Open WebUI
+helm upgrade --install \
+    open-webui ./helm-charts/open-webui \
+    --namespace prod \
+    --values ./helm-charts/open-webui/values.prod.yaml
+```
+
+### Переключение между окружениями
+
+Для переключения между окружениями используйте соответствующие values-файлы:
+
+```bash
+# Для dev окружения
+--values ./helm-charts/[chart]/values.yaml
+
+# Для prod окружения
+--values ./helm-charts/[chart]/values.prod.yaml
+```
+
+Также можно использовать переменную окружения `ENVIRONMENT`:
+
+```bash
+# Установка переменной окружения
+export ENVIRONMENT=dev  # или prod
+
+# Установка компонентов с учетом окружения
+helm upgrade --install \
+    cert-manager ./helm-charts/cert-manager \
+    --namespace $ENVIRONMENT \
+    --create-namespace \
+    --values ./helm-charts/cert-manager/values.${ENVIRONMENT}.yaml
+```
+
 ## Проверка развертывания
 
 ### 1. Проверка Core Services

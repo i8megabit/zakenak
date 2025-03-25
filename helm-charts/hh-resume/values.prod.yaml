@@ -1,0 +1,20 @@
+# Production values for hh-resume chart
+release:
+  namespace: prod
+
+# Настройки Ingress
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-issuer"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: hh-resume.eberil.ru
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: hh-resume-eberil-ru-tls
+      hosts:
+        - hh-resume.eberil.ru

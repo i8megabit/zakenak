@@ -1,8 +1,4 @@
-# Параметры релиза
-release:
-  name: kubernetes-dashboard
-  namespace: dev
-
+# Production values for kubernetes-dashboard chart
 kubernetes-dashboard:
   extraArgs:
     - --token-ttl=43200
@@ -24,14 +20,17 @@ kubernetes-dashboard:
     enabled: true
     className: nginx
     hosts:
-      - dashboard.dev.local
+      - dashboard.eberil.ru
+    paths:
+      - /
     annotations:
-      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+      cert-manager.io/cluster-issuer: "letsencrypt-issuer"
     tls:
-      - secretName: kubernetes-dashboard-tls
+      - secretName: dashboard-eberil-ru-tls
         hosts:
-          - dashboard.dev.local
+          - dashboard.eberil.ru
   resources:
     requests:
       cpu: 50m
