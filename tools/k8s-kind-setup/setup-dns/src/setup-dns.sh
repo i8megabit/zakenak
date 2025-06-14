@@ -6,15 +6,15 @@ source "$(dirname "${BASH_SOURCE[0]}")/../../../env/src/env.sh"
 echo -e "${CYAN}Настройка CoreDNS...${NC}"
 
 # Применение конфигурации CoreDNS
-# First check if the ConfigMap exists
+# Сначала проверяем, существует ли ConfigMap
 if kubectl get configmap coredns -n kube-system &>/dev/null; then
-    # If it exists, apply the new configuration with --save-config flag to ensure the annotation is set
+    # Если ConfigMap уже есть, применяем новую конфигурацию с флагом --save-config, чтобы задать аннотацию
     if ! kubectl apply -f "$(dirname "${BASH_SOURCE[0]}")/coredns-custom.yaml" --save-config; then
         echo -e "${RED}Ошибка при применении конфигурации CoreDNS${NC}"
         exit 1
     fi
 else
-    # If it doesn't exist, create it with --save-config to ensure the annotation is set
+    # Если его нет, создаём ConfigMap с флагом --save-config
     if ! kubectl apply -f "$(dirname "${BASH_SOURCE[0]}")/coredns-custom.yaml" --save-config; then
         echo -e "${RED}Ошибка при применении конфигурации CoreDNS${NC}"
         exit 1
@@ -24,13 +24,13 @@ fi
 # Применение конфигурации coredns-custom-config
 echo -e "${CYAN}Применение конфигурации coredns-custom-config...${NC}"
 if kubectl get configmap coredns-custom -n kube-system &>/dev/null; then
-    # If it exists, apply the new configuration with --save-config flag to ensure the annotation is set
+    # Если ConfigMap уже есть, применяем новую конфигурацию с флагом --save-config, чтобы задать аннотацию
     if ! kubectl apply -f "$(dirname "${BASH_SOURCE[0]}")/manifests/coredns-custom-config.yaml" --save-config; then
         echo -e "${RED}Ошибка при применении конфигурации coredns-custom-config${NC}"
         exit 1
     fi
 else
-    # If it doesn't exist, create it with --save-config to ensure the annotation is set
+    # Если его нет, создаём ConfigMap с флагом --save-config
     if ! kubectl apply -f "$(dirname "${BASH_SOURCE[0]}")/manifests/coredns-custom-config.yaml" --save-config; then
         echo -e "${RED}Ошибка при применении конфигурации coredns-custom-config${NC}"
         exit 1
@@ -77,18 +77,18 @@ fi
 
 echo -e "${CYAN}Проверка DNS завершена${NC}"
 
-# Check if running in WSL
+# Проверяем, запущено ли окружение в WSL
 if grep -q "microsoft" /proc/version || grep -q "WSL" /proc/version; then
     echo -e "${CYAN}Обнаружено WSL окружение. Настройка DNS для Windows...${NC}"
     
-    # Inform about Windows DNS configuration
+# Сообщаем о настройке DNS в Windows
     echo -e "${YELLOW}ВАЖНО: Для доступа к сервисам из Windows необходимо настроить DNS.${NC}"
     echo -e "${YELLOW}В Windows домены *.prod.local не будут доступны без дополнительной настройки.${NC}"
     echo -e "${CYAN}Для настройки DNS в Windows выполните:${NC}"
     echo -e "${GREEN}./update-windows-dns.sh${NC}"
     echo -e "${CYAN}или следуйте инструкциям в README-WINDOWS-DNS.md${NC}"
     
-    # Make the scripts executable
+# Делаем скрипты исполнимыми
     chmod +x "$(dirname "${BASH_SOURCE[0]}")/update-windows-dns.sh" 2>/dev/null || true
     chmod +x "$(dirname "${BASH_SOURCE[0]}")/update-windows-hosts.ps1" 2>/dev/null || true
 fi
