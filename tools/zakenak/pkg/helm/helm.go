@@ -1,7 +1,7 @@
-// Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
+// (c) 2023-2025 Mikhail Eberil (@eberil)
 //
-// This file is part of Zakenak project and is released under the terms of the
-// MIT License. See LICENSE file in the project root for full license information.
+// Этот файл — часть проекта Zakenak и распространяется по лицензии MIT.
+// Подробности смотрите в файле LICENSE в корне репозитория.
 
 package helm
 
@@ -10,17 +10,17 @@ import (
 	"os/exec"
 )
 
-// Client represents the base structure for working with Helm
+// Client описывает базовый клиент Helm
 type Client struct {
-	// Client configuration
+	// Параметры клиента
 }
 
-// NewClient creates a new instance of Helm client
+// NewClient возвращает новый экземпляр клиента Helm
 func NewClient() *Client {
 	return &Client{}
 }
 
-// ValidateChart validates a Helm chart at the given path
+// ValidateChart проверяет Helm чарт по указанному пути
 func (c *Client) ValidateChart(chartPath string) error {
 	cmd := exec.Command("helm", "lint", chartPath)
 	if output, err := cmd.CombinedOutput(); err != nil {

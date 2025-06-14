@@ -27,7 +27,7 @@ func shouldShowBanner() bool {
 	return os.Getenv("ZAKENAK_DISABLE_BANNERS") != "true"
 }
 
-// PrintZakenak prints the main Zakenak banner
+// PrintZakenak выводит основной баннер Zakenak
 func PrintZakenak() {
 	if !shouldShowBanner() {
 		return
@@ -51,7 +51,7 @@ func PrintZakenak() {
 	`)
 }
 
-// PrintError prints the error banner
+// PrintError выводит баннер ошибки
 func PrintError() {
 	if !shouldShowBanner() {
 		return
@@ -72,7 +72,7 @@ func PrintError() {
 	`)
 }
 
-// PrintSuccess prints the success banner
+// PrintSuccess выводит баннер успешного завершения
 func PrintSuccess() {
 	if !shouldShowBanner() {
 		return
@@ -93,7 +93,7 @@ func PrintSuccess() {
 	`)
 }
 
-// PrintDeploy prints the deployment banner
+// PrintDeploy выводит баннер деплоя
 func PrintDeploy() {
 	if !shouldShowBanner() {
 		return
