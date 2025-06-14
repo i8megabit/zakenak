@@ -13,21 +13,21 @@ Should Harbour?	No.
 
 ## Системные требования
 
-### Hardware
+### Аппаратные требования
 - NVIDIA GPU (Compute Capability 7.0+)
-- Минимум 16GB RAM (рекомендуется 32GB)
-- Минимум 8GB GPU VRAM
+- минимум 16GB RAM (рекомендуется 32GB)
+- минимум 8GB GPU VRAM
 - PCIe x16 слот (Gen3 или выше)
-- NVMe SSD storage
-- 10Gbps сеть (рекомендуется)
-- Redundant Power Supply
+- NVMe SSD
+- сеть 10Gbps (рекомендуется)
+- резервное питание
 
-### Software
+### Программное обеспечение
 - Windows 11 Pro/Enterprise
 - WSL2 с Ubuntu 22.04 LTS
 - NVIDIA Driver 535.104.05+
 - CUDA Toolkit 12.8
-- Docker Desktop с WSL2 бэкендом
+- Docker Desktop с WSL2
 - Kubernetes 1.25+
 - Helm 3.x
 
@@ -306,21 +306,11 @@ kubectl top pod -n prod
 ```plain text
 Copyright (c) 2023-2025 Mikhail Eberil (@eberil)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Разрешается бесплатно использовать этот файл и прилагаемую документацию,
+включая копирование, модификацию и распространение при условии
+сохранения указанного уведомления об авторских правах.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+ПО ПРЕДОСТАВЛЯЕТСЯ «КАК ЕСТЬ» БЕЗ ЯВНЫХ ИЛИ ПОДРАЗУМЕВАЕМЫХ ГАРАНТИЙ,
+ВКЛЮЧАЯ ГАРАНТИИ ТОВАРНОЙ ПРИГОДНОСТИ ИЛИ СООТВЕТСТВИЯ ЦЕЛЯМ.
+Авторы не несут ответственности за возможные убытки.
 ```

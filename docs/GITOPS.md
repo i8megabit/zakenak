@@ -178,14 +178,14 @@ graph TD
 
 ## Системные требования
 
-### Hardware
+### Аппаратные требования
 - NVIDIA GPU (Compute Capability 7.0+)
-- Минимум 16GB RAM
-- NVMe SSD хранилище
+- минимум 16GB RAM
+- NVMe SSD
 - PCIe x16 слот для GPU
-- 10Gbps сеть (рекомендуется)
+- сеть 10Gbps (рекомендуется)
 
-### Software
+### Программное обеспечение
 - Windows 11 Pro/Enterprise с WSL2 (Ubuntu 22.04 LTS)
 - NVIDIA Driver 535.104.05+
 - CUDA Toolkit 12.8
@@ -225,7 +225,7 @@ graph TD
 - Harbor с поддержкой подписи
 - Nexus Repository OSS/Pro
 
-## Troubleshooting
+## Устранение неполадок
 
 ### Общие проблемы
 - Конфликты состояний при синхронизации
@@ -246,10 +246,10 @@ graph TD
 ```plain text
 Copyright (c) 2025 Mikhail Eberil
 
-This file is part of Zakenak project and is released under the terms of the MIT License. 
-See LICENSE file in the project root for full license information.
+Этот файл является частью проекта Zakenak и распространяется по лицензии MIT.
+Полные условия смотрите в файле LICENSE.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
-PURPOSE AND NONINFRINGEMENT.
+ПО ПРЕДОСТАВЛЯЕТСЯ «КАК ЕСТЬ» БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ,
+ВКЛЮЧАЯ ГАРАНТИИ ТОВАРНОЙ ПРИГОДНОСТИ И СООТВЕТСТВИЯ
+КОНКРЕТНОЙ ЦЕЛИ.
 ```

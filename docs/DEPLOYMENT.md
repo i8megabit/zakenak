@@ -13,17 +13,17 @@ Should Harbour?	No.
 
 ## Требования к системе
 
-### Hardware
+### Аппаратные требования
 - NVIDIA GPU (Compute Capability 7.0+)
-- 16GB RAM минимум
-- NVMe SSD storage
-- 10Gbps сеть (рекомендуется)
-- Redundant Power Supply
+- минимум 16GB RAM
+- NVMe SSD
+- сеть 10Gbps (рекомендуется)
+- резервное питание
 
-### Software
+### Программное обеспечение
 - Windows 11 Pro или Enterprise
 - WSL2 с Ubuntu 22.04 LTS
-- Docker Desktop с WSL2 интеграцией
+- Docker Desktop с WSL2
 - CUDA Toolkit 12.8
 - Kubernetes 1.25+
 - Helm 3.x
@@ -295,10 +295,10 @@ helm rollback ollama 1 -n prod
 ```plain text
 Copyright (c) 2025 Mikhail Eberil
 
-This file is part of Zakenak project and is released under the terms of the MIT License. 
-See LICENSE file in the project root for full license information.
+Этот файл является частью проекта Zakenak и распространяется по лицензии MIT.
+Полные условия смотрите в файле LICENSE.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
-PURPOSE AND NONINFRINGEMENT.
+ПО ПРЕДОСТАВЛЯЕТСЯ «КАК ЕСТЬ» БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ,
+ВКЛЮЧАЯ ГАРАНТИИ ТОВАРНОЙ ПРИГОДНОСТИ И СООТВЕТСТВИЯ
+КОНКРЕТНОЙ ЦЕЛИ.
 ```
