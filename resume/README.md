@@ -12,10 +12,10 @@ Experienced DevOps Engineer and Infrastructure Architect with over 11 years of e
 ## Professional Experience
 
 ### Department Head
-**Sberbank** | January 2022 - Present
+**NDA** | January 2022 - Present
 
 #### Key Responsibilities:
-- Lead the DevOps team for the over-the-counter trading division.
+- Lead the DevOps team.
 - Design and implement high-availability infrastructure for critical financial systems.
 - Develop DevOps culture, workflows, and best practices.
 - Manage CI/CD pipelines for financial applications with strict security requirements.
