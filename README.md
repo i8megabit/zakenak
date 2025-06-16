@@ -456,8 +456,6 @@ Zakenak распространяется под MIT лицензией.
 
 ## Авторы
 - [@eberil](https://github.com/eberil) - Основной разработчик
-- [Портфолио](portfolio/README.md)
-- [Резюме](resume/README.md)
 
 ## Благодарности
 - Команде Werf за вдохновение
