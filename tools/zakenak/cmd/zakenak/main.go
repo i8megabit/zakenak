@@ -33,6 +33,13 @@ var (
     kubeconfig string
 )
 
+func getWorkspaceDir() string {
+    if v := os.Getenv("WORKSPACE_DIR"); v != "" {
+        return v
+    }
+    return "/workspace"
+}
+
 func main() {
     banner.PrintZakenak()
 
@@ -125,7 +132,7 @@ func runConverge() error {
     ctx := context.Background()
     
     // Создаем и настраиваем Git manager в начале
-    gitManager := git.NewManager("/workspace")
+    gitManager := git.NewManager(getWorkspaceDir())
     if err := gitManager.EnsureMainBranch(); err != nil {
         log.Printf("Git initialization failed with details: %v", err)
         return fmt.Errorf("failed to ensure main branch: %w", err)

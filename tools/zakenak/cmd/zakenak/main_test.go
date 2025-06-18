@@ -8,23 +8,29 @@ import (
 	"testing"
 )
 
-// ensureWorkspaceGit initializes a git repo at /workspace if it doesn't exist.
-func ensureWorkspaceGit(t *testing.T) {
-	if _, err := os.Stat("/workspace/.git"); os.IsNotExist(err) {
-		if err := exec.Command("git", "init", "/workspace").Run(); err != nil {
+// ensureWorkspaceGit initializes a git repo in WORKSPACE_DIR.
+func ensureWorkspaceGit(t *testing.T) string {
+	work := os.Getenv("WORKSPACE_DIR")
+	if work == "" {
+		work = t.TempDir()
+		os.Setenv("WORKSPACE_DIR", work)
+	}
+	if _, err := os.Stat(filepath.Join(work, ".git")); os.IsNotExist(err) {
+		if err := exec.Command("git", "init", work).Run(); err != nil {
 			t.Fatalf("git init: %v", err)
 		}
-		if err := exec.Command("git", "-C", "/workspace", "checkout", "-b", "main").Run(); err != nil {
+		exec.Command("git", "config", "--global", "user.email", "test@example.com").Run()
+		exec.Command("git", "config", "--global", "user.name", "test").Run()
+		if err := exec.Command("git", "-C", work, "checkout", "-b", "main").Run(); err != nil {
 			t.Fatalf("git checkout: %v", err)
 		}
-		if err := exec.Command("git", "-C", "/workspace", "commit", "--allow-empty", "-m", "init").Run(); err != nil {
-			t.Fatalf("git commit: %v", err)
-		}
+		exec.Command("git", "-C", work, "commit", "--allow-empty", "-m", "init").Run()
 	} else {
-		if err := exec.Command("git", "-C", "/workspace", "rev-parse", "HEAD").Run(); err != nil {
-			exec.Command("git", "-C", "/workspace", "commit", "--allow-empty", "-m", "init").Run()
+		if err := exec.Command("git", "-C", work, "rev-parse", "HEAD").Run(); err != nil {
+			exec.Command("git", "-C", work, "commit", "--allow-empty", "-m", "init").Run()
 		}
 	}
+	return work
 }
 
 // createFakeCommands creates stub executables used by the CLI.
@@ -98,13 +104,13 @@ users:
 }
 
 func TestRunConverge(t *testing.T) {
-	ensureWorkspaceGit(t)
+	work := ensureWorkspaceGit(t)
 	dir, cleanup := createFakeCommands(t)
 	defer cleanup()
 	os.Setenv("HOME", dir)
 	createConfig(t, dir)
 	cwd, _ := os.Getwd()
-	os.Chdir("/workspace")
+	os.Chdir(work)
 	defer os.Chdir(cwd)
 
 	if err := runConverge(); err != nil {
@@ -121,13 +127,13 @@ func TestRunBuild(t *testing.T) {
 }
 
 func TestRunDeploy(t *testing.T) {
-	ensureWorkspaceGit(t)
+	work := ensureWorkspaceGit(t)
 	dir, cleanup := createFakeCommands(t)
 	defer cleanup()
 	os.Setenv("HOME", dir)
 	createConfig(t, dir)
 	cwd, _ := os.Getwd()
-	os.Chdir("/workspace")
+	os.Chdir(work)
 	defer os.Chdir(cwd)
 
 	if err := runDeploy(); err != nil {
