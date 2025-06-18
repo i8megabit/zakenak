@@ -21,7 +21,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up kind
         uses: helm/kind-action@v1.9.0
-      - name: Install sample chart
+      - name: Run tests
         run: |
-          helm install test ./charts/helm-charts/local-ca --namespace test --create-namespace
-          kubectl get all -n test
+          ./charts/tests/test.sh

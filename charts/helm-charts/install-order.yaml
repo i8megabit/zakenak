@@ -1,5 +1,6 @@
 # Порядок установки чартов
 charts:
+- echo-server
 - coredns
 - ingress-nginx
 - cert-manager

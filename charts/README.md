@@ -1,14 +1,15 @@
 # Charts Toolkit
 
-This small tool helps install local Helm charts.
+This script helps install and manage the charts in this repo. It can work on a host with Helm or from the provided Docker image.
 
-## Usage
+## Commands
 
 ```bash
-./charts.sh list
-./charts.sh install <chart> [namespace]
-./charts.sh upgrade <chart> [namespace]
-./charts.sh uninstall <chart> [namespace]
+./charts.sh list                       # show available charts
+./charts.sh install CHART [namespace]  # install a chart
+./charts.sh upgrade CHART [namespace]  # upgrade a chart
+./charts.sh uninstall CHART [namespace]# remove a chart
+./charts.sh install-all [namespace]    # install all charts in defined order
 ```
 
-The script expects charts in `charts/helm-charts`.
+`CHARTS_DIR` and `ORDER_FILE` environment variables can override the default locations of the charts and installation order.

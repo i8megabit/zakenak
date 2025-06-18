@@ -1,0 +1,7 @@
+replicaCount: 1
+image:
+  repository: ealen/echo-server
+  tag: latest
+service:
+  type: ClusterIP
+  port: 8080
