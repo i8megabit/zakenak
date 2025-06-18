@@ -33,7 +33,7 @@ func (m *FileStateManager) Load() (*State, error) {
 func (m *FileStateManager) loadWithoutLock() (*State, error) {
 	if _, err := os.Stat(m.path); os.IsNotExist(err) {
 		return &State{
-			Version:    "1.0.0",
+			Version:    "1.0.2",
 			LastUpdate: time.Now(),
 			Components: make(map[string]Component),
 			Status: Status{

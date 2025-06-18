@@ -80,7 +80,7 @@ zakenak deploy
 docker pull ghcr.io/i8megabit/zakenak:latest
 
 # Получение конкретной версии
-docker pull ghcr.io/i8megabit/zakenak:1.0.0
+docker pull ghcr.io/i8megabit/zakenak:1.0.2
 ```
 
 ### Базовое использование
@@ -125,7 +125,7 @@ docker run --read-only \
 	-v $(pwd):/workspace:ro \
 	-v ~/.kube:/root/.kube:ro \
 	--network=host \
-	ghcr.io/i8megabit/zakenak:1.0.0 converge
+    ghcr.io/i8megabit/zakenak:1.0.2 converge
 ```
 
 ## Базовая конфигурация
@@ -153,7 +153,7 @@ build:
     context: .
     dockerfile: Dockerfile
     args:
-        VERSION: v1.0.0
+        VERSION: v1.0.2
     gpu:
         enabled: true
         runtime: nvidia
@@ -212,6 +212,7 @@ Zakenak распространяется под MIT лицензией.
 - 💡 [Примеры](examples/)
 - 🔧 [Устранение неполадок](docs/troubleshooting.md)
 - 📖 [API Reference](docs/api.md)
+- ✅ [Тесты](docs/TESTING.md)
 
 ## Авторы
 - [@eberil](https://github.com/eberil) - Основной разработчик
