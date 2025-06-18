@@ -119,7 +119,7 @@ build:
   context: .
   dockerfile: Dockerfile
   args:
-    VERSION: v1.0.0
+    VERSION: v1.0.2
   gpu:
     enabled: true
     runtime: nvidia
@@ -147,12 +147,12 @@ security:
 # Ограничение памяти GPU
 docker run --gpus all \
     -e GPU_MEMORY_FRACTION=0.8 \
-    ghcr.io/i8megabit/zakenak:1.0.0 converge
+    ghcr.io/i8megabit/zakenak:1.0.2 converge
 
 # Multi-GPU конфигурация
 docker run --gpus '"device=0,1"' \
     -e GPU_SPLIT_MODE="balanced" \
-    ghcr.io/i8megabit/zakenak:1.0.0 converge
+    ghcr.io/i8megabit/zakenak:1.0.2 converge
 ```
 
 ## Примеры использования
@@ -163,7 +163,7 @@ docker run --gpus '"device=0,1"' \
 docker run --gpus all \
     -v $(pwd):/workspace \
     -v ~/.kube:/root/.kube \
-    ghcr.io/i8megabit/zakenak:1.0.0 \
+    ghcr.io/i8megabit/zakenak:1.0.2 \
     deploy --chart ./helm-charts/ollama \
     --values ./helm-charts/ollama/values-gpu.yaml
 ```
@@ -172,14 +172,14 @@ docker run --gpus all \
 ```bash
 # GPU метрики
 docker run --gpus all \
-    ghcr.io/i8megabit/zakenak:1.0.0 \
+    ghcr.io/i8megabit/zakenak:1.0.2 \
     nvidia-smi dmon -s pucvmet
 
 # Отладка
 docker run --gpus all \
     -v $(pwd):/workspace \
     -e ZAKENAK_DEBUG=true \
-    ghcr.io/i8megabit/zakenak:1.0.0 converge
+    ghcr.io/i8megabit/zakenak:1.0.2 converge
 ```
 
 ## Переменные окружения
@@ -280,7 +280,7 @@ docker run --gpus all \
     --memory-swap 0 \
     --device-read-bps /dev/sda:1mb \
     --device-write-bps /dev/sda:1mb \
-    ghcr.io/i8megabit/zakenak:1.0.0
+    ghcr.io/i8megabit/zakenak:1.0.2
 ```
 
 2. Мониторинг подозрительной активности:
@@ -329,36 +329,36 @@ docker run --gpus all \
     -v /var/log/zakenak:/var/log/zakenak \
     -e SECURITY_MONITORING=true \
     -e ALERT_ON_VIOLATION=true \
-    ghcr.io/i8megabit/zakenak:1.0.0 monitor
+    ghcr.io/i8megabit/zakenak:1.0.2 monitor
 ```
 
 ### Дополнительные меры безопасности
 1. Регулярное обновление образов:
 ```bash
 # Проверка и обновление образа
-docker pull ghcr.io/i8megabit/zakenak:1.0.0
+docker pull ghcr.io/i8megabit/zakenak:1.0.2
 docker image prune -f
 ```
 
 2. Сканирование уязвимостей:
 ```bash
 # Сканирование образа
-docker scan ghcr.io/i8megabit/zakenak:1.0.0
+docker scan ghcr.io/i8megabit/zakenak:1.0.2
 
 # Проверка конфигурации на соответствие CIS
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-    aquasec/trivy image ghcr.io/i8megabit/zakenak:1.0.0
+    aquasec/trivy image ghcr.io/i8megabit/zakenak:1.0.2
 ```
 
 3. Проверка целостности:
 ```bash
 # Проверка подписи образа
-docker trust inspect ghcr.io/i8megabit/zakenak:1.0.0
+docker trust inspect ghcr.io/i8megabit/zakenak:1.0.2
 
 # Верификация компонентов
 docker run --gpus all \
     -e VERIFY_COMPONENTS=true \
-    ghcr.io/i8megabit/zakenak:1.0.0 verify
+    ghcr.io/i8megabit/zakenak:1.0.2 verify
 ```
 
 ## Устранение неполадок
@@ -367,12 +367,12 @@ docker run --gpus all \
 ```bash
 # Проверка GPU статуса
 docker run --gpus all \
-    ghcr.io/i8megabit/zakenak:1.0.0 \
+    ghcr.io/i8megabit/zakenak:1.0.2 \
     nvidia-smi -q
 
 # Проверка конфигурации
 docker run -v $(pwd):/workspace \
-    ghcr.io/i8megabit/zakenak:1.0.0 \
+    ghcr.io/i8megabit/zakenak:1.0.2 \
     validate
 ```
 

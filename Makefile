@@ -18,7 +18,6 @@ TAG ?= $(VERSION)
 .PHONY: all build clean test docker
 
 all: clean build test
-
 build:
 	@echo "Building zakenak..."
 	@mkdir -p bin
@@ -28,7 +27,7 @@ build:
 
 test:
 	@echo "Running tests..."
-	$(GO) test -v ./...
+	cd tools/zakenak && $(GO) test -v ./...
 
 clean:
 	@echo "Cleaning..."
