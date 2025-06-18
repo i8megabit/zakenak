@@ -213,7 +213,7 @@ Zakenak распространяется под MIT лицензией.
 - 🔧 [Устранение неполадок](docs/troubleshooting.md)
 - 📖 [API Reference](docs/api.md)
 - ✅ [Тесты](docs/TESTING.md)
-- 🧪 [Интеграционные тесты](.github/workflows/integration.yml)
+- 🧪 [Интеграционные тесты (Minikube)](.github/workflows/integration.yml)
 
 ## Авторы
 - [@eberil](https://github.com/eberil) - Основной разработчик

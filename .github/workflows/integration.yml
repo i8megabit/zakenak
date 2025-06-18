@@ -36,6 +36,10 @@ jobs:
         working-directory: ./tools/zakenak
         run: make build
 
+      - name: Run unit tests
+        working-directory: ./tools/zakenak
+        run: make test
+
       - name: Deploy charts
         working-directory: ./tools/zakenak
         env:
