@@ -1,0 +1,27 @@
+name: charts
+on:
+  push:
+    paths:
+      - 'charts/**'
+  pull_request:
+    paths:
+      - 'charts/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t charts ./charts
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up kind
+        uses: helm/kind-action@v1.9.0
+      - name: Install sample chart
+        run: |
+          helm install test ./charts/helm-charts/local-ca --namespace test --create-namespace
+          kubectl get all -n test
