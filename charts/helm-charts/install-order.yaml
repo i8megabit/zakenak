@@ -10,3 +10,6 @@ charts:
 - nvidia-device-plugin
 - ollama
 - open-webui
+
+- redis
+- postgres

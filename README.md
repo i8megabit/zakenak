@@ -1,31 +1,39 @@
-# Charts Collection
+```
+  ____ _                _         _____ _               _
+ / ___| |__   __ _ _ __| |_ ___  |_   _| |__   ___  ___| |_
+| |   | '_ \ / _` | '__| __/ __|   | | | '_ \ / _ \/ __| __|
+| |___| | | | (_| | |  | |_\__ \   | | | | | |  __/ (__| |_
+ \____|_| |_|\__,_|_|   \__|___/   |_| |_| |_|\___|\___|\__|
+```
 
-A set of Helm charts with a helper script to manage them.
+# Коллекция чартов
 
-## Requirements
-- bash
-- helm
-- yq
+Здесь собраны полезные Helm-чарты и скрипт `charts.sh` для их управления.
 
-## Quick start
+## Требования
+* bash
+* helm
+* yq
 
-List charts:
+## Быстрый старт
+
+Посмотреть список доступных чартов:
 ```bash
 ./charts/charts.sh list
 ```
 
-Install one chart:
+Установить один чарт:
 ```bash
-./charts/charts.sh install <chart> [namespace]
+./charts/charts.sh install <чарт> [namespace]
 ```
 
-Install all charts in the order from `install-order.yaml`:
+Установить все чарты в порядке из `install-order.yaml`:
 ```bash
 ./charts/charts.sh install-all [namespace]
 ```
 
-Each chart lives in `charts/helm-charts` and may have its own README.
-Build a Docker image with the script if you prefer an isolated environment:
+Каждый чарт лежит в каталоге `charts/helm-charts` и может иметь отдельный README.
+Для изолированного запуска можно собрать Docker-образ:
 ```bash
 docker build -t charts ./charts
 ```

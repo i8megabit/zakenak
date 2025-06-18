@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "postgres.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "postgres.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "postgres.name" . }}
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.postgresPassword | quote }}
+          ports:
+            - containerPort: 5432
