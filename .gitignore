@@ -10,6 +10,8 @@
 
 # Output of the go coverage tool
 *.out
+coverage.html
+build/coverage.*
 
 # Dependency directories
 vendor/

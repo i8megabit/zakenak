@@ -16,7 +16,7 @@ REGISTRY ?= ghcr.io
 IMAGE_NAME ?= i8megabit/gitops
 TAG ?= $(VERSION)
 
-.PHONY: all build clean test docker deps tidy vendor init-modules
+.PHONY: all build clean test coverage docker deps tidy vendor init-modules
 
 all: clean deps build test
 
@@ -45,6 +45,12 @@ build: deps
 
 test: deps
 	$(GO) test -v ./...
+
+coverage: deps
+	mkdir -p $(BUILD_DIR)
+	$(GO) test -v -coverprofile=$(BUILD_DIR)/coverage.out ./...
+	$(GO) tool cover -func=$(BUILD_DIR)/coverage.out > $(BUILD_DIR)/coverage.txt
+	$(GO) tool cover -html=$(BUILD_DIR)/coverage.out -o $(BUILD_DIR)/coverage.html
 
 clean:
 	rm -rf $(BUILD_DIR)
