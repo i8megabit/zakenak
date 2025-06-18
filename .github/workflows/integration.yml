@@ -1,0 +1,50 @@
+name: Integration Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Install Minikube
+        run: |
+          curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+          chmod +x minikube
+          sudo mv minikube /usr/local/bin/
+
+      - name: Start Minikube
+        run: sudo minikube start --driver=docker
+
+      - name: Export kubeconfig
+        run: echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
+
+      - name: Build Zakenak
+        working-directory: ./tools/zakenak
+        run: make build
+
+      - name: Deploy charts
+        working-directory: ./tools/zakenak
+        env:
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        run: |
+          ./build/zakenak deploy --kubeconfig $KUBECONFIG --config ../zakenak.yaml
+
+      - name: Check status
+        working-directory: ./tools/zakenak
+        env:
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        run: ./build/zakenak status
