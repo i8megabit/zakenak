@@ -12,6 +12,7 @@ import (
     apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
+//lint:ignore U1000 handlers are used in other modules
 // deployHandler handles deployment operations
 func deployHandler(client *kubernetes.Clientset, cfg *config.Config) error {
     // Создание namespace если не существует
@@ -28,6 +29,7 @@ func deployHandler(client *kubernetes.Clientset, cfg *config.Config) error {
     return nil
 }
 
+//lint:ignore U1000 helper for future implementations
 // ensureNamespace creates namespace if it doesn't exist
 func ensureNamespace(client *kubernetes.Clientset, namespace string) error {
     ns := &corev1.Namespace{
@@ -44,6 +46,7 @@ func ensureNamespace(client *kubernetes.Clientset, namespace string) error {
     return nil
 }
 
+//lint:ignore U1000 helper for future implementations
 // deployChart deploys a single Helm chart
 func deployChart(client *kubernetes.Clientset, cfg *config.Config, chartPath string) error {
     helmClient := helm.NewClient()

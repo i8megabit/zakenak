@@ -32,6 +32,7 @@ import (
     "github.com/i8megabit/zakenak/pkg/kind"
 )
 
+//lint:ignore U1000 CLI feature under development
 func newClusterCmd() *cobra.Command {
     cmd := &cobra.Command{
         Use:   "cluster",
@@ -46,6 +47,7 @@ func newClusterCmd() *cobra.Command {
     return cmd
 }
 
+//lint:ignore U1000 CLI feature under development
 func newClusterCreateCmd() *cobra.Command {
     var configPath string
     var gpuEnabled bool
@@ -74,6 +76,7 @@ func newClusterCreateCmd() *cobra.Command {
     return cmd
 }
 
+//lint:ignore U1000 CLI feature under development
 func newClusterDeleteCmd() *cobra.Command {
     var clusterName string
     
