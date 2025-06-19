@@ -25,3 +25,5 @@ cd tools/zakenak
 make coverage
 ```
 The HTML report is saved to `build/coverage.html`.
+In CI the coverage report is uploaded as an artifact and a short summary is
+appended to the GitHub Actions job log.

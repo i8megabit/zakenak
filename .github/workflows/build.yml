@@ -74,6 +74,9 @@ jobs:
           tools/zakenak/build/coverage.html
         retention-days: 5
 
+    - name: Show coverage summary
+      run: cat tools/zakenak/build/coverage.txt >> "$GITHUB_STEP_SUMMARY"
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
