@@ -16,7 +16,7 @@ REGISTRY ?= ghcr.io
 IMAGE_NAME ?= i8megabit/gitops
 TAG ?= $(VERSION)
 
-.PHONY: all build clean test coverage docker deps tidy vendor init-modules
+.PHONY: all build clean test coverage staticcheck govulncheck lint docker deps tidy vendor init-modules
 
 all: clean deps build test
 
@@ -73,5 +73,15 @@ lint:
 	golint ./...
 	go vet ./...
 	goimports -w .
+	$(MAKE) staticcheck
+	$(MAKE) govulncheck
+
+staticcheck:
+	$(GO) install honnef.co/go/tools/cmd/staticcheck@latest
+	staticcheck ./...
+
+govulncheck:
+	$(GO) install golang.org/x/vuln/cmd/govulncheck@latest
+	govulncheck ./...
 
 .DEFAULT_GOAL := build

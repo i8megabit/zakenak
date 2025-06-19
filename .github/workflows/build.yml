@@ -37,24 +37,15 @@ jobs:
 
     - name: Setup Go workspace
       working-directory: ./tools/zakenak
-      run: |
-        go mod tidy
-        mkdir -p build
-
-    - name: Install staticcheck
-      run: go install honnef.co/go/tools/cmd/staticcheck@latest
+      run: make deps
 
     - name: Run staticcheck
       working-directory: ./tools/zakenak
-      run: staticcheck ./...
-
-    - name: Install govulncheck
-      run: go install golang.org/x/vuln/cmd/govulncheck@latest
+      run: make staticcheck
 
     - name: Run govulncheck
       working-directory: ./tools/zakenak
-      run: govulncheck ./...
-      continue-on-error: true
+      run: make govulncheck
 
     - name: Build Binary
       working-directory: ./tools/zakenak
@@ -71,10 +62,7 @@ jobs:
 
     - name: Run tests with coverage
       working-directory: ./tools/zakenak
-      run: |
-        go test -v -coverprofile=build/coverage.out ./...
-        go tool cover -func=build/coverage.out > build/coverage.txt
-        go tool cover -html=build/coverage.out -o build/coverage.html
+      run: make coverage
 
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
