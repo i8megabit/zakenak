@@ -16,3 +16,12 @@ go test ./...
 - генерация конфигурации Kind
 
 Тесты не требуют сторонних сервисов и выполняются быстро.
+
+# Coverage
+
+To generate coverage reports, run:
+```bash
+cd tools/zakenak
+make coverage
+```
+The HTML report is saved to `build/coverage.html`.

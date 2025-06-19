@@ -72,6 +72,13 @@ zakenak build
 # Деплой в кластер
 zakenak deploy
 ```
+
+### Запуск тестов и генерация покрытия
+```bash
+cd tools/zakenak
+make coverage
+```
+Результаты будут сохранены в каталоге `tools/zakenak/build`, где файл `coverage.html` можно открыть в браузере.
 ## Использование Docker образа
 
 ### Получение образа
