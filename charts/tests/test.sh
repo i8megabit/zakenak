@@ -13,10 +13,10 @@ helm install cert-manager jetstack/cert-manager \
 
 # Ставим чарт local-ca, который зависит от cert-manager
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-helm install test "$SCRIPT_DIR/../helm-charts/local-ca" \
-  --namespace test --create-namespace --wait
+helm install local-ca "$SCRIPT_DIR/../helm-charts/local-ca" \
+  --namespace dev --create-namespace --wait
 
-kubectl get pods -n test
+kubectl get pods -n dev
 
 kind delete cluster
 
