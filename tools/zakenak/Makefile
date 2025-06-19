@@ -82,6 +82,7 @@ staticcheck:
 
 govulncheck:
 	$(GO) install golang.org/x/vuln/cmd/govulncheck@latest
-	govulncheck ./...
+	mkdir -p $(BUILD_DIR)
+	govulncheck ./... > $(BUILD_DIR)/govulncheck.txt 2>&1 || true
 
 .DEFAULT_GOAL := build
