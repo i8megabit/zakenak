@@ -1,0 +1,15 @@
+# Порядок установки чартов
+charts:
+- echo-server
+- coredns
+- ingress-nginx
+- cert-manager
+- local-ca
+- sidecar-injector
+- kubernetes-dashboard
+- nvidia-device-plugin
+- ollama
+- open-webui
+
+- redis
+- postgres

@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "echo-server.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "echo-server.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "echo-server.fullname" . }}
+    spec:
+      containers:
+        - name: server
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          ports:
+            - containerPort: 8080
