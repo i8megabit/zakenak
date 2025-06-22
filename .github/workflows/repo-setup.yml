@@ -1,0 +1,30 @@
+name: Configure Repository
+
+on:
+  workflow_dispatch:
+
+jobs:
+  protection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure merge strategy
+        env:
+          TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          curl -L -X PATCH \
+            -H "Authorization: token $TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }} \
+            -d '{"allow_merge_commit":false,"allow_rebase_merge":false,"allow_squash_merge":true}'
+
+      - name: Protect branches
+        env:
+          TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          for BR in main develop; do
+            curl -L -X PUT \
+              -H "Authorization: token $TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/${{ github.repository }}/branches/$BR/protection \
+              -d '{"required_status_checks":{"strict":true,"contexts":["build"]},"enforce_admins":false,"required_pull_request_reviews":{"required_approving_review_count":1},"restrictions":null}'
+          done

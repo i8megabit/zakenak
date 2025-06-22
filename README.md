@@ -72,6 +72,15 @@ zakenak build
 # Деплой в кластер
 zakenak deploy
 ```
+
+### Запуск тестов
+```bash
+cd tools/zakenak
+go test ./...
+# Пакеты без тестовых файлов будут помечены как `[no test files]`
+# или
+make test
+```
 ## Использование Docker образа
 
 ### Получение образа
