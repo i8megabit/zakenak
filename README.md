@@ -72,6 +72,14 @@ zakenak build
 # Деплой в кластер
 zakenak deploy
 ```
+
+### Запуск тестов
+```bash
+cd tools/zakenak
+go test ./...
+# или
+make test
+```
 ## Использование Docker образа
 
 ### Получение образа
