@@ -77,6 +77,7 @@ zakenak deploy
 ```bash
 cd tools/zakenak
 go test ./...
+# Пакеты без тестовых файлов будут помечены как `[no test files]`
 # или
 make test
 ```

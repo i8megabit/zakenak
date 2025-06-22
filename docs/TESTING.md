@@ -8,6 +8,7 @@
 # перейти в каталог Go-модуля
 cd tools/zakenak
 go test ./...
+# Пакеты без тестов выводятся как `[no test files]`
 # или воспользоваться Makefile
 make test
 ```
